@@ -153,7 +153,8 @@ public class SQLTempTableTest {
                 Assertions.assertEquals("/path/to/logfile", result.getString("path"), "path was wrong");
                 Assertions.assertEquals("original_filename.log", result.getString("name"), "name was wrong");
                 Assertions.assertEquals("2010-10-10 10:10:10", result.getString("archived"), "archived was wrong");
-                Assertions.assertEquals("d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2", result.getString("checksum"), "checksum was wrong");
+                Assertions
+                        .assertEquals("d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2", result.getString("checksum"), "checksum was wrong");
                 Assertions.assertEquals("etagvalue", result.getString("etag"), "etag was wrong");
                 Assertions.assertEquals("logtagvalue", result.getString("logtag"), "logtag was wrong");
                 Assertions.assertEquals("1048576", result.getString("size"), "size was wrong");
