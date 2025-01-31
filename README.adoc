@@ -3,11 +3,10 @@
 // 2. Update the issues link in Contributing section in the readme file
 // 3. Update the discussion link in config.yml file in .github/ISSUE_TEMPLATE directory
 
-= repo-template
+= HBS_03: Teragrep Metadata Using HBase
 
-// Add a short description of your project. Tell what your project does and what it's used for.
-
-This is a template repository for Teragrep organization.
+HBS_03 is a data replication tool that syncs data from MySQL to HBase using Teragrep's predefined schema.
+It simplifies the process of migrating data from MySQL to HBase.
 
 == Features
 
@@ -21,7 +20,7 @@ See the official documentation on https://docs.teragrep.com[docs.teragrep.com].
 
 // If your project has limitations, please list them. Otherwise remove this section.
 
-== How to [compile/use/implement]
+== How to
 
 // add instructions how people can start to use your project
 
