@@ -45,54 +45,61 @@
  */
 package com.teragrep.hbs_03;
 
-import org.apache.hadoop.hbase.util.Bytes;
-
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Objects;
 
-/** Represents a row key for HBase row */
+/**
+ * Represents a row key for HBase row
+ */
 public final class RowKey {
 
-    private final Long epoch;
-    private final String source;
+    private final long streamId;
+    private final long logtime;
+    private final long logfileId;
 
-    public RowKey(final String epoch, final String source) {
-        this(Long.parseLong(epoch), source);
-    }
-
-    public RowKey(final Integer epoch, final String source) {
-        this(Long.valueOf(epoch), source);
-    }
-
-    public RowKey(final Long epoch, final String source) {
-        this.epoch = epoch;
-        this.source = source;
-    }
-
-    public String value() {
-        final long negativeEpoch = -epoch;
-        // formats source string to be equal length non-negative integers
-        return String.format("%08x", source.hashCode()) + "#" + negativeEpoch;
+    public RowKey(final long streamId, final long logtime, final long logfileId) {
+        this.streamId = streamId;
+        this.logtime = logtime;
+        this.logfileId = logfileId;
     }
 
     public byte[] bytes() {
-        return Bytes.toBytes(value());
+        // streamId + # + logtime + # + logfileId
+        final ByteBuffer rowKeyBuffer = ByteBuffer.allocate(Long.BYTES + Byte.BYTES + Long.BYTES + Byte.BYTES + Long.BYTES);
+        rowKeyBuffer.order(ByteOrder.BIG_ENDIAN);
+        rowKeyBuffer.putLong(streamId);
+        rowKeyBuffer.put((byte) '#');
+        rowKeyBuffer.putLong(logtime);
+        rowKeyBuffer.put((byte) '#');
+        rowKeyBuffer.putLong(logfileId);
+        return rowKeyBuffer.array();
     }
 
     @Override
     public String toString() {
-        return value();
+        byte[] rowKeyBytes = bytes();
+        final StringBuilder byteString = new StringBuilder();
+        for (final byte b : rowKeyBytes) {
+            byteString.append(String.format("%02x ", b));
+        }
+        return String.format("RowKey(streamId=<%d>, logtime=%d, logfileId=%d)\n bytes=<[%s]>",
+                streamId,
+                logtime,
+                logfileId,
+                byteString.toString().trim()
+        );
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass())
-            return false;
-        final RowKey rowKey = (RowKey) o;
-        return Objects.equals(epoch, rowKey.epoch) && Objects.equals(source, rowKey.source);
+    public boolean equals(final Object object) {
+        if (object == null || getClass() != object.getClass()) return false;
+        final RowKey rowKey = (RowKey) object;
+        return streamId == rowKey.streamId && logtime == rowKey.logtime && logfileId == rowKey.logfileId;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(epoch, source);
+        return Objects.hash(streamId, logtime, logfileId);
     }
 }

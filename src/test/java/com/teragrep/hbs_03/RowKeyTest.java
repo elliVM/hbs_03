@@ -53,25 +53,54 @@ public class RowKeyTest {
 
     @Test
     public void testRowKey() {
-        final String epoch = "946684800";
-        final String src = "source";
-        final RowKey rowKey = new RowKey(epoch, src);
-        final String expected = "ca90681b#-946684800";
-        Assertions.assertEquals(expected, rowKey.value());
+        long streamId = 12345L;
+        long logtime = 9876543210L;
+        long logfileId = 54321L;
+        RowKey rowKey = new RowKey(streamId, logtime, logfileId);
+        byte[] bytes = rowKey.bytes();
+        Assertions.assertEquals(26, bytes.length, "byte array length should be 25");
+        Assertions.assertEquals(0x23, bytes[8], "first separator should be #");
+        Assertions.assertEquals(0x23, bytes[17], "second separator should be #");
     }
 
     @Test
-    public void testEqualLength() {
-        final String epoch = "946684800";
-        final String src1 = "source";
-        final String src2 = "source_name";
-        final byte[] rowKey1 = new RowKey(epoch, src1).bytes();
-        final byte[] rowKey2 = new RowKey(epoch, src2).bytes();
-        Assertions.assertEquals(rowKey1.length, rowKey2.length);
+    public void testMaxValues() {
+        long streamId = Long.MAX_VALUE;
+        long logtime = Long.MAX_VALUE;
+        long logfileId = Long.MAX_VALUE;
+        RowKey rowKey = new RowKey(streamId, logtime, logfileId);
+        byte[] bytes = rowKey.bytes();
+        Assertions.assertEquals(26, bytes.length, "byte array length should be 25");
+        Assertions.assertEquals(0x23, bytes[8], "first separator should be #");
+        Assertions.assertEquals(0x23, bytes[17], "second separator should be #");
+    }
+
+    @Test
+    public void testMinValues() {
+        long streamId = Long.MIN_VALUE;
+        long logtime = Long.MIN_VALUE;
+        long logfileId = Long.MIN_VALUE;
+        RowKey rowKey = new RowKey(streamId, logtime, logfileId);
+        byte[] bytes = rowKey.bytes();
+        Assertions.assertEquals(26, bytes.length, "byte array length should be 25");
+        Assertions.assertEquals(0x23, bytes[8], "first separator should be #");
+        Assertions.assertEquals(0x23, bytes[17], "second separator should be #");
+    }
+
+    @Test
+    public void testToString() {
+        long streamId = 12345L;
+        long logtime = 9876543210L;
+        long logfileId = 54321L;
+        RowKey rowKey = new RowKey(streamId, logtime, logfileId);
+        String expected = "RowKey(streamId=<12345>, logtime=9876543210, logfileId=54321)\n" +
+                " bytes=<[00 00 00 00 00 00 30 39 23 00 00 00 02 4c b0 16 ea 23 00 00 00 00 00 00 d4 31]>";
+        Assertions.assertEquals(expected, rowKey.toString());
     }
 
     @Test
     public void testEqualsVerifier() {
         EqualsVerifier.forClass(RowKey.class).verify();
     }
+
 }

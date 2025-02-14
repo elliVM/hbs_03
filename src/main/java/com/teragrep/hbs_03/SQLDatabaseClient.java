@@ -45,48 +45,122 @@
  */
 package com.teragrep.hbs_03;
 
+import org.jooq.Cursor;
 import org.jooq.DSLContext;
-import org.jooq.InsertOnDuplicateStep;
+import org.jooq.Field;
 import org.jooq.Record;
+import org.jooq.Record20;
 import org.jooq.Result;
+import org.jooq.SelectOnConditionStep;
+import org.jooq.impl.DSL;
+import org.jooq.types.UInteger;
+import org.jooq.types.ULong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Date;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.teragrep.hbs_03.jooq.generated.journaldb.Journaldb.JOURNALDB;
+import static com.teragrep.hbs_03.jooq.generated.streamdb.Streamdb.STREAMDB;
 
 public final class SQLDatabaseClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SQLDatabaseClient.class);
     private final DSLContext ctx;
-    private final SQLTempTable tempTable;
+    private final int batchSize;
 
     public SQLDatabaseClient(final DSLContext ctx) {
-        this(ctx, new SQLTempTable(ctx));
+        this(ctx, 100);
     }
 
-    public SQLDatabaseClient(final DSLContext ctx, final SQLTempTable tempTable) {
+    public SQLDatabaseClient(final DSLContext ctx, final int batchSize) {
         this.ctx = ctx;
-        this.tempTable = tempTable;
+        this.batchSize = batchSize;
     }
 
     public void initialize() {
         logGrants();
-        tempTable.create();
     }
 
-    public void dateToTempTable(final Date day) {
-        tempTable.truncate();
-        final NestedTopNQueryByDate queryByDate = new NestedTopNQueryByDate(ctx, day);
-        final InsertOnDuplicateStep<Record> insertStep = ctx
-                .insertInto(tempTable.table())
-                .select(queryByDate.selectStep());
-        LOGGER.info("Insert SQL <{}>", insertStep);
-        insertStep.execute();
+    public int replicateDate(final Date day, LogfileHBaseTable hBaseTable) {
+        final LogfileTableDayQuery logfileTableDayQuery = new LogfileTableDayQuery(ctx, day);
+
+        final Field<Long> logtimeFunction = DSL
+                .field(
+                        "UNIX_TIMESTAMP(STR_TO_DATE(SUBSTRING(REGEXP_SUBSTR({0},'^\\\\d{4}\\\\/\\\\d{2}-\\\\d{2}\\\\/[\\\\w\\\\.-]+\\\\/([^\\\\p{Z}\\\\p{C}]+?)\\\\/([^\\\\p{Z}\\\\p{C}]+)(-@)?(\\\\d+|)-(\\\\d{4}\\\\d{2}\\\\d{2}\\\\d{2})'), -10, 10), '%Y%m%d%H'))",
+                        Long.class, JOURNALDB.LOGFILE.PATH
+                );
+        final Field<Long> logtimeField = DSL.field("logtime", Long.class);
+
+        // TODO: all joined rows might not have not have streamdb information
+        final SelectOnConditionStep<Record20<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, ULong, UInteger, String, String, Long>> selectStep = ctx.select(
+                        JOURNALDB.LOGFILE.ID,
+                        JOURNALDB.LOGFILE.LOGDATE,
+                        JOURNALDB.LOGFILE.EXPIRATION,
+                        JOURNALDB.BUCKET.NAME.as("bucket"),
+                        JOURNALDB.LOGFILE.PATH,
+                        JOURNALDB.LOGFILE.OBJECT_KEY_HASH,
+                        JOURNALDB.HOST.NAME.as("host"),
+                        JOURNALDB.LOGFILE.ORIGINAL_FILENAME,
+                        JOURNALDB.LOGFILE.ARCHIVED,
+                        JOURNALDB.LOGFILE.FILE_SIZE,
+                        JOURNALDB.LOGFILE.SHA256_CHECKSUM,
+                        JOURNALDB.LOGFILE.ARCHIVE_ETAG,
+                        JOURNALDB.LOGFILE.LOGTAG,
+                        JOURNALDB.SOURCE_SYSTEM.NAME.as("source_system"),
+                        JOURNALDB.CATEGORY.NAME.as("category"),
+                        JOURNALDB.LOGFILE.UNCOMPRESSED_FILE_SIZE,
+                        STREAMDB.STREAM.ID.as("stream_id"), // row key id
+                        STREAMDB.STREAM.STREAM_,
+                        STREAMDB.STREAM.DIRECTORY,
+                        logtimeFunction.as(logtimeField)
+                )
+                .from(logfileTableDayQuery.toTableStatement())
+                .join(JOURNALDB.LOGFILE)
+                .on(JOURNALDB.LOGFILE.ID.eq(logfileTableDayQuery.idField()))
+                .join(JOURNALDB.HOST)
+                .on(JOURNALDB.LOGFILE.HOST_ID.eq(JOURNALDB.HOST.ID))
+                .join(JOURNALDB.BUCKET)
+                .on(JOURNALDB.LOGFILE.BUCKET_ID.eq(JOURNALDB.BUCKET.ID))
+                .join(JOURNALDB.SOURCE_SYSTEM)
+                .on(JOURNALDB.LOGFILE.SOURCE_SYSTEM_ID.eq(JOURNALDB.SOURCE_SYSTEM.ID))
+                .join(JOURNALDB.CATEGORY)
+                .on(JOURNALDB.LOGFILE.CATEGORY_ID.eq(JOURNALDB.CATEGORY.ID))
+                .join(JOURNALDB.METADATA_VALUE)
+                .on(JOURNALDB.LOGFILE.ID.eq(JOURNALDB.METADATA_VALUE.LOGFILE_ID))
+                .join(STREAMDB.HOST)
+                .on(JOURNALDB.HOST.NAME.eq(STREAMDB.HOST.NAME))
+                .join(STREAMDB.LOG_GROUP)
+                .on(STREAMDB.HOST.GID.eq(STREAMDB.LOG_GROUP.ID))
+                .join(STREAMDB.STREAM)
+                .on(
+                        STREAMDB.LOG_GROUP.ID.eq(STREAMDB.STREAM.GID).and(JOURNALDB.LOGFILE.LOGTAG.eq(STREAMDB.STREAM.TAG))
+                );
+
+        final Cursor<Record20<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, ULong, UInteger, String, String, Long>> cursor = selectStep.fetchLazy();
+        final List<HBaseRow> hbaseRows = new ArrayList<>(batchSize);
+        int totalRows = 0;
+        while (cursor.hasNext()) {
+            final Result<Record20<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, ULong, UInteger, String, String, Long>> nextResult = cursor.fetchNext(batchSize);
+
+            for (Record20<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, ULong, UInteger, String, String, Long> row : nextResult) {
+                hbaseRows.add(new HBaseRow(row));
+            }
+
+            hBaseTable.putAll(hbaseRows);
+
+            totalRows = totalRows + hbaseRows.size();
+            hbaseRows.clear();
+        }
+        return totalRows;
     }
 
     private void logGrants() {
         final String grantsSQL = "SHOW GRANTS FOR CURRENT_USER()";
         final Result<Record> grants = ctx.fetch(grantsSQL);
-        LOGGER.info("<{}>", grants.get(0));
+        LOGGER.info("\n<{}>", grants.get(0));
     }
 }

@@ -70,22 +70,23 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
-public final class LogfileTable {
+public final class LogfileHBaseTable {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(LogfileTable.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LogfileHBaseTable.class);
     private final Connection connection;
     private final TableName tableName;
 
-    public LogfileTable(final Connection connection) {
+    public LogfileHBaseTable(final Connection connection) {
         this(connection, TableName.valueOf("logfile"));
     }
 
-    public LogfileTable(final Connection connection, final String tableName) {
+    public LogfileHBaseTable(final Connection connection, final String tableName) {
         this(connection, TableName.valueOf(tableName));
     }
 
-    public LogfileTable(final Connection connection, final TableName tableName) {
+    public LogfileHBaseTable(final Connection connection, final TableName tableName) {
         this.connection = connection;
         this.tableName = tableName;
     }
@@ -164,16 +165,17 @@ public final class LogfileTable {
     /**
      * Uses BufferedMutator to mutate puts and flush
      *
-     * @param puts List of puts that are added to the BufferedMutator
+     * @param rows List of puts that are added to the BufferedMutator
      */
-    public void putAll(final List<Put> puts) {
+    public void putAll(final List<HBaseRow> rows) {
         final BufferedMutatorParams params = new BufferedMutatorParams(tableName);
         try (final BufferedMutator mutator = connection.getBufferedMutator(params)) {
             if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("Putting <{}> objects", puts.size());
+                LOGGER.info("Putting <{}> objects", rows.size());
             }
             try {
-                mutator.mutate(puts);
+                final List<Put> putList = rows.stream().map(HBaseRow::put).collect(Collectors.toList());
+                mutator.mutate(putList);
             }
             catch (final IOException e) {
                 LOGGER.error("Error executing mutator <{}>", mutator);

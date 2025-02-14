@@ -59,7 +59,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class LogfileTableTest {
+public class LogfileHBaseTableTest {
 
     private final String username = "streamdb";
     private final String password = "streamdb_pass";
@@ -68,7 +68,7 @@ public class LogfileTableTest {
     private TestingHBaseCluster hbase;
     private Admin admin;
     private org.apache.hadoop.hbase.client.Connection hbaseConn;
-    private LogfileTable table;
+    private LogfileHBaseTable table;
 
     @BeforeAll
     public void setup() {
@@ -77,7 +77,7 @@ public class LogfileTableTest {
             hbase.start();
             hbaseConn = ConnectionFactory.createConnection(hbase.getConf());
             admin = hbaseConn.getAdmin();
-            table = new LogfileTable(hbaseConn, tableName);
+            table = new LogfileHBaseTable(hbaseConn, tableName);
         });
     }
 

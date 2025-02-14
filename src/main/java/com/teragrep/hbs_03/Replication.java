@@ -50,6 +50,8 @@ import com.teragrep.cnf_01.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Date;
+
 /** Entry point class to start replication */
 public final class Replication {
 
@@ -63,9 +65,18 @@ public final class Replication {
         final SQLDatabaseClient sqlClient = new SQLDatabaseClientFactory(config).object();
 
         // create hbase table
-        final LogfileTable table = hbaseClient.logfile();
+        final LogfileHBaseTable table = hbaseClient.logfile();
         table.create();
 
+        // Start date: January 1, 2000, 00:00:00 UTC
+        long startEpoch = 946684800000L;
+        // End date: January 1, 2100, 00:00:00 UTC
+        long endEpoch = 4102444800000L;
+        Date start = new Date(startEpoch);
+        Date end = new Date(endEpoch);
+
+        final ReplicateRange replicate = new ReplicateRange(start, end, sqlClient, table);
+        replicate.start();
         // Query data to logfile table
     }
 }

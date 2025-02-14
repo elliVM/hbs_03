@@ -46,26 +46,24 @@
 package com.teragrep.hbs_03;
 
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.JSON;
 import org.jooq.Record18;
+import org.jooq.Record20;
 import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.jooq.tools.jdbc.MockDataProvider;
 import org.jooq.tools.jdbc.MockExecuteContext;
 import org.jooq.tools.jdbc.MockResult;
+import org.jooq.types.UInteger;
 import org.jooq.types.ULong;
 
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 
-import static com.teragrep.hbs_03.jooq.generated.journaldb.Tables.BUCKET;
-import static com.teragrep.hbs_03.jooq.generated.journaldb.Tables.CATEGORY;
-import static com.teragrep.hbs_03.jooq.generated.journaldb.Tables.HOST;
-import static com.teragrep.hbs_03.jooq.generated.journaldb.Tables.LOGFILE;
-import static com.teragrep.hbs_03.jooq.generated.journaldb.Tables.METADATA_VALUE;
-import static com.teragrep.hbs_03.jooq.generated.journaldb.Tables.SOURCE_SYSTEM;
+import static com.teragrep.hbs_03.jooq.generated.journaldb.Journaldb.JOURNALDB;
 import static com.teragrep.hbs_03.jooq.generated.streamdb.Streamdb.STREAMDB;
 
 public class MockSQLData implements MockDataProvider {
@@ -78,13 +76,11 @@ public class MockSQLData implements MockDataProvider {
         final String sql = ctx.sql();
         if (sql.toUpperCase().startsWith("ONE")) {
             mock = generateResult(1);
-        }
-        else if (sql.toUpperCase().startsWith("ROWS_")) {
+        } else if (sql.toUpperCase().startsWith("ROWS_")) {
             final int customRows = Integer.parseInt(sql.substring("ROWS_".length()));
             mock = generateResult(customRows);
-        }
-        else {
-            mock = new MockResult[] {
+        } else {
+            mock = new MockResult[]{
                     new MockResult(0, this.ctx.newResult())
             };
         }
@@ -93,22 +89,96 @@ public class MockSQLData implements MockDataProvider {
 
     // generates always same results to the set range
     MockResult[] generateResult(int numOfResults) {
-        final Result<Record18<ULong, Integer, Date, String, String, Timestamp, String, String, String, ULong, JSON, String, String, String, String, String, String, String>> result = ctx
-                .newResult(LOGFILE.ID.as("id"), DSL.epoch(DSL.timestamp(LOGFILE.LOGDATE)).as("epoch"), LOGFILE.EXPIRATION.as("exp"), LOGFILE.PATH.as("pth"), LOGFILE.ORIGINAL_FILENAME.as("name"), DSL.timestamp(LOGFILE.ARCHIVED).as("archived"), LOGFILE.SHA256_CHECKSUM.as("checksum"), LOGFILE.ARCHIVE_ETAG.as("etag"), LOGFILE.LOGTAG.as("logtag"), LOGFILE.UNCOMPRESSED_FILE_SIZE.as("size"), DSL.jsonObjectAgg(METADATA_VALUE.VALUE_KEY.concat(":").concat(METADATA_VALUE.VALUE)).as("meta"), SOURCE_SYSTEM.NAME.as("src"), CATEGORY.NAME.as("ctg"), BUCKET.NAME.as("bckt"), HOST.NAME.as("host"), STREAMDB.STREAM.TAG.as("stream_tag"), STREAMDB.LOG_GROUP.NAME.as("log_group"), STREAMDB.STREAM.DIRECTORY.as("directory"));
+        final Field<Long> logtimeFunction = DSL
+                .field(
+                        "UNIX_TIMESTAMP(STR_TO_DATE(SUBSTRING(REGEXP_SUBSTR({0},'^\\\\d{4}\\\\/\\\\d{2}-\\\\d{2}\\\\/[\\\\w\\\\.-]+\\\\/([^\\\\p{Z}\\\\p{C}]+?)\\\\/([^\\\\p{Z}\\\\p{C}]+)(-@)?(\\\\d+|)-(\\\\d{4}\\\\d{2}\\\\d{2}\\\\d{2})'), -10, 10), '%Y%m%d%H'))",
+                        Long.class, JOURNALDB.LOGFILE.PATH
+                );
+        final Field<Long> logtimeField = DSL.field("logtime", Long.class);
+
+        final Result<Record20<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, ULong, UInteger, String, String, Long>> result =
+                ctx.newResult(
+                        JOURNALDB.LOGFILE.ID.as("id"),
+                        JOURNALDB.LOGFILE.LOGDATE.as("logdate"),
+                        JOURNALDB.LOGFILE.EXPIRATION.as("expiration"),
+                        JOURNALDB.BUCKET.NAME.as("bucket"),
+                        JOURNALDB.LOGFILE.PATH.as("path"),
+                        JOURNALDB.LOGFILE.OBJECT_KEY_HASH.as("hash"),
+                        JOURNALDB.HOST.NAME.as("host"),
+                        JOURNALDB.LOGFILE.ORIGINAL_FILENAME.as("file_name"),
+                        JOURNALDB.LOGFILE.ARCHIVED.as("archived"),
+                        JOURNALDB.LOGFILE.FILE_SIZE.as("file_size"),
+                        JOURNALDB.LOGFILE.SHA256_CHECKSUM.as("checksum"),
+                        JOURNALDB.LOGFILE.ARCHIVE_ETAG.as("etag"),
+                        JOURNALDB.LOGFILE.LOGTAG.as("logtag"),
+                        JOURNALDB.SOURCE_SYSTEM.NAME.as("source_system"),
+                        JOURNALDB.CATEGORY.NAME.as("category"),
+                        JOURNALDB.LOGFILE.UNCOMPRESSED_FILE_SIZE.as("uncompressed_filesize"),
+                        STREAMDB.STREAM.ID.as("stream_id"),
+                        STREAMDB.STREAM.STREAM_.as("stream"),
+                        STREAMDB.STREAM.DIRECTORY.as("directory"),
+                        logtimeFunction.as(logtimeField)
+                );
 
         for (long l = 1; l <= numOfResults; l++) {
-            // date between 1-28
+            int year = 2010;
+            int month = 10;
+            // day between 1-28
             final int day = (l % 28) == 0 ? 28 : (int) l % 28;
-            final Timestamp timestamp = Timestamp.valueOf(String.format("2010-10-%s 10:00:00", day));
-            final LocalDate local = LocalDate.of(2010, 10, day);
+            final Timestamp timestamp = Timestamp.valueOf(String.format("%s-%s-%s 10:00:00", year, month, day));
+            final LocalDate local = LocalDate.of(year, month, day);
+            final LocalDate localExpiration = LocalDate.of(year + 100, month, day);
             final Date date = Date.valueOf(local);
+            final Date expireDate = Date.valueOf(localExpiration);
             // archived date as epoch + 1000
-            final int epoch = (int) date.getTime() + 1000;
-            result
-                    .add(ctx.newRecord(LOGFILE.ID.as("id"), DSL.epoch(DSL.timestamp(LOGFILE.LOGDATE)).as("epoch"), LOGFILE.EXPIRATION.as("exp"), LOGFILE.PATH.as("pth"), LOGFILE.ORIGINAL_FILENAME.as("name"), DSL.timestamp(LOGFILE.ARCHIVED).as("archived"), LOGFILE.SHA256_CHECKSUM.as("checksum"), LOGFILE.ARCHIVE_ETAG.as("etag"), LOGFILE.LOGTAG.as("logtag"), LOGFILE.UNCOMPRESSED_FILE_SIZE.as("size"), DSL.jsonObjectAgg(METADATA_VALUE.VALUE_KEY.concat(":").concat(METADATA_VALUE.VALUE)).as("meta"), SOURCE_SYSTEM.NAME.as("src"), CATEGORY.NAME.as("ctg"), BUCKET.NAME.as("bckt"), HOST.NAME.as("host"), STREAMDB.STREAM.TAG.as("stream_tag"), STREAMDB.LOG_GROUP.NAME.as("log_group"), STREAMDB.STREAM.DIRECTORY.as("directory")).values(ULong.valueOf(l), epoch, date, "path", "original name", timestamp, "checksum", "etag", "log_tag", ULong.valueOf(10), JSON.valueOf("{\"key\": \"value\"}"), "source", "category", "bucket", "host", "stream_tag", "log_group", "directory"));
+            final long epoch = date.getTime();
+            final String path = String.format("%s/%s-%s/110000-sc-99-99-10-10/afe23b85-io/io-%s%s%s23.log.gz", year, month, day, year, month, day);
+            result.add(ctx.newRecord(
+                    JOURNALDB.LOGFILE.ID.as("id"),
+                    JOURNALDB.LOGFILE.LOGDATE.as("logdate"),
+                    JOURNALDB.LOGFILE.EXPIRATION.as("expiration"),
+                    JOURNALDB.BUCKET.NAME.as("bucket"),
+                    JOURNALDB.LOGFILE.PATH.as("path"),
+                    JOURNALDB.LOGFILE.OBJECT_KEY_HASH.as("hash"),
+                    JOURNALDB.HOST.NAME.as("host"),
+                    JOURNALDB.LOGFILE.ORIGINAL_FILENAME.as("file_name"),
+                    JOURNALDB.LOGFILE.ARCHIVED.as("archived"),
+                    JOURNALDB.LOGFILE.FILE_SIZE.as("file_size"),
+                    JOURNALDB.LOGFILE.SHA256_CHECKSUM.as("checksum"),
+                    JOURNALDB.LOGFILE.ARCHIVE_ETAG.as("etag"),
+                    JOURNALDB.LOGFILE.LOGTAG.as("logtag"),
+                    JOURNALDB.SOURCE_SYSTEM.NAME.as("source_system"),
+                    JOURNALDB.CATEGORY.NAME.as("category"),
+                    JOURNALDB.LOGFILE.UNCOMPRESSED_FILE_SIZE.as("uncompressed_filesize"),
+                    STREAMDB.STREAM.ID.as("stream_id"),
+                    STREAMDB.STREAM.STREAM_.as("stream"),
+                    STREAMDB.STREAM.DIRECTORY.as("directory"),
+                    logtimeFunction.as(logtimeField)
+            ).values(
+                    ULong.valueOf(l),
+                    date,
+                    expireDate,
+                    "BUCKET name",
+                    path,
+                    "key_hash",
+                    "host",
+                    "original_name",
+                    timestamp,
+                    ULong.valueOf(1000L),
+                    "check_sum",
+                    "ARCHIVE_ETAG",
+                    "LOGTAG",
+                    "source_system",
+                    "category",
+                    ULong.valueOf(100000L),
+                    UInteger.valueOf(l + 1000),
+                    "stream",
+                    "directory",
+                    epoch
+            ));
         }
 
-        return new MockResult[] {
+        return new MockResult[]{
                 new MockResult(numOfResults, result)
         };
     }

@@ -46,14 +46,17 @@
 package com.teragrep.hbs_03;
 
 import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.jooq.DSLContext;
 import org.jooq.JSON;
 import org.jooq.Record;
 import org.jooq.Record18;
+import org.jooq.Record20;
 import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.jooq.tools.jdbc.MockConnection;
+import org.jooq.types.UInteger;
 import org.jooq.types.ULong;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -71,24 +74,41 @@ public class HBaseRowTest {
     @Test
     public void testRowKey() {
         final Result<Record> result = ctx.fetch("ONE_ROW");
-        final HBaseRow row = new HBaseRow(
-                (Record18<ULong, Integer, Date, String, String, Timestamp, String, String, String, ULong, JSON, String, String, String, String, String, String, String>) result
-                        .get(0)
-        );
-        final String expected = String.format("%08x", "directory".hashCode()) + "#-1685179496";
+        final HBaseRow row = new HBaseRow((Record20<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, ULong, UInteger, String, String, Long>) result.get(0));
+        final String expected = "RowKey(streamId=<1001>, logtime=1285880400000, logfileId=1)\n" +
+                " bytes=<[00 00 00 00 00 00 03 e9 23 00 00 01 2b 64 71 c8 80 23 00 00 00 00 00 00 00 01]>";
         final String rowKey = row.id();
         Assertions.assertEquals(expected, rowKey);
     }
 
     @Test
-    public void testPut() {
+    public void testPutQualifiers() {
         final Result<Record> result = ctx.fetch("ONE_ROW");
-        final HBaseRow row = new HBaseRow(
-                (Record18<ULong, Integer, Date, String, String, Timestamp, String, String, String, ULong, JSON, String, String, String, String, String, String, String>) result
-                        .get(0)
-        );
+        System.out.println(result);
+        final HBaseRow row = new HBaseRow((Record20<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, ULong, UInteger, String, String, Long>) result.get(0));
+
         final Put put = row.put();
-        String expected = "{\"totalColumns\":17,\"row\":\"c6a01e6d#-1685179496\",\"families\":{\"meta\":[{\"qualifier\":\"pth\",\"vlen\":4,\"tag\":[],\"timestamp\":\"9223372036854775807\"},{\"qualifier\":\"src\",\"vlen\":6,\"tag\":[],\"timestamp\":\"9223372036854775807\"},{\"qualifier\":\"sz\",\"vlen\":8,\"tag\":[],\"timestamp\":\"9223372036854775807\"},{\"qualifier\":\"epoch\",\"vlen\":4,\"tag\":[],\"timestamp\":\"9223372036854775807\"}]},\"ts\":\"9223372036854775807\"}";
-        Assertions.assertEquals(expected, put.toString());
+        final byte[] columnFamily = Bytes.toBytes("meta");
+        // test qualifiers
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("i")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("ld")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("e")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("b")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("p")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("okh")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("h")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("of")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("a")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("fs")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("chk")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("et")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("lt")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("lt")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("src")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("c")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("ufs")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("sid")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("d")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("t")));
     }
 }

@@ -78,6 +78,7 @@ public final class SQLDatabaseClientFactory implements Factory<SQLDatabaseClient
         final String journaldbName;
         final String streamdbName;
         final String bloomdbName;
+        final String batchSize;
 
         try {
             final Map<String, String> map = config.asMap();
@@ -88,6 +89,7 @@ public final class SQLDatabaseClientFactory implements Factory<SQLDatabaseClient
             journaldbName = map.getOrDefault("sql.journaldb.name", "journaldb");
             streamdbName = map.getOrDefault("sql.streamdb.name", "streamdb");
             bloomdbName = map.getOrDefault("sql.bloomdb.name", "bloomdb");
+            batchSize = map.getOrDefault("sql.batch.size", "1000");
         }
         catch (final ConfigurationException e) {
             throw new RuntimeException("Error getting configuration: " + e.getMessage());

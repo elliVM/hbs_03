@@ -45,53 +45,19 @@
  */
 package com.teragrep.hbs_03;
 
-import org.jooq.DSLContext;
-import org.jooq.SQLDialect;
-import org.jooq.conf.MappedSchema;
-import org.jooq.conf.RenderMapping;
-import org.jooq.conf.Settings;
-import org.jooq.impl.DSL;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.jooq.Record;
+import org.jooq.Table;
 
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.DriverManager;
+public interface TempTable {
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class SQLDatabaseClientTest {
+    public void create();
 
-    //    private final String username = System.getProperty("test.db.username");
-    //    private final String password = System.getProperty("test.db.password");
-    //    private final String url = System.getProperty("test.db.url");
-    final String username = "streamdb";
-    final String password = "streamdb_pass";
-    final String url = "jdbc:mariadb://192.168.49.2:30601/archiver_journal_tyrael";
-    final Settings settings = new Settings()
-            .withRenderMapping(new RenderMapping().withSchemata(new MappedSchema().withInput("streamdb").withOutput("archiver_streamdb_tyrael"), new MappedSchema().withInput("journaldb").withOutput("archiver_journal_tyrael"), new MappedSchema().withInput("bloomdb").withOutput("bloomdb")));
-    final Connection connection = Assertions
-            .assertDoesNotThrow(() -> DriverManager.getConnection(url, username, password));
-    final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
+    public void truncate();
 
-    @AfterAll
-    public void tearDown() {
-        Assertions.assertDoesNotThrow(connection::close);
-    }
+    /**
+     * Returns jooq Table reference to the temp table
+     * @return Table<Record> - temp table as jooq Table
+     */
+    public Table<Record> table();
 
-    @Test
-    @EnabledIfSystemProperty(
-            named = "runDatabaseTests",
-            matches = "true"
-    )
-    public void testInit() {
-        final SQLDatabaseClient client = new SQLDatabaseClient(DSL.using(connection));
-        client.initialize();
-    }
-
-    @Test
-    public void testQuery() {
-    }
 }

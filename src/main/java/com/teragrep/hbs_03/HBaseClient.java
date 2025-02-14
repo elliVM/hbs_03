@@ -95,7 +95,7 @@ public final class HBaseClient {
         }
     }
 
-    public LogfileTable logfile() {
-        return new LogfileTable(connection(), name);
+    public LogfileHBaseTable logfile() {
+        return new LogfileHBaseTable(connection(), name);
     }
 }

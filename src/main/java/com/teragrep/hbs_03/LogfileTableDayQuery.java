@@ -45,30 +45,61 @@
  */
 package com.teragrep.hbs_03;
 
+import org.jooq.Condition;
 import org.jooq.DSLContext;
-import org.jooq.SQLDialect;
+import org.jooq.Field;
+import org.jooq.JSON;
+import org.jooq.Record;
+import org.jooq.Record1;
+import org.jooq.Table;
+import org.jooq.TableLike;
 import org.jooq.impl.DSL;
-import org.jooq.tools.jdbc.MockConnection;
-import org.junit.jupiter.api.Test;
+import org.jooq.types.ULong;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class TempTableRowTest {
+import java.sql.Date;
 
-    final MockSQLData provider = new MockSQLData();
-    final MockConnection connection = new MockConnection(provider);
-    final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL);
+import static com.teragrep.hbs_03.jooq.generated.journaldb.Journaldb.JOURNALDB;
+import static com.teragrep.hbs_03.jooq.generated.journaldb.Tables.LOGFILE;
 
-    @Test
-    public void testRowKey() {
-        //        final TempTableRow row = new TempTableRow(result.get(0));
-        //        final String rowKey = row.id();
-        //        Assertions.assertEquals("1446acbe#-1", rowKey);
+public final class LogfileTableDayQuery {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(LogfileTableDayQuery.class);
+
+    private final DSLContext ctx;
+    private final String name;
+    private final Condition dateCondition;
+
+    public LogfileTableDayQuery(final DSLContext ctx, final Date day) {
+        this(ctx, "inner_table", day);
     }
 
-    @Test
-    public void testPut() {
-        //        final TempTableRow row = new TempTableRow(result.get(0));
-        //        final Put put = row.put();
-        //        Assertions.assertEquals(15, put.size());
-        //        Assertions.assertEquals(1, put.numFamilies());
+    public LogfileTableDayQuery(final DSLContext ctx, final String name, final Date day) {
+        this(ctx, name, LOGFILE.LOGDATE.eq(DSL.date(day)));
+    }
+
+    public LogfileTableDayQuery(final DSLContext ctx, final String name, final Condition dateCondition) {
+        this.ctx = ctx;
+        this.name = name;
+        this.dateCondition = dateCondition;
+    }
+
+    private Table<Record> table() {
+        return DSL.table(DSL.name(name));
+    }
+
+    public TableLike<Record1<ULong>> toTableStatement() {
+        LOGGER.debug("Select from logfile where <{}>", dateCondition);
+         return ctx.select(
+                        JOURNALDB.LOGFILE.ID
+                )
+                .from(JOURNALDB.LOGFILE)
+                .where(dateCondition)
+                .asTable(table());
+    }
+
+    public Field<ULong> idField() {
+        return DSL.field(DSL.name(table().getName(), "id"), ULong.class);
     }
 }
