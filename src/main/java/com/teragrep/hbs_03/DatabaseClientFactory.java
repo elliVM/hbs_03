@@ -69,7 +69,7 @@ public final class DatabaseClientFactory implements Factory<DatabaseClient> {
     private final String prefix;
 
     public DatabaseClientFactory(final Configuration config) {
-        this(config, "hbs_03.db.");
+        this(config, "hbs.db.");
     }
 
     public DatabaseClientFactory(final Configuration config, final String prefix) {

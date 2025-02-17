@@ -76,8 +76,12 @@ public class ValidDateString {
 
     @Override
     public boolean equals(final Object object) {
-        if (object == null || getClass() != object.getClass())
+        if (object == null) {
             return false;
+        }
+        if (getClass() != object.getClass()) {
+            return false;
+        }
         final ValidDateString validDateString = (ValidDateString) object;
         return Objects.equals(pattern, validDateString.pattern)
                 && Objects.equals(dateString, validDateString.dateString);

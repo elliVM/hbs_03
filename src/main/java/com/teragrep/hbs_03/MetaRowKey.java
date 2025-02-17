@@ -93,8 +93,12 @@ public final class MetaRowKey {
 
     @Override
     public boolean equals(final Object object) {
-        if (object == null || getClass() != object.getClass())
+        if (object == null) {
             return false;
+        }
+        if (getClass() != object.getClass()) {
+            return false;
+        }
         final MetaRowKey metaRowKey = (MetaRowKey) object;
         return streamId == metaRowKey.streamId && logtime == metaRowKey.logtime && logfileId == metaRowKey.logfileId;
     }

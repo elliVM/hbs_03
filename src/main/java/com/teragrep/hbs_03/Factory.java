@@ -48,6 +48,6 @@ package com.teragrep.hbs_03;
 /** Class to produce a configured immutable typed object */
 public interface Factory<T> {
 
-    public T object();
+    public abstract T object();
 
 }

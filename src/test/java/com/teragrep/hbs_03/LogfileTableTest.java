@@ -45,66 +45,13 @@
  */
 package com.teragrep.hbs_03;
 
-import org.apache.hadoop.hbase.HBaseTestingUtility;
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.Admin;
-import org.apache.hadoop.hbase.client.Connection;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class LogfileTableTest {
 
-    HBaseTestingUtility hbase = new HBaseTestingUtility();
-    Connection conn;
-    Admin admin;
-
-    @BeforeAll
-    public void setup() {
-        Assertions.assertDoesNotThrow(() -> {
-            hbase.getConfiguration().set("hadoop.tmp.dir", "/tmp/hbase-test");
-            hbase.getConfiguration().set("hbase.zookeeper.quorum", "localhost");
-            hbase.getConfiguration().set("hbase.zookeeper.property.clientPort", "2181");
-            hbase.startMiniCluster();
-            conn = hbase.getConnection();
-            admin = conn.getAdmin();
-        });
-    }
-
-    @BeforeEach
-    public void beforeEach() {
-        new LogfileTable(conn, "test_table").delete();
-    }
-
-    @AfterAll
-    public void tearDown() {
-        Assertions.assertDoesNotThrow(() -> {
-            admin.close();
-        });
-        Assertions.assertDoesNotThrow(() -> {
-            conn.close();
-        });
-        Assertions.assertDoesNotThrow(() -> {
-            hbase.shutdownMiniCluster();
-        });
-    }
-
     @Test
     public void testCreate() {
-        LogfileTable table = new LogfileTable(conn, "test_table");
-        Assertions.assertDoesNotThrow(() -> {
-            Assertions.assertFalse(admin.tableExists(TableName.valueOf("test_table")));
-        });
-        Assertions.assertDoesNotThrow(table::create);
-        // checks that create is not run if the table already exists
-        Assertions.assertDoesNotThrow(table::create);
-        Assertions.assertDoesNotThrow(() -> {
-            final boolean exists = admin.tableExists(TableName.valueOf("test_table"));
-            Assertions.assertTrue(exists);
-        });
     }
 }

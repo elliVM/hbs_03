@@ -58,15 +58,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.testcontainers.containers.MariaDBContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
 
+@Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DatabaseClientTest {
 
+    @Container
     private MariaDBContainer<?> mariadb;
     private Connection connection;
     final Settings settings = new Settings()

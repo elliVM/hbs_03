@@ -66,12 +66,11 @@ import static com.teragrep.hbs_03.jooq.generated.streamdb.Streamdb.STREAMDB;
 
 public class MockS3MetaData implements MockDataProvider {
 
-    final DSLContext ctx = DSL.using(SQLDialect.MYSQL);
-
     @Override
-    public MockResult[] execute(final MockExecuteContext ctx) {
+    public MockResult[] execute(final MockExecuteContext mockCtx) {
+        final DSLContext ctx = DSL.using(SQLDialect.MYSQL);
         final MockResult[] mock;
-        final String sql = ctx.sql();
+        final String sql = mockCtx.sql();
         if (sql.toUpperCase().startsWith("ONE")) {
             mock = generateResult(1);
         }
@@ -81,14 +80,15 @@ public class MockS3MetaData implements MockDataProvider {
         }
         else {
             mock = new MockResult[] {
-                    new MockResult(0, this.ctx.newResult())
+                    new MockResult(0, ctx.newResult())
             };
         }
         return mock;
     }
 
     // generates always same results to the set range
-    MockResult[] generateResult(int numOfResults) {
+    private MockResult[] generateResult(int numOfResults) {
+        final DSLContext ctx = DSL.using(SQLDialect.MYSQL);
         final Field<Long> logtimeFunction = DSL
                 .field(
                         "UNIX_TIMESTAMP(STR_TO_DATE(SUBSTRING(REGEXP_SUBSTR({0},'^\\\\d{4}\\\\/\\\\d{2}-\\\\d{2}\\\\/[\\\\w\\\\.-]+\\\\/([^\\\\p{Z}\\\\p{C}]+?)\\\\/([^\\\\p{Z}\\\\p{C}]+)(-@)?(\\\\d+|)-(\\\\d{4}\\\\d{2}\\\\d{2}\\\\d{2})'), -10, 10), '%Y%m%d%H'))",

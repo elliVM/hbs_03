@@ -32,11 +32,13 @@
     <hbase.verion>2.6.1</hbase.verion>
     <java.version>11</java.version>
     <junit.version>5.10.2</junit.version>
+    <main.class>com.teragrep.hbs_03.TeragrepMetaDataMigration</main.class>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <revision>0.0.1</revision>
     <sha1></sha1>
+    <testcontainers.version>1.20.4</testcontainers.version>
   </properties>
   <dependencies>
     <dependency>
@@ -81,7 +83,6 @@
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
       <version>1.5.12</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -105,33 +106,25 @@
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers</artifactId>
-      <version>1.20.4</version>
+      <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>mariadb</artifactId>
-      <version>1.20.4</version>
+      <version>${testcontainers.version}</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${testcontainers.version}</version>
     </dependency>
     <!-- equals tests -->
     <dependency>
       <groupId>nl.jqno.equalsverifier</groupId>
       <artifactId>equalsverifier</artifactId>
       <version>3.17.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hbase</groupId>
-      <artifactId>hbase-testing-util</artifactId>
-      <version>${hbase.verion}</version>
-      <scope>test</scope>
-    </dependency>
-    <!-- hbase-testing-util supports only JUnit 4 -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.13.2</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -169,6 +162,19 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.6.0</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <phase>package</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>flatten-maven-plugin</artifactId>
         <version>1.1.0</version>
@@ -193,6 +199,19 @@
           </execution>
         </executions>
       </plugin>
+      <!-- Add main class -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.4.2</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>com.teragrep.hbs_03.TeragrepMetaDataMigration</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
       <!-- mandatory plugin: enforcer -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -209,7 +228,7 @@
                 <bannedDependencies>
                   <excludes>
                     <!-- We generally do not want to use junit4, only junit5 -->
-                    <exclude>junit:junit</exclude>
+                    <!-- junit 4 allowed as part of testcontainers and hbase test imports -->
                   </excludes>
                 </bannedDependencies>
                 <requireMavenVersion>
@@ -336,11 +355,14 @@
             <exclude>settings.xml</exclude>
             <!-- maven -->
             <exclude>pom.xml</exclude>
+            <exclude>dependency-reduced-pom.xml</exclude>
             <exclude>eclipse-java-formatter.xml</exclude>
             <!-- readme -->
             <exclude>README.adoc</exclude>
             <!-- resources -->
             <exclude>src/test/resources/*</exclude>
+            <exclude>database/*</exclude>
+            <exclude>add_license_to_generated.sh</exclude>
           </excludes>
         </configuration>
         <executions>
@@ -371,6 +393,9 @@
               <failsOnError>false</failsOnError>
               <checkstyleRules>
                 <module name="Checker">
+                  <module name="BeforeExecutionExclusionFileFilter">
+                    <property name="fileNamePattern" value=".*[\\/]src[\\/]main[\\/]java[\\/]com[\\/]teragrep[\\/]hbs_03[\\/]jooq[\\/]generated[\\/].*$"></property>
+                  </module>
                   <module name="TreeWalker">
                     <module name="ClassMemberImpliedModifier"></module>
                     <module name="CovariantEquals"></module>
@@ -426,9 +451,6 @@
                   </module>
                   <module name="Translation"></module>
                   <module name="UniqueProperties"></module>
-                </module>
-                <module name="BeforeExecutionExclusionFileFilter">
-                  <property name="fileNamePattern" value=".*[\\/]src[\\/]main[\\/]java[\\/]com[\\/]teragrep[\\/]hbs_03[\\/]jooq[\\/]generated[\\/].*$"></property>
                 </module>
               </checkstyleRules>
             </configuration>

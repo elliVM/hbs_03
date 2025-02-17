@@ -65,7 +65,7 @@ public final class TeragrepMetaDataMigration {
             }
             System.exit(0); // success
         }
-        catch (final Exception e) {
+        catch (final HbsRuntimeException e) {
             LOGGER.error("Exception executing migration <{}>", e.getMessage(), e);
             System.exit(1); // failure
         }

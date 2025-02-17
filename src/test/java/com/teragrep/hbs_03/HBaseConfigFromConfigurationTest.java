@@ -95,8 +95,9 @@ public class HBaseConfigFromConfigurationTest {
         final Properties props = new Properties();
         props.put("prefix.config.path", "broken/path/");
         final Configuration configuration = new PropertiesConfiguration(props);
-        org.apache.hadoop.conf.Configuration hbaseConfig = Assertions
-                .assertDoesNotThrow(() -> new HBaseConfigFromConfiguration(configuration, "prefix.").config());
-        Assertions.assertEquals("localhost", hbaseConfig.get("hbase.zookeeper.quorum"));
+        final HbsRuntimeException ex = Assertions
+                .assertThrows(HbsRuntimeException.class, () -> new HBaseConfigFromConfiguration(configuration, "prefix.").config());
+        final String expectedMessage = "Could not find a file in given file path (caused by: MalformedURLException: No file in path)";
+        Assertions.assertEquals(expectedMessage, ex.getMessage());
     }
 }

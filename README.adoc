@@ -36,7 +36,13 @@ See the official documentation on https://docs.teragrep.com[docs.teragrep.com].
 
 == How to
 
-// add instructions how people can start to use your project
+Package and execute jar file
+
+Example script how to replicate between a date range (2010-2030):
+[source,shell]
+----
+java -jar hbs_03.jar hbs.db.username=user hbs.db.password=password hbs.db.url=database_url hbs.hadoop.hbase.zookeeper.quorum=zookeeper_quorum hbs.hadop.hbase.zookeeper.property.clientPort=port migration.start=2010-01-01 migration.end=2030-01-01
+----
 
 == Contributing
 

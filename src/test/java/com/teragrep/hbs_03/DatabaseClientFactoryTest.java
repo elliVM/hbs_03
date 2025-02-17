@@ -54,15 +54,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.testcontainers.containers.MariaDBContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DatabaseClientFactoryTest {
 
+    @Container
     private MariaDBContainer<?> mariadb;
 
     @BeforeAll
@@ -88,36 +92,36 @@ public class DatabaseClientFactoryTest {
     @Test
     public void testMissingUsername() {
         Properties props = new Properties();
-        props.setProperty("hbs_03.db.password", "password");
-        props.setProperty("hbs_03.db.url", "url");
+        props.setProperty("hbs.db.password", "password");
+        props.setProperty("hbs.db.url", "url");
         Configuration config = new PropertiesConfiguration(props);
         DatabaseClientFactory factory = new DatabaseClientFactory(config);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, factory::object);
-        String expected = "<hbs_03.db.username> option missing";
+        String expected = "<hbs.db.username> option missing";
         Assertions.assertEquals(expected, exception.getMessage());
     }
 
     @Test
     public void testMissingPassword() {
         Properties props = new Properties();
-        props.setProperty("hbs_03.db.username", "username");
-        props.setProperty("hbs_03.db.url", "url");
+        props.setProperty("hbs.db.username", "username");
+        props.setProperty("hbs.db.url", "url");
         Configuration config = new PropertiesConfiguration(props);
         DatabaseClientFactory factory = new DatabaseClientFactory(config);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, factory::object);
-        String expected = "<hbs_03.db.password> option missing";
+        String expected = "<hbs.db.password> option missing";
         Assertions.assertEquals(expected, exception.getMessage());
     }
 
     @Test
     public void testMissingUrl() {
         Properties props = new Properties();
-        props.setProperty("hbs_03.db.username", "username");
-        props.setProperty("hbs_03.db.password", "password");
+        props.setProperty("hbs.db.username", "username");
+        props.setProperty("hbs.db.password", "password");
         Configuration config = new PropertiesConfiguration(props);
         DatabaseClientFactory factory = new DatabaseClientFactory(config);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, factory::object);
-        String expected = "<hbs_03.db.url> option missing";
+        String expected = "<hbs.db.url> option missing";
         Assertions.assertEquals(expected, exception.getMessage());
     }
 
@@ -128,9 +132,9 @@ public class DatabaseClientFactoryTest {
     )
     public void testValid() {
         Properties props = new Properties();
-        props.setProperty("hbs_03.db.url", mariadb.getJdbcUrl());
-        props.setProperty("hbs_03.db.username", mariadb.getUsername());
-        props.setProperty("hbs_03.db.password", mariadb.getPassword());
+        props.setProperty("hbs.db.url", mariadb.getJdbcUrl());
+        props.setProperty("hbs.db.username", mariadb.getUsername());
+        props.setProperty("hbs.db.password", mariadb.getPassword());
         Configuration config = new PropertiesConfiguration(props);
         Assertions.assertDoesNotThrow(() -> new DatabaseClientFactory(config).object());
     }

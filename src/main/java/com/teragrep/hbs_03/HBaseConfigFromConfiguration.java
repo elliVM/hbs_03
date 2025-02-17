@@ -63,7 +63,7 @@ public class HBaseConfigFromConfiguration {
     private final String prefix;
 
     public HBaseConfigFromConfiguration(final Configuration config) {
-        this(config, "hbs_03.hadoop.");
+        this(config, "hbs.hadoop.");
     }
 
     public HBaseConfigFromConfiguration(final Configuration config, final String prefix) {
