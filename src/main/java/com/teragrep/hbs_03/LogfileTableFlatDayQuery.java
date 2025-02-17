@@ -41,7 +41,8 @@ public class LogfileTableFlatDayQuery {
     }
 
     public Cursor<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> asCursor() {
-        // TODO: all joined rows might not have not have streamdb information
+        // TODO: all joined rows might not have not have streamdb information, left join them and handle nulls
+        // TODO: expects 1 to 1 with all select values
         return ctx.select(
                         JOURNALDB.LOGFILE.ID,
                         JOURNALDB.LOGFILE.LOGDATE,
@@ -53,7 +54,7 @@ public class LogfileTableFlatDayQuery {
                         JOURNALDB.LOGFILE.ORIGINAL_FILENAME,
                         JOURNALDB.LOGFILE.ARCHIVED,
                         JOURNALDB.LOGFILE.FILE_SIZE,
-                        JOURNALDB.METADATA_VALUE.VALUE.as("meta"),
+                        JOURNALDB.METADATA_VALUE.VALUE.as("meta"), // this expects that each logfile has exactly 1 value
                         JOURNALDB.LOGFILE.SHA256_CHECKSUM,
                         JOURNALDB.LOGFILE.ARCHIVE_ETAG,
                         JOURNALDB.LOGFILE.LOGTAG,

@@ -56,7 +56,7 @@ public class MigrateDateRangeTest {
         final HBaseClient client = new HBaseClient(config, "replication_range_test");
         final DatabaseClient sqlClient = new DatabaseClient(ctx, connection,5000);
         final Date start = Date.valueOf("2015-1-1");
-        final Date end = Date.valueOf("2021-1-1");
+        final Date end = Date.valueOf("2030-1-1");
         final MigrateDateRange migrateDateRange = new MigrateDateRange(start, end, sqlClient, client);
 
         migrateDateRange.start();
