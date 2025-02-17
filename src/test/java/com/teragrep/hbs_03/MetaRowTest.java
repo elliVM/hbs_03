@@ -48,10 +48,9 @@ package com.teragrep.hbs_03;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.jooq.DSLContext;
-import org.jooq.JSON;
 import org.jooq.Record;
-import org.jooq.Record18;
 import org.jooq.Record20;
+import org.jooq.Record21;
 import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -64,17 +63,17 @@ import org.junit.jupiter.api.Test;
 import java.sql.Date;
 import java.sql.Timestamp;
 
-public class HBaseRowTest {
+public class MetaRowTest {
 
     // SQL Mock
-    final MockSQLData provider = new MockSQLData();
+    final MockS3MetaData provider = new MockS3MetaData();
     final MockConnection connection = new MockConnection(provider);
     final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL);
 
     @Test
     public void testRowKey() {
         final Result<Record> result = ctx.fetch("ONE_ROW");
-        final HBaseRow row = new HBaseRow((Record20<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, ULong, UInteger, String, String, Long>) result.get(0));
+        final MetaRow row = new MetaRow((Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) result.get(0));
         final String expected = "RowKey(streamId=<1001>, logtime=1285880400000, logfileId=1)\n" +
                 " bytes=<[00 00 00 00 00 00 03 e9 23 00 00 01 2b 64 71 c8 80 23 00 00 00 00 00 00 00 01]>";
         final String rowKey = row.id();
@@ -84,31 +83,54 @@ public class HBaseRowTest {
     @Test
     public void testPutQualifiers() {
         final Result<Record> result = ctx.fetch("ONE_ROW");
-        System.out.println(result);
-        final HBaseRow row = new HBaseRow((Record20<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, ULong, UInteger, String, String, Long>) result.get(0));
+        final MetaRow row = new MetaRow((Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) result.get(0));
 
         final Put put = row.put();
         final byte[] columnFamily = Bytes.toBytes("meta");
         // test qualifiers
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("a")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("b")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("c")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("chk")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("d")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("e")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("et")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("fs")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("h")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("i")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("ld")));
-        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("e")));
-        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("b")));
-        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("p")));
-        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("okh")));
-        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("h")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("lt")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("m")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("of")));
-        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("a")));
-        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("fs")));
-        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("chk")));
-        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("et")));
-        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("lt")));
-        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("lt")));
-        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("src")));
-        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("c")));
-        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("ufs")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("okh")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("p")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("s")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("sid")));
-        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("d")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("src")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("t")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("ufs")));
+    }
+
+    @Test
+    public void testCorrectSize() {
+        final Result<Record> result = ctx.fetch("ONE_ROW");
+        final MetaRow row = new MetaRow((Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) result.get(0));
+
+        final Put put = row.put();
+        Assertions.assertTrue(put.getFamilyCellMap().containsKey(Bytes.toBytes("meta")));
+        Assertions.assertEquals(21, put.getFamilyCellMap().get(Bytes.toBytes("meta")).size());
+    }
+
+    @Test
+    public void testNullValue() {
+        final Result<Record> result = ctx.fetch("ONE_ROW");
+        Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>
+                record = (Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) result.get(0);
+        record.set(record.field11(), null);
+        final MetaRow row = new MetaRow(record);
+
+        final Put put = row.put();
+        Assertions.assertTrue(put.getFamilyCellMap().containsKey(Bytes.toBytes("meta")));
+        Assertions.assertEquals(21, put.getFamilyCellMap().get(Bytes.toBytes("meta")).size());
     }
 }

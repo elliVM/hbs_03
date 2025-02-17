@@ -45,71 +45,78 @@
  */
 package com.teragrep.hbs_03;
 
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.Admin;
-import org.apache.hadoop.hbase.client.ConnectionFactory;
-import org.apache.hadoop.hbase.testing.TestingHBaseCluster;
-import org.apache.hadoop.hbase.testing.TestingHBaseClusterOption;
+import org.jooq.DSLContext;
+import org.jooq.SQLDialect;
+import org.jooq.conf.MappedSchema;
+import org.jooq.conf.RenderMapping;
+import org.jooq.conf.Settings;
+import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.testcontainers.containers.MariaDBContainer;
+import org.testcontainers.utility.DockerImageName;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.util.List;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class LogfileHBaseTableTest {
+public class DatabaseClientTest {
 
-    private final String username = "streamdb";
-    private final String password = "streamdb_pass";
-    private final String url = "jdbc:mariadb://192.168.49.2:31420/archiver_journal_tyrael";
-    private final String tableName = "logfile_test";
-    private TestingHBaseCluster hbase;
-    private Admin admin;
-    private org.apache.hadoop.hbase.client.Connection hbaseConn;
-    private LogfileHBaseTable table;
+    private MariaDBContainer<?> mariadb;
+    private Connection connection;
+    final Settings settings = new Settings()
+            .withRenderMapping(new RenderMapping().withSchemata(new MappedSchema().withInput("streamdb").withOutput("journaldb"), new MappedSchema().withInput("journaldb").withOutput("journaldb"), new MappedSchema().withInput("bloomdb").withOutput("journaldb")));
 
     @BeforeAll
+    @EnabledIfSystemProperty(
+            named = "runContainerTests",
+            matches = "true"
+    )
     public void setup() {
-        Assertions.assertDoesNotThrow(() -> {
-            hbase = TestingHBaseCluster.create(TestingHBaseClusterOption.builder().build());
-            hbase.start();
-            hbaseConn = ConnectionFactory.createConnection(hbase.getConf());
-            admin = hbaseConn.getAdmin();
-            table = new LogfileHBaseTable(hbaseConn, tableName);
-        });
-    }
-
-    @BeforeEach
-    public void beforeEach() {
-        table.delete();
+        mariadb = Assertions
+                .assertDoesNotThrow(
+                        () -> new MariaDBContainer<>(DockerImageName.parse("mariadb:10.5"))
+                                .withPrivilegedMode(false)
+                                .withUsername("user")
+                                .withPassword("password")
+                                .withDatabaseName("journaldb")
+                );
+        mariadb.start();
+        connection = Assertions
+                .assertDoesNotThrow(
+                        () -> DriverManager
+                                .getConnection(
+                                        mariadb.getJdbcUrl(),
+                                        mariadb.getUsername(),
+                                        mariadb.getPassword()
+                                )
+                );
     }
 
     @AfterAll
+    @EnabledIfSystemProperty(
+            named = "runContainerTests",
+            matches = "true"
+    )
     public void tearDown() {
-        Assertions.assertDoesNotThrow(() -> {
-            admin.close();
-            hbaseConn.close();
-            hbase.stop();
-        });
+        mariadb.stop();
     }
 
     @Test
     @EnabledIfSystemProperty(
-            named = "runDatabaseTests",
+            named = "runContainerTests",
             matches = "true"
     )
-    public void testCreate() {
-        Assertions.assertDoesNotThrow(() -> {
-            Assertions.assertFalse(admin.tableExists(TableName.valueOf(tableName)));
-        });
-        Assertions.assertDoesNotThrow(table::create);
-        // checks that create is not run if the table already exists
-        Assertions.assertDoesNotThrow(table::create);
-        Assertions.assertDoesNotThrow(() -> {
-            final boolean exists = admin.tableExists(TableName.valueOf(tableName));
-            Assertions.assertTrue(exists);
-        });
+    public void testInit() {
+        final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
+        final DatabaseClient client = new DatabaseClient(ctx, connection);
+        final List<String> result = client.grants();
+        Assertions.assertTrue(result.get(0).contains("GRANT USAGE ON *.* TO `user`@`%`"));
+        Assertions.assertTrue(result.get(1).contains("GRANT ALL PRIVILEGES ON `journaldb`.* TO `user`"));
     }
 }

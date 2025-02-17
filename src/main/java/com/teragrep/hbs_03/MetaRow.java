@@ -48,8 +48,8 @@ package com.teragrep.hbs_03;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.jooq.JSON;
-import org.jooq.Record18;
 import org.jooq.Record20;
+import org.jooq.Record21;
 import org.jooq.types.UInteger;
 import org.jooq.types.ULong;
 import org.jooq.types.UShort;
@@ -60,23 +60,23 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HBaseRow implements Row {
+public class MetaRow implements Row {
 
-    private final Record20<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, ULong, UInteger, String, String, Long> record;
-    private final RowKey rowKey;
+    private final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record;
+    private final MetaRowKey metaRowKey;
 
-    public HBaseRow(
-            final Record20<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, ULong, UInteger, String, String, Long> record
+    public MetaRow(
+            final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record
     ) {
-        this(record, new RowKey(record.value17().longValue(), record.value20(), record.value1().longValue()));
+        this(record, new MetaRowKey(record.value18().longValue(), record.value21(), record.value1().longValue()));
     }
 
-    public HBaseRow(
-            final Record20<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, ULong, UInteger, String, String, Long> record,
-            RowKey rowKey
+    public MetaRow(
+            final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record,
+            MetaRowKey metaRowKey
     ) {
         this.record = record;
-        this.rowKey = rowKey;
+        this.metaRowKey = metaRowKey;
     }
 
     public Put put() {
@@ -93,18 +93,19 @@ public class HBaseRow implements Row {
         map.put("of", record.field8().get(record));   // original filename
         map.put("a", record.field9().get(record));    // archived
         map.put("fs", record.field10().get(record));  // file size
-        map.put("chk", record.field11().get(record)); // sha256 checksum
-        map.put("et", record.field12().get(record));  // archive ETag
-        map.put("lt", record.field13().get(record));  // log tag
-        map.put("src", record.field14().get(record)); // source system name
-        map.put("c", record.field15().get(record));   // category name
-        map.put("ufs", record.field16().get(record)); // uncompressed file size
-        map.put("sid", record.field17().get(record)); // stream ID
-        map.put("s", record.field18().get(record));   // stream
-        map.put("d", record.field19().get(record));   // stream directory
-        map.put("t", record.field20().get(record));   // logtime
+        map.put("m", record.field11().get(record));  // meta value
+        map.put("chk", record.field12().get(record)); // sha256 checksum
+        map.put("et", record.field13().get(record));  // archive ETag
+        map.put("lt", record.field14().get(record));  // log tag
+        map.put("src", record.field15().get(record)); // source system name
+        map.put("c", record.field16().get(record));   // category name
+        map.put("ufs", record.field17().get(record)); // uncompressed file size
+        map.put("sid", record.field18().get(record)); // stream ID
+        map.put("s", record.field19().get(record));   // stream
+        map.put("d", record.field20().get(record));   // stream directory
+        map.put("t", record.field21().get(record));   // logtime
 
-        final Put put = new Put(rowKey.bytes(), true);
+        final Put put = new Put(metaRowKey.bytes(), true);
         final byte[] familyBytes = Bytes.toBytes("meta");
         for (final Map.Entry<String, Object> entry : map.entrySet()) {
             final String key = entry.getKey();
@@ -119,18 +120,20 @@ public class HBaseRow implements Row {
 
     @Override
     public String id() {
-        return rowKey.toString();
+        return metaRowKey.toString();
     }
 
     private byte[] objectBytes(final Object value) {
         final byte[] bytes;
-        if (value instanceof String) {
+        if (value == null) { // empty array if null
+            bytes = new byte[0];
+        } else if (value instanceof String) {
             bytes = Bytes.toBytes((String) value);
         } else if (value instanceof Integer) {
             bytes = Bytes.toBytes((Integer) value);
         } else if (value instanceof Long) {
             bytes = ByteBuffer.allocate(Long.BYTES).putLong((Long) value).array();
-        }else if (value instanceof UShort) {
+        } else if (value instanceof UShort) {
             bytes = Bytes.toBytes(((UShort) value).intValue());
         } else if (value instanceof UInteger) {
             bytes = Bytes.toBytes(((UInteger) value).intValue());

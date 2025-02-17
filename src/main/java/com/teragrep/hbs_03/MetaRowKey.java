@@ -45,53 +45,61 @@
  */
 package com.teragrep.hbs_03;
 
-import org.jooq.DSLContext;
-import org.jooq.SQLDialect;
-import org.jooq.conf.MappedSchema;
-import org.jooq.conf.RenderMapping;
-import org.jooq.conf.Settings;
-import org.jooq.impl.DSL;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Objects;
 
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.DriverManager;
+/**
+ * Represents a row key for HBase row
+ */
+public final class MetaRowKey {
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class SQLDatabaseClientTest {
+    private final long streamId;
+    private final long logtime;
+    private final long logfileId;
 
-    //    private final String username = System.getProperty("test.db.username");
-    //    private final String password = System.getProperty("test.db.password");
-    //    private final String url = System.getProperty("test.db.url");
-    final String username = "streamdb";
-    final String password = "streamdb_pass";
-    final String url = "jdbc:mariadb://192.168.49.2:30601/archiver_journal_tyrael";
-    final Settings settings = new Settings()
-            .withRenderMapping(new RenderMapping().withSchemata(new MappedSchema().withInput("streamdb").withOutput("archiver_streamdb_tyrael"), new MappedSchema().withInput("journaldb").withOutput("archiver_journal_tyrael"), new MappedSchema().withInput("bloomdb").withOutput("bloomdb")));
-    final Connection connection = Assertions
-            .assertDoesNotThrow(() -> DriverManager.getConnection(url, username, password));
-    final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
-
-    @AfterAll
-    public void tearDown() {
-        Assertions.assertDoesNotThrow(connection::close);
+    public MetaRowKey(final long streamId, final long logtime, final long logfileId) {
+        this.streamId = streamId;
+        this.logtime = logtime;
+        this.logfileId = logfileId;
     }
 
-    @Test
-    @EnabledIfSystemProperty(
-            named = "runDatabaseTests",
-            matches = "true"
-    )
-    public void testInit() {
-        final SQLDatabaseClient client = new SQLDatabaseClient(DSL.using(connection));
-        client.initialize();
+    public byte[] bytes() {
+        // streamId + # + logtime + # + logfileId
+        final ByteBuffer rowKeyBuffer = ByteBuffer.allocate(Long.BYTES + Byte.BYTES + Long.BYTES + Byte.BYTES + Long.BYTES);
+        rowKeyBuffer.order(ByteOrder.BIG_ENDIAN);
+        rowKeyBuffer.putLong(streamId);
+        rowKeyBuffer.put((byte) '#');
+        rowKeyBuffer.putLong(logtime);
+        rowKeyBuffer.put((byte) '#');
+        rowKeyBuffer.putLong(logfileId);
+        return rowKeyBuffer.array();
     }
 
-    @Test
-    public void testQuery() {
+    @Override
+    public String toString() {
+        byte[] rowKeyBytes = bytes();
+        final StringBuilder byteString = new StringBuilder();
+        for (final byte b : rowKeyBytes) {
+            byteString.append(String.format("%02x ", b));
+        }
+        return String.format("RowKey(streamId=<%d>, logtime=%d, logfileId=%d)\n bytes=<[%s]>",
+                streamId,
+                logtime,
+                logfileId,
+                byteString.toString().trim()
+        );
+    }
+
+    @Override
+    public boolean equals(final Object object) {
+        if (object == null || getClass() != object.getClass()) return false;
+        final MetaRowKey metaRowKey = (MetaRowKey) object;
+        return streamId == metaRowKey.streamId && logtime == metaRowKey.logtime && logfileId == metaRowKey.logfileId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(streamId, logtime, logfileId);
     }
 }

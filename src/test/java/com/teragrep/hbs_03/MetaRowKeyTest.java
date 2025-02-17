@@ -49,15 +49,15 @@ import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class RowKeyTest {
+public class MetaRowKeyTest {
 
     @Test
     public void testRowKey() {
-        long streamId = 12345L;
-        long logtime = 9876543210L;
-        long logfileId = 54321L;
-        RowKey rowKey = new RowKey(streamId, logtime, logfileId);
-        byte[] bytes = rowKey.bytes();
+        final long streamId = 12345L;
+        final long logtime = 9876543210L;
+        final long logfileId = 54321L;
+        final MetaRowKey metaRowKey = new MetaRowKey(streamId, logtime, logfileId);
+        final byte[] bytes = metaRowKey.bytes();
         Assertions.assertEquals(26, bytes.length, "byte array length should be 25");
         Assertions.assertEquals(0x23, bytes[8], "first separator should be #");
         Assertions.assertEquals(0x23, bytes[17], "second separator should be #");
@@ -65,11 +65,11 @@ public class RowKeyTest {
 
     @Test
     public void testMaxValues() {
-        long streamId = Long.MAX_VALUE;
-        long logtime = Long.MAX_VALUE;
-        long logfileId = Long.MAX_VALUE;
-        RowKey rowKey = new RowKey(streamId, logtime, logfileId);
-        byte[] bytes = rowKey.bytes();
+        final long streamId = Long.MAX_VALUE;
+        final long logtime = Long.MAX_VALUE;
+        final long logfileId = Long.MAX_VALUE;
+        final MetaRowKey metaRowKey = new MetaRowKey(streamId, logtime, logfileId);
+        final byte[] bytes = metaRowKey.bytes();
         Assertions.assertEquals(26, bytes.length, "byte array length should be 25");
         Assertions.assertEquals(0x23, bytes[8], "first separator should be #");
         Assertions.assertEquals(0x23, bytes[17], "second separator should be #");
@@ -77,11 +77,11 @@ public class RowKeyTest {
 
     @Test
     public void testMinValues() {
-        long streamId = Long.MIN_VALUE;
-        long logtime = Long.MIN_VALUE;
-        long logfileId = Long.MIN_VALUE;
-        RowKey rowKey = new RowKey(streamId, logtime, logfileId);
-        byte[] bytes = rowKey.bytes();
+        final long streamId = Long.MIN_VALUE;
+        final long logtime = Long.MIN_VALUE;
+        final long logfileId = Long.MIN_VALUE;
+        final MetaRowKey metaRowKey = new MetaRowKey(streamId, logtime, logfileId);
+        final byte[] bytes = metaRowKey.bytes();
         Assertions.assertEquals(26, bytes.length, "byte array length should be 25");
         Assertions.assertEquals(0x23, bytes[8], "first separator should be #");
         Assertions.assertEquals(0x23, bytes[17], "second separator should be #");
@@ -89,18 +89,18 @@ public class RowKeyTest {
 
     @Test
     public void testToString() {
-        long streamId = 12345L;
-        long logtime = 9876543210L;
-        long logfileId = 54321L;
-        RowKey rowKey = new RowKey(streamId, logtime, logfileId);
-        String expected = "RowKey(streamId=<12345>, logtime=9876543210, logfileId=54321)\n" +
+        final long streamId = 12345L;
+        final long logtime = 9876543210L;
+        final long logfileId = 54321L;
+        final MetaRowKey metaRowKey = new MetaRowKey(streamId, logtime, logfileId);
+        final String expected = "RowKey(streamId=<12345>, logtime=9876543210, logfileId=54321)\n" +
                 " bytes=<[00 00 00 00 00 00 30 39 23 00 00 00 02 4c b0 16 ea 23 00 00 00 00 00 00 d4 31]>";
-        Assertions.assertEquals(expected, rowKey.toString());
+        Assertions.assertEquals(expected, metaRowKey.toString());
     }
 
     @Test
     public void testEqualsVerifier() {
-        EqualsVerifier.forClass(RowKey.class).verify();
+        EqualsVerifier.forClass(MetaRowKey.class).verify();
     }
 
 }

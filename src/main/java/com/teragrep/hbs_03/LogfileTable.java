@@ -46,119 +46,102 @@
 package com.teragrep.hbs_03;
 
 import org.apache.hadoop.hbase.MasterNotRunningException;
-import org.apache.hadoop.hbase.TableExistsException;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.BufferedMutator;
 import org.apache.hadoop.hbase.client.BufferedMutatorParams;
 import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.client.ColumnFamilyDescriptor;
-import org.apache.hadoop.hbase.client.ColumnFamilyDescriptorBuilder;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.client.TableDescriptor;
-import org.apache.hadoop.hbase.client.TableDescriptorBuilder;
-import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public final class LogfileHBaseTable {
+public final class LogfileTable {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(LogfileHBaseTable.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LogfileTable.class);
     private final Connection connection;
-    private final TableName tableName;
+    private final LogfileTableTableDescriptor tableDescriptor;
 
-    public LogfileHBaseTable(final Connection connection) {
-        this(connection, TableName.valueOf("logfile"));
+    public LogfileTable(final Connection connection, final String tableName) {
+        this(connection, new LogfileTableTableDescriptor(tableName));
     }
 
-    public LogfileHBaseTable(final Connection connection, final String tableName) {
-        this(connection, TableName.valueOf(tableName));
-    }
-
-    public LogfileHBaseTable(final Connection connection, final TableName tableName) {
+    public LogfileTable(final Connection connection, final LogfileTableTableDescriptor tableDescriptor) {
         this.connection = connection;
-        this.tableName = tableName;
+        this.tableDescriptor = tableDescriptor;
     }
 
     public void create() {
+        final TableName name = tableDescriptor.name();
         try (final Admin admin = connection.getAdmin()) {
-            if (!admin.tableExists(tableName)) {
-                final TableDescriptor descriptor = TableDescriptorBuilder
-                        .newBuilder(tableName)
-                        .setColumnFamilies(columnFamilyDescriptors())
-                        .build();
+            if (!admin.tableExists(name)) {
+                final TableDescriptor descriptor = tableDescriptor.descriptor();
                 admin.createTable(descriptor);
-                LOGGER.info("Created Logfile table to HBase");
+                LOGGER.debug("Created <{}> table to HBase", name);
+            } else {
+                LOGGER.debug("Table <{}> already exists, skipping creation", name);
             }
-        }
-        catch (final MasterNotRunningException e) {
-            throw new RuntimeException("Master was not running: " + e.getMessage());
-        }
-        catch (final TableExistsException e) {
-            throw new RuntimeException("Logfile table already exists: " + e.getMessage());
-        }
-        catch (final IllegalArgumentException e) {
-            throw new RuntimeException(tableName + " restricted: " + e.getMessage());
-        }
-        catch (final IOException e) {
-            throw new RuntimeException("Error creating logfile table: " + e.getMessage());
+        } catch (final MasterNotRunningException e) {
+            throw new HbsRuntimeException("Master war not running", e);
+        } catch (final IllegalArgumentException e) {
+            throw new HbsRuntimeException(name + " restricted", e);
+        } catch (final IOException e) {
+            throw new HbsRuntimeException("Error creating logfile table", e);
         }
     }
 
     public void delete() {
+        final TableName name = tableDescriptor.name();
         try (final Admin admin = connection.getAdmin()) {
-            if (admin.tableExists(tableName)) {
-                if (!admin.isTableDisabled(tableName)) {
-                    admin.disableTable(tableName);
+            if (admin.tableExists(name)) {
+                if (!admin.isTableDisabled(name)) {
+                    LOGGER.debug("Disabled table <{}>", name);
+                    admin.disableTable(name);
                 }
-                LOGGER.info("Disabled table <{}>", tableName);
-                admin.deleteTable(tableName);
-                LOGGER.info("Deleted table <{}>", tableName);
+                admin.deleteTable(name);
+                LOGGER.debug("Deleted table <{}>", name);
             }
-        }
-        catch (final IOException e) {
-            throw new RuntimeException("Error deleting table: " + e);
+        } catch (final IOException e) {
+            throw new HbsRuntimeException("Error deleting table", e);
         }
     }
 
     public List<Result> scan(final Scan scan) {
+        final TableName name = tableDescriptor.name();
         final List<Result> results = new ArrayList<>();
-        try (final Table table = connection.getTable(tableName)) {
+        try (final Table table = connection.getTable(name)) {
             try (final ResultScanner scanner = table.getScanner(scan)) {
                 for (final Result result : scanner) {
                     results.add(result);
                 }
+            } catch (final IOException e) {
+                throw new HbsRuntimeException("Error getting scanner", e);
             }
-            catch (final IOException e) {
-                throw new RuntimeException("Error getting ResultScanner: " + e);
-            }
-        }
-        catch (final IOException e) {
-            throw new RuntimeException("ERror getting table from connection: " + e);
+        } catch (final IOException e) {
+            throw new HbsRuntimeException("Error getting table from connection", e);
         }
         return Collections.unmodifiableList(results);
     }
 
     public void put(final Put put) {
-        try (final Table table = connection.getTable(tableName)) {
+        final TableName name = tableDescriptor.name();
+        try (final Table table = connection.getTable(name)) {
             table.put(put);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("Put <{}> into database", put);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Put <{}> into database", put);
             }
-        }
-        catch (final IOException e) {
-            throw new RuntimeException("Error writing files to table: " + e.getMessage());
+        } catch (final IOException e) {
+            throw new HbsRuntimeException("Error writing files to table", e);
         }
     }
 
@@ -167,28 +150,30 @@ public final class LogfileHBaseTable {
      *
      * @param rows List of puts that are added to the BufferedMutator
      */
-    public void putAll(final List<HBaseRow> rows) {
-        final BufferedMutatorParams params = new BufferedMutatorParams(tableName);
-        try (final BufferedMutator mutator = connection.getBufferedMutator(params)) {
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("Putting <{}> objects", rows.size());
+    public void putAll(final List<MetaRow> rows) {
+
+        final TableName name = tableDescriptor.name();
+
+        final BufferedMutatorParams defaultParams = new BufferedMutatorParams(name)
+                .listener((e, mutator) -> LOGGER.error("Error during mutation: <{}>", e.getMessage(), e))
+                .writeBufferSize(32 * 1024 * 1024);
+
+        final MetaRow exampleRow = rows.get(0); // select one row used to batch size
+        final BufferedMutatorParams params = new DynamicMutatorParams(name, rows.size(), exampleRow).params();
+        try (final BufferedMutator mutator = connection.getBufferedMutator(defaultParams)) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Putting <{}> objects", rows.size());
             }
             try {
-                final List<Put> putList = rows.stream().map(HBaseRow::put).collect(Collectors.toList());
+                final List<Put> putList = rows.stream().map(MetaRow::put).collect(Collectors.toList());
                 mutator.mutate(putList);
-            }
-            catch (final IOException e) {
+                mutator.flush();
+            } catch (final IOException e) {
                 LOGGER.error("Error executing mutator <{}>", mutator);
+                throw new HbsRuntimeException("Error executing mutator", e);
             }
-            mutator.flush();
+        } catch (final IOException e) {
+            throw new HbsRuntimeException("Error creating BufferedMutator", e);
         }
-        catch (final IOException e) {
-            throw new RuntimeException("Error writing files to table: " + e.getMessage());
-        }
-    }
-
-    private List<ColumnFamilyDescriptor> columnFamilyDescriptors() {
-        return Collections
-                .unmodifiableList(Arrays.asList(ColumnFamilyDescriptorBuilder.newBuilder(Bytes.toBytes("meta")).build(), ColumnFamilyDescriptorBuilder.newBuilder(Bytes.toBytes("bloom")).build()));
     }
 }

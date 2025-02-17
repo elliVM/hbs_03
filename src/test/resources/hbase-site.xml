@@ -1,0 +1,6 @@
+<configuration>
+    <property>
+        <name>hbase.zookeeper.quorum</name>
+        <value>host_from_file</value>
+    </property>
+</configuration>

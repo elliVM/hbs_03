@@ -48,10 +48,14 @@ package com.teragrep.hbs_03;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-public final class HBaseClient {
+public final class HBaseClient implements AutoCloseable {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseClient.class);
 
     private final Configuration configuration;
     private final String name;
@@ -75,27 +79,31 @@ public final class HBaseClient {
     private Connection connection() {
         if (conn == null) {
             try {
+                LOGGER.debug("Initializing connection");
                 conn = ConnectionFactory.createConnection(configuration);
 
             }
             catch (final IOException e) {
-                throw new RuntimeException("Error creating connection: " + e.getMessage());
+                throw new HbsRuntimeException("Error creating connection", e);
             }
         }
+
         return conn;
     }
 
+    @Override
     public void close() {
+        LOGGER.debug("Closing connection");
         try {
             connection().close();
             conn = null;
         }
         catch (final IOException e) {
-            throw new RuntimeException("Error closing connection: " + e.getMessage());
+            throw new HbsRuntimeException("Error closing connection", e);
         }
     }
 
-    public LogfileHBaseTable logfile() {
-        return new LogfileHBaseTable(connection(), name);
+    public LogfileTable logfile() {
+        return new LogfileTable(connection(), name);
     }
 }

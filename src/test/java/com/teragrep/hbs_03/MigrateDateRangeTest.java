@@ -2,10 +2,6 @@ package com.teragrep.hbs_03;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.client.Admin;
-import org.apache.hadoop.hbase.client.ConnectionFactory;
-import org.apache.hadoop.hbase.testing.TestingHBaseCluster;
-import org.apache.hadoop.hbase.testing.TestingHBaseClusterOption;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.conf.MappedSchema;
@@ -13,10 +9,8 @@ import org.jooq.conf.RenderMapping;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +19,7 @@ import java.sql.Date;
 import java.sql.DriverManager;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class ReplicateRangeTest {
+public class MigrateDateRangeTest {
 
     // HBase
     final Configuration config = HBaseConfiguration.create();
@@ -50,13 +44,6 @@ public class ReplicateRangeTest {
     public void setup() {
         config.set("hbase.zookeeper.quorum", "localhost");
         config.set("hbase.zookeeper.property.clientPort", "2181");
-//        Assertions.assertDoesNotThrow(() -> {
-//            hbase = TestingHBaseCluster.create(TestingHBaseClusterOption.builder().build());
-//            hbase.start();
-//            hbaseConn = ConnectionFactory.createConnection(hbase.getConf());
-//            admin = hbaseConn.getAdmin();
-//            table = new LogfileHBaseTable(hbaseConn, tableName);
-//        });
     }
 
     @AfterAll
@@ -66,15 +53,12 @@ public class ReplicateRangeTest {
 
     @Test
     public void testRange() {
-        final LogfileHBaseTable table = new HBaseClient(config, "replication_range_test").logfile();
-        table.delete();
-        table.create();
+        final HBaseClient client = new HBaseClient(config, "replication_range_test");
+        final DatabaseClient sqlClient = new DatabaseClient(ctx, connection,5000);
+        final Date start = Date.valueOf("2015-1-1");
+        final Date end = Date.valueOf("2021-1-1");
+        final MigrateDateRange migrateDateRange = new MigrateDateRange(start, end, sqlClient, client);
 
-        final SQLDatabaseClient sqlClient = new SQLDatabaseClient(ctx);
-        final Date start = new Date(946684800000L); // January 1, 2000
-        final Date end = new Date(4102444800000L);  // January 1, 2030
-        final ReplicateRange replicateRange = new ReplicateRange(start, end, sqlClient, table);
-
-        replicateRange.start();
+        migrateDateRange.start();
     }
 }

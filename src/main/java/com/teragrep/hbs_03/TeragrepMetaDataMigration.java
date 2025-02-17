@@ -45,61 +45,28 @@
  */
 package com.teragrep.hbs_03;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.Objects;
+import com.teragrep.cnf_01.ArgsConfiguration;
+import com.teragrep.cnf_01.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Represents a row key for HBase row
- */
-public final class RowKey {
+/** Entry point class to start replication */
+public final class TeragrepMetaDataMigration {
 
-    private final long streamId;
-    private final long logtime;
-    private final long logfileId;
+    private static final Logger LOGGER = LoggerFactory.getLogger(TeragrepMetaDataMigration.class);
 
-    public RowKey(final long streamId, final long logtime, final long logfileId) {
-        this.streamId = streamId;
-        this.logtime = logtime;
-        this.logfileId = logfileId;
-    }
-
-    public byte[] bytes() {
-        // streamId + # + logtime + # + logfileId
-        final ByteBuffer rowKeyBuffer = ByteBuffer.allocate(Long.BYTES + Byte.BYTES + Long.BYTES + Byte.BYTES + Long.BYTES);
-        rowKeyBuffer.order(ByteOrder.BIG_ENDIAN);
-        rowKeyBuffer.putLong(streamId);
-        rowKeyBuffer.put((byte) '#');
-        rowKeyBuffer.putLong(logtime);
-        rowKeyBuffer.put((byte) '#');
-        rowKeyBuffer.putLong(logfileId);
-        return rowKeyBuffer.array();
-    }
-
-    @Override
-    public String toString() {
-        byte[] rowKeyBytes = bytes();
-        final StringBuilder byteString = new StringBuilder();
-        for (final byte b : rowKeyBytes) {
-            byteString.append(String.format("%02x ", b));
+    public static void main(final String[] args) {
+        try {
+            final Configuration config = new ArgsConfiguration(args);
+            LOGGER.info("Loaded argument configuration <{}>", config);
+            final Factory<MigrateDateRange> migrateDateRangeFactory = new MigrateDateRangeFactory(config);
+            try (final MigrateDateRange migrateDateRange = migrateDateRangeFactory.object()) {
+                migrateDateRange.start();
+            }
+            System.exit(0); // success
+        } catch (final Exception e) {
+            LOGGER.error("Exception executing migration <{}>", e.getMessage(), e);
+            System.exit(1); // failure
         }
-        return String.format("RowKey(streamId=<%d>, logtime=%d, logfileId=%d)\n bytes=<[%s]>",
-                streamId,
-                logtime,
-                logfileId,
-                byteString.toString().trim()
-        );
-    }
-
-    @Override
-    public boolean equals(final Object object) {
-        if (object == null || getClass() != object.getClass()) return false;
-        final RowKey rowKey = (RowKey) object;
-        return streamId == rowKey.streamId && logtime == rowKey.logtime && logfileId == rowKey.logfileId;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(streamId, logtime, logfileId);
     }
 }

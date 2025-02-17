@@ -46,62 +46,21 @@
 package com.teragrep.hbs_03;
 
 import com.teragrep.cnf_01.Configuration;
-import com.teragrep.cnf_01.ConfigurationException;
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 public final class HBaseClientFactory implements Factory<HBaseClient> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseClientFactory.class);
-
-    private final Configuration config;
+    private final HBaseConfigFromConfiguration hbaseConfigFromConfig;
 
     public HBaseClientFactory(final Configuration config) {
-        this.config = config;
+        this(new HBaseConfigFromConfiguration(config));
+    }
+
+    public HBaseClientFactory(final HBaseConfigFromConfiguration hbaseConfigFromConfig) {
+        this.hbaseConfigFromConfig = hbaseConfigFromConfig;
     }
 
     public HBaseClient object() {
-        final Map<String, String> map;
-        try {
-            map = config.asMap();
-        }
-        catch (final ConfigurationException e) {
-            throw new RuntimeException("Error getting configuration: " + e.getMessage());
-        }
-
-        return new HBaseClient(hbaseConfigFromMap(map));
-    }
-
-    private org.apache.hadoop.conf.Configuration hbaseConfigFromMap(final Map<String, String> map) {
-        final org.apache.hadoop.conf.Configuration hbaseConfig = HBaseConfiguration.create();
-        // parse hbase options
-        for (final Map.Entry<String, String> entry : map.entrySet()) {
-            final String key = entry.getKey();
-            final String value = entry.getValue();
-
-            // prefixes are removed to allow for any hbase option to be set
-            if (key.startsWith("hbaseopt.file.path")) { // from file
-                final String optionsFilePath = value.substring("hbaseopt.file".length());
-                try {
-                    final String path = this.getClass().getClassLoader().getResource(optionsFilePath).getPath();
-                    hbaseConfig.addResource(path);
-                }
-                catch (NullPointerException e) {
-                    throw new RuntimeException(
-                            "Could not find path for the file <" + optionsFilePath + "> " + e.getMessage()
-                    );
-                }
-            }
-            else if (key.startsWith("hbaseopt.")) { // from command line args
-                final String hbaseOption = value.substring("hbase.".length());
-                LOGGER.info("Set HBase configuration option: <[{}]>=<[{}]>", hbaseOption, value);
-                hbaseConfig.set(hbaseOption, value);
-            }
-        }
-        return hbaseConfig;
+        return new HBaseClient(hbaseConfigFromConfig.config());
     }
 
 }

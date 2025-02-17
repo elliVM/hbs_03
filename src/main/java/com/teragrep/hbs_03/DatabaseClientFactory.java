@@ -61,74 +61,78 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Map;
 
-public final class SQLDatabaseClientFactory implements Factory<SQLDatabaseClient> {
+public final class DatabaseClientFactory implements Factory<DatabaseClient> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SQLDatabaseClientFactory.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseClientFactory.class);
 
     private final Configuration config;
+    private final String prefix;
 
-    public SQLDatabaseClientFactory(final Configuration config) {
-        this.config = config;
+    public DatabaseClientFactory(final Configuration config) {
+        this(config, "hbs_03.db.");
     }
 
-    public SQLDatabaseClient object() {
+    public DatabaseClientFactory(final Configuration config, final String prefix) {
+        this.config = config;
+        this.prefix = prefix;
+    }
+
+    public DatabaseClient object() {
         final String url;
         final String username;
         final String password;
         final String journaldbName;
         final String streamdbName;
         final String bloomdbName;
-        final String batchSize;
+        final int batchSize;
 
         try {
             final Map<String, String> map = config.asMap();
             validate(map);
-            url = map.get("sql.database.url");
-            username = map.get("sql.database.username");
-            password = map.get("sql.database.password");
-            journaldbName = map.getOrDefault("sql.journaldb.name", "journaldb");
-            streamdbName = map.getOrDefault("sql.streamdb.name", "streamdb");
-            bloomdbName = map.getOrDefault("sql.bloomdb.name", "bloomdb");
-            batchSize = map.getOrDefault("sql.batch.size", "1000");
-        }
-        catch (final ConfigurationException e) {
-            throw new RuntimeException("Error getting configuration: " + e.getMessage());
+            url = map.get(prefix + "url");
+            username = map.get(prefix + "username");
+            password = map.get(prefix + "password");
+            journaldbName = map.getOrDefault(prefix + "journaldb.name", "journaldb");
+            streamdbName = map.getOrDefault(prefix + "streamdb.name", "streamdb");
+            bloomdbName = map.getOrDefault(prefix + "bloomdb.name", "bloomdb");
+            batchSize = Integer.parseInt(map.getOrDefault(prefix + "batch.size", "5000"));
+        } catch (final ConfigurationException e) {
+            throw new HbsRuntimeException("Error getting configuration", e);
         }
 
         final Settings settings = new Settings()
                 .withRenderMapping(new RenderMapping().withSchemata(new MappedSchema().withInput("streamdb").withOutput(streamdbName), new MappedSchema().withInput("journaldb").withOutput(journaldbName), new MappedSchema().withInput("bloomdb").withOutput(bloomdbName)));
 
-        final SQLDatabaseClient client;
+        final DatabaseClient client;
         try {
             final Connection conn = DriverManager.getConnection(url, username, password);
             final DSLContext ctx = DSL.using(conn, SQLDialect.MYSQL, settings);
-            client = new SQLDatabaseClient(ctx);
-        }
-        catch (final SQLException e) {
-            throw new RuntimeException("Error creating database client: " + e.getMessage());
+            client = new DatabaseClient(ctx, conn, batchSize);
+        } catch (final SQLException e) {
+            throw new HbsRuntimeException("Error creating database client", e);
         }
 
         return client;
     }
 
     private void validate(final Map<String, String> map) {
-        if (!map.containsKey("sql.database.url")) {
-            throw new IllegalArgumentException("<sql.database.url> option missing");
+        if (!map.containsKey(prefix + "url")) {
+            throw new IllegalArgumentException("<" + prefix + "url> option missing");
         }
-        if (!map.containsKey("sql.database.username")) {
-            throw new IllegalArgumentException("<sql.database.username> option missing");
+        if (!map.containsKey(prefix + "username")) {
+            throw new IllegalArgumentException("<" + prefix + "username> option missing");
         }
-        if (!map.containsKey("sql.database.password")) {
-            throw new IllegalArgumentException("<sql.database.password> option missing");
+        if (!map.containsKey(prefix + "password")) {
+            throw new IllegalArgumentException("<" + prefix + "password> option missing");
         }
-        if (!map.containsKey("sql.streamdb.name")) {
-            LOGGER.info("No <sql.streamdb.name> option. Using default streamdb name <streamdb>");
+        if (!map.containsKey(prefix + "streamdb.name")) {
+            LOGGER.info("No <" + prefix + "streamdb.name> option. Using default streamdb name <streamdb>");
         }
-        if (!map.containsKey("sql.journaldb.name")) {
-            LOGGER.info("No <sql.journaldb.name> option. Using default journaldb name <journaldb>");
+        if (!map.containsKey(prefix + "journaldb.name")) {
+            LOGGER.info("No <" + prefix + "journaldb.name> option. Using default journaldb name <journaldb>");
         }
-        if (!map.containsKey("sql.bloomdb.name")) {
-            LOGGER.info("No <sql.bloomdb.name> option. Using default bloomdb name <bloomdb>");
+        if (!map.containsKey(prefix + "bloomdb.name")) {
+            LOGGER.info("No <" + prefix + "bloomdb.name> option. Using default bloomdb name <bloomdb>");
         }
     }
 }

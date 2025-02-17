@@ -47,9 +47,8 @@ package com.teragrep.hbs_03;
 
 import org.jooq.DSLContext;
 import org.jooq.Field;
-import org.jooq.JSON;
-import org.jooq.Record18;
 import org.jooq.Record20;
+import org.jooq.Record21;
 import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -66,7 +65,7 @@ import java.time.LocalDate;
 import static com.teragrep.hbs_03.jooq.generated.journaldb.Journaldb.JOURNALDB;
 import static com.teragrep.hbs_03.jooq.generated.streamdb.Streamdb.STREAMDB;
 
-public class MockSQLData implements MockDataProvider {
+public class MockS3MetaData implements MockDataProvider {
 
     final DSLContext ctx = DSL.using(SQLDialect.MYSQL);
 
@@ -96,7 +95,7 @@ public class MockSQLData implements MockDataProvider {
                 );
         final Field<Long> logtimeField = DSL.field("logtime", Long.class);
 
-        final Result<Record20<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, ULong, UInteger, String, String, Long>> result =
+        final Result<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong,String, String, String, String, String, String, ULong, UInteger, String, String, Long>> result =
                 ctx.newResult(
                         JOURNALDB.LOGFILE.ID.as("id"),
                         JOURNALDB.LOGFILE.LOGDATE.as("logdate"),
@@ -108,6 +107,7 @@ public class MockSQLData implements MockDataProvider {
                         JOURNALDB.LOGFILE.ORIGINAL_FILENAME.as("file_name"),
                         JOURNALDB.LOGFILE.ARCHIVED.as("archived"),
                         JOURNALDB.LOGFILE.FILE_SIZE.as("file_size"),
+                        JOURNALDB.METADATA_VALUE.VALUE.as("meta"),
                         JOURNALDB.LOGFILE.SHA256_CHECKSUM.as("checksum"),
                         JOURNALDB.LOGFILE.ARCHIVE_ETAG.as("etag"),
                         JOURNALDB.LOGFILE.LOGTAG.as("logtag"),
@@ -144,6 +144,7 @@ public class MockSQLData implements MockDataProvider {
                     JOURNALDB.LOGFILE.ORIGINAL_FILENAME.as("file_name"),
                     JOURNALDB.LOGFILE.ARCHIVED.as("archived"),
                     JOURNALDB.LOGFILE.FILE_SIZE.as("file_size"),
+                    JOURNALDB.METADATA_VALUE.VALUE.as("file_size"),
                     JOURNALDB.LOGFILE.SHA256_CHECKSUM.as("checksum"),
                     JOURNALDB.LOGFILE.ARCHIVE_ETAG.as("etag"),
                     JOURNALDB.LOGFILE.LOGTAG.as("logtag"),
@@ -165,6 +166,7 @@ public class MockSQLData implements MockDataProvider {
                     "original_name",
                     timestamp,
                     ULong.valueOf(1000L),
+                    "metadata_value",
                     "check_sum",
                     "ARCHIVE_ETAG",
                     "LOGTAG",

@@ -48,11 +48,9 @@ package com.teragrep.hbs_03;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
-import org.jooq.JSON;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.Table;
-import org.jooq.TableLike;
 import org.jooq.impl.DSL;
 import org.jooq.types.ULong;
 import org.slf4j.Logger;
@@ -63,6 +61,9 @@ import java.sql.Date;
 import static com.teragrep.hbs_03.jooq.generated.journaldb.Journaldb.JOURNALDB;
 import static com.teragrep.hbs_03.jooq.generated.journaldb.Tables.LOGFILE;
 
+/**
+ * Queries logfile.id columns from the logfile table by date
+ */
 public final class LogfileTableDayQuery {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LogfileTableDayQuery.class);
@@ -72,7 +73,7 @@ public final class LogfileTableDayQuery {
     private final Condition dateCondition;
 
     public LogfileTableDayQuery(final DSLContext ctx, final Date day) {
-        this(ctx, "inner_table", day);
+        this(ctx, "logfile_day_table", day);
     }
 
     public LogfileTableDayQuery(final DSLContext ctx, final String name, final Date day) {
@@ -89,7 +90,7 @@ public final class LogfileTableDayQuery {
         return DSL.table(DSL.name(name));
     }
 
-    public TableLike<Record1<ULong>> toTableStatement() {
+    public Table<Record1<ULong>> asTable() {
         LOGGER.debug("Select from logfile where <{}>", dateCondition);
          return ctx.select(
                         JOURNALDB.LOGFILE.ID
