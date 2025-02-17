@@ -64,7 +64,8 @@ public final class TeragrepMetaDataMigration {
                 migrateDateRange.start();
             }
             System.exit(0); // success
-        } catch (final Exception e) {
+        }
+        catch (final Exception e) {
             LOGGER.error("Exception executing migration <{}>", e.getMessage(), e);
             System.exit(1); // failure
         }

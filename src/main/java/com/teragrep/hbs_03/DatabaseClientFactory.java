@@ -96,7 +96,8 @@ public final class DatabaseClientFactory implements Factory<DatabaseClient> {
             streamdbName = map.getOrDefault(prefix + "streamdb.name", "streamdb");
             bloomdbName = map.getOrDefault(prefix + "bloomdb.name", "bloomdb");
             batchSize = Integer.parseInt(map.getOrDefault(prefix + "batch.size", "5000"));
-        } catch (final ConfigurationException e) {
+        }
+        catch (final ConfigurationException e) {
             throw new HbsRuntimeException("Error getting configuration", e);
         }
 
@@ -108,7 +109,8 @@ public final class DatabaseClientFactory implements Factory<DatabaseClient> {
             final Connection conn = DriverManager.getConnection(url, username, password);
             final DSLContext ctx = DSL.using(conn, SQLDialect.MYSQL, settings);
             client = new DatabaseClient(ctx, conn, batchSize);
-        } catch (final SQLException e) {
+        }
+        catch (final SQLException e) {
             throw new HbsRuntimeException("Error creating database client", e);
         }
 

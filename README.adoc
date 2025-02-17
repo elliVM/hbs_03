@@ -10,7 +10,21 @@ It simplifies the process of migrating data from MySQL to HBase.
 
 == Features
 
-// List your project's features
+=== MySQL to HBase Data Replication
+Replicates data from MySQL to HBase, ensuring consistency and efficiency.
+
+=== Configurable Date Range
+Allows users to specify a date range for data migration, offering flexibility in data selection.
+
+=== Teragrep Schema Integration
+Uses Teragrep's predefined schema to ensure that the data is mapped and replicated correctly between MySQL and HBase.
+
+=== Automated Data Sync
+Automates the process of syncing data from MySQL to HBase, reducing manual intervention.
+
+=== Configurable Settings
+Provides configurable options for customizing the migration process, such as date range and schema mappings.
+
 
 == Documentation
 

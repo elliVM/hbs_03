@@ -79,22 +79,12 @@ public class DatabaseClientTest {
     )
     public void setup() {
         mariadb = Assertions
-                .assertDoesNotThrow(
-                        () -> new MariaDBContainer<>(DockerImageName.parse("mariadb:10.5"))
-                                .withPrivilegedMode(false)
-                                .withUsername("user")
-                                .withPassword("password")
-                                .withDatabaseName("journaldb")
-                );
+                .assertDoesNotThrow(() -> new MariaDBContainer<>(DockerImageName.parse("mariadb:10.5")).withPrivilegedMode(false).withUsername("user").withPassword("password").withDatabaseName("journaldb"));
         mariadb.start();
         connection = Assertions
                 .assertDoesNotThrow(
                         () -> DriverManager
-                                .getConnection(
-                                        mariadb.getJdbcUrl(),
-                                        mariadb.getUsername(),
-                                        mariadb.getPassword()
-                                )
+                                .getConnection(mariadb.getJdbcUrl(), mariadb.getUsername(), mariadb.getPassword())
                 );
     }
 

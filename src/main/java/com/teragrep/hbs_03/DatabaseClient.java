@@ -48,7 +48,6 @@ package com.teragrep.hbs_03;
 import org.jooq.Cursor;
 import org.jooq.DSLContext;
 import org.jooq.Record;
-import org.jooq.Record20;
 import org.jooq.Record21;
 import org.jooq.Result;
 import org.jooq.types.UInteger;
@@ -89,18 +88,25 @@ public final class DatabaseClient implements AutoCloseable {
         final List<MetaRow> hbaseRows = new ArrayList<>(fetchSize);
 
         int totalRows = 0;
-        try (final Cursor<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> cursor = logfileTableFlatDayQuery.asCursor()) {
+        try (
+                final Cursor<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> cursor = logfileTableFlatDayQuery
+                        .asCursor()
+        ) {
             while (cursor.hasNext()) {
                 long cursorStart = System.nanoTime();
-                final Result<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> nextResult = cursor.fetchNext(fetchSize);
+                final Result<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> nextResult = cursor
+                        .fetchNext(fetchSize);
 
-                for (final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> row : nextResult) {
+                for (
+                    final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> row : nextResult
+                ) {
                     hbaseRows.add(new MetaRow(row));
                 }
 
                 if (hbaseRows.size() == 1) {
                     hBaseTable.put(hbaseRows.get(0).put());
-                } else {
+                }
+                else {
                     hBaseTable.putAll(hbaseRows);
                 }
                 totalRows = totalRows + hbaseRows.size();
@@ -120,7 +126,8 @@ public final class DatabaseClient implements AutoCloseable {
         try {
             LOGGER.debug("Closing connection");
             connection.close();
-        } catch (final SQLException e) {
+        }
+        catch (final SQLException e) {
             throw new HbsRuntimeException("Error closing connection", e);
         }
     }

@@ -88,14 +88,18 @@ public final class LogfileTable {
                 final TableDescriptor descriptor = tableDescriptor.descriptor();
                 admin.createTable(descriptor);
                 LOGGER.debug("Created <{}> table to HBase", name);
-            } else {
+            }
+            else {
                 LOGGER.debug("Table <{}> already exists, skipping creation", name);
             }
-        } catch (final MasterNotRunningException e) {
+        }
+        catch (final MasterNotRunningException e) {
             throw new HbsRuntimeException("Master war not running", e);
-        } catch (final IllegalArgumentException e) {
+        }
+        catch (final IllegalArgumentException e) {
             throw new HbsRuntimeException(name + " restricted", e);
-        } catch (final IOException e) {
+        }
+        catch (final IOException e) {
             throw new HbsRuntimeException("Error creating logfile table", e);
         }
     }
@@ -111,7 +115,8 @@ public final class LogfileTable {
                 admin.deleteTable(name);
                 LOGGER.debug("Deleted table <{}>", name);
             }
-        } catch (final IOException e) {
+        }
+        catch (final IOException e) {
             throw new HbsRuntimeException("Error deleting table", e);
         }
     }
@@ -124,10 +129,12 @@ public final class LogfileTable {
                 for (final Result result : scanner) {
                     results.add(result);
                 }
-            } catch (final IOException e) {
+            }
+            catch (final IOException e) {
                 throw new HbsRuntimeException("Error getting scanner", e);
             }
-        } catch (final IOException e) {
+        }
+        catch (final IOException e) {
             throw new HbsRuntimeException("Error getting table from connection", e);
         }
         return Collections.unmodifiableList(results);
@@ -140,7 +147,8 @@ public final class LogfileTable {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Put <{}> into database", put);
             }
-        } catch (final IOException e) {
+        }
+        catch (final IOException e) {
             throw new HbsRuntimeException("Error writing files to table", e);
         }
     }
@@ -168,11 +176,13 @@ public final class LogfileTable {
                 final List<Put> putList = rows.stream().map(MetaRow::put).collect(Collectors.toList());
                 mutator.mutate(putList);
                 mutator.flush();
-            } catch (final IOException e) {
+            }
+            catch (final IOException e) {
                 LOGGER.error("Error executing mutator <{}>", mutator);
                 throw new HbsRuntimeException("Error executing mutator", e);
             }
-        } catch (final IOException e) {
+        }
+        catch (final IOException e) {
             throw new HbsRuntimeException("Error creating BufferedMutator", e);
         }
     }

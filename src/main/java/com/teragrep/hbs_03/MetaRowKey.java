@@ -66,7 +66,8 @@ public final class MetaRowKey {
 
     public byte[] bytes() {
         // streamId + # + logtime + # + logfileId
-        final ByteBuffer rowKeyBuffer = ByteBuffer.allocate(Long.BYTES + Byte.BYTES + Long.BYTES + Byte.BYTES + Long.BYTES);
+        final ByteBuffer rowKeyBuffer = ByteBuffer
+                .allocate(Long.BYTES + Byte.BYTES + Long.BYTES + Byte.BYTES + Long.BYTES);
         rowKeyBuffer.order(ByteOrder.BIG_ENDIAN);
         rowKeyBuffer.putLong(streamId);
         rowKeyBuffer.put((byte) '#');
@@ -83,17 +84,17 @@ public final class MetaRowKey {
         for (final byte b : rowKeyBytes) {
             byteString.append(String.format("%02x ", b));
         }
-        return String.format("RowKey(streamId=<%d>, logtime=%d, logfileId=%d)\n bytes=<[%s]>",
-                streamId,
-                logtime,
-                logfileId,
-                byteString.toString().trim()
-        );
+        return String
+                .format(
+                        "RowKey(streamId=<%d>, logtime=%d, logfileId=%d)\n bytes=<[%s]>", streamId, logtime, logfileId,
+                        byteString.toString().trim()
+                );
     }
 
     @Override
     public boolean equals(final Object object) {
-        if (object == null || getClass() != object.getClass()) return false;
+        if (object == null || getClass() != object.getClass())
+            return false;
         final MetaRowKey metaRowKey = (MetaRowKey) object;
         return streamId == metaRowKey.streamId && logtime == metaRowKey.logtime && logfileId == metaRowKey.logfileId;
     }

@@ -49,7 +49,6 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.jooq.DSLContext;
 import org.jooq.Record;
-import org.jooq.Record20;
 import org.jooq.Record21;
 import org.jooq.Result;
 import org.jooq.SQLDialect;
@@ -73,9 +72,12 @@ public class MetaRowTest {
     @Test
     public void testRowKey() {
         final Result<Record> result = ctx.fetch("ONE_ROW");
-        final MetaRow row = new MetaRow((Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) result.get(0));
-        final String expected = "RowKey(streamId=<1001>, logtime=1285880400000, logfileId=1)\n" +
-                " bytes=<[00 00 00 00 00 00 03 e9 23 00 00 01 2b 64 71 c8 80 23 00 00 00 00 00 00 00 01]>";
+        final MetaRow row = new MetaRow(
+                (Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) result
+                        .get(0)
+        );
+        final String expected = "RowKey(streamId=<1001>, logtime=1285880400000, logfileId=1)\n"
+                + " bytes=<[00 00 00 00 00 00 03 e9 23 00 00 01 2b 64 71 c8 80 23 00 00 00 00 00 00 00 01]>";
         final String rowKey = row.id();
         Assertions.assertEquals(expected, rowKey);
     }
@@ -83,7 +85,10 @@ public class MetaRowTest {
     @Test
     public void testPutQualifiers() {
         final Result<Record> result = ctx.fetch("ONE_ROW");
-        final MetaRow row = new MetaRow((Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) result.get(0));
+        final MetaRow row = new MetaRow(
+                (Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) result
+                        .get(0)
+        );
 
         final Put put = row.put();
         final byte[] columnFamily = Bytes.toBytes("meta");
@@ -114,7 +119,10 @@ public class MetaRowTest {
     @Test
     public void testCorrectSize() {
         final Result<Record> result = ctx.fetch("ONE_ROW");
-        final MetaRow row = new MetaRow((Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) result.get(0));
+        final MetaRow row = new MetaRow(
+                (Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) result
+                        .get(0)
+        );
 
         final Put put = row.put();
         Assertions.assertTrue(put.getFamilyCellMap().containsKey(Bytes.toBytes("meta")));
@@ -124,8 +132,8 @@ public class MetaRowTest {
     @Test
     public void testNullValue() {
         final Result<Record> result = ctx.fetch("ONE_ROW");
-        Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>
-                record = (Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) result.get(0);
+        Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record = (Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) result
+                .get(0);
         record.set(record.field11(), null);
         final MetaRow row = new MetaRow(record);
 

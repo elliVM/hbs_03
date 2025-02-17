@@ -93,8 +93,8 @@ public class MetaRowKeyTest {
         final long logtime = 9876543210L;
         final long logfileId = 54321L;
         final MetaRowKey metaRowKey = new MetaRowKey(streamId, logtime, logfileId);
-        final String expected = "RowKey(streamId=<12345>, logtime=9876543210, logfileId=54321)\n" +
-                " bytes=<[00 00 00 00 00 00 30 39 23 00 00 00 02 4c b0 16 ea 23 00 00 00 00 00 00 d4 31]>";
+        final String expected = "RowKey(streamId=<12345>, logtime=9876543210, logfileId=54321)\n"
+                + " bytes=<[00 00 00 00 00 00 30 39 23 00 00 00 02 4c b0 16 ea 23 00 00 00 00 00 00 d4 31]>";
         Assertions.assertEquals(expected, metaRowKey.toString());
     }
 

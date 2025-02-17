@@ -49,19 +49,16 @@ import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.ConnectionFactory;
-import org.apache.hadoop.hbase.testing.TestingHBaseCluster;
-import org.apache.hadoop.hbase.testing.TestingHBaseClusterOption;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class LogfileTableTest {
+
     HBaseTestingUtility hbase = new HBaseTestingUtility();
     Connection conn;
     Admin admin;

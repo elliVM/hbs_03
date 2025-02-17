@@ -92,12 +92,7 @@ public final class LogfileTableDayQuery {
 
     public Table<Record1<ULong>> asTable() {
         LOGGER.debug("Select from logfile where <{}>", dateCondition);
-         return ctx.select(
-                        JOURNALDB.LOGFILE.ID
-                )
-                .from(JOURNALDB.LOGFILE)
-                .where(dateCondition)
-                .asTable(table());
+        return ctx.select(JOURNALDB.LOGFILE.ID).from(JOURNALDB.LOGFILE).where(dateCondition).asTable(table());
     }
 
     public Field<ULong> idField() {

@@ -48,7 +48,6 @@ package com.teragrep.hbs_03;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.jooq.JSON;
-import org.jooq.Record20;
 import org.jooq.Record21;
 import org.jooq.types.UInteger;
 import org.jooq.types.ULong;
@@ -83,27 +82,27 @@ public class MetaRow implements Row {
         final Map<String, Object> map = new HashMap<>();
 
         // add values from the record and shorter column names for qualifier
-        map.put("i", record.field1().get(record));    // log file ID
-        map.put("ld", record.field2().get(record));   // log date
-        map.put("e", record.field3().get(record));    // expiration
-        map.put("b", record.field4().get(record));    // bucket name
-        map.put("p", record.field5().get(record));    // log file path
-        map.put("okh", record.field6().get(record));  // object key hash
-        map.put("h", record.field7().get(record));    // host name
-        map.put("of", record.field8().get(record));   // original filename
-        map.put("a", record.field9().get(record));    // archived
-        map.put("fs", record.field10().get(record));  // file size
-        map.put("m", record.field11().get(record));  // meta value
+        map.put("i", record.field1().get(record)); // log file ID
+        map.put("ld", record.field2().get(record)); // log date
+        map.put("e", record.field3().get(record)); // expiration
+        map.put("b", record.field4().get(record)); // bucket name
+        map.put("p", record.field5().get(record)); // log file path
+        map.put("okh", record.field6().get(record)); // object key hash
+        map.put("h", record.field7().get(record)); // host name
+        map.put("of", record.field8().get(record)); // original filename
+        map.put("a", record.field9().get(record)); // archived
+        map.put("fs", record.field10().get(record)); // file size
+        map.put("m", record.field11().get(record)); // meta value
         map.put("chk", record.field12().get(record)); // sha256 checksum
-        map.put("et", record.field13().get(record));  // archive ETag
-        map.put("lt", record.field14().get(record));  // log tag
+        map.put("et", record.field13().get(record)); // archive ETag
+        map.put("lt", record.field14().get(record)); // log tag
         map.put("src", record.field15().get(record)); // source system name
-        map.put("c", record.field16().get(record));   // category name
+        map.put("c", record.field16().get(record)); // category name
         map.put("ufs", record.field17().get(record)); // uncompressed file size
         map.put("sid", record.field18().get(record)); // stream ID
-        map.put("s", record.field19().get(record));   // stream
-        map.put("d", record.field20().get(record));   // stream directory
-        map.put("t", record.field21().get(record));   // logtime
+        map.put("s", record.field19().get(record)); // stream
+        map.put("d", record.field20().get(record)); // stream directory
+        map.put("t", record.field21().get(record)); // logtime
 
         final Put put = new Put(metaRowKey.bytes(), true);
         final byte[] familyBytes = Bytes.toBytes("meta");
@@ -127,27 +126,38 @@ public class MetaRow implements Row {
         final byte[] bytes;
         if (value == null) { // empty array if null
             bytes = new byte[0];
-        } else if (value instanceof String) {
+        }
+        else if (value instanceof String) {
             bytes = Bytes.toBytes((String) value);
-        } else if (value instanceof Integer) {
+        }
+        else if (value instanceof Integer) {
             bytes = Bytes.toBytes((Integer) value);
-        } else if (value instanceof Long) {
+        }
+        else if (value instanceof Long) {
             bytes = ByteBuffer.allocate(Long.BYTES).putLong((Long) value).array();
-        } else if (value instanceof UShort) {
+        }
+        else if (value instanceof UShort) {
             bytes = Bytes.toBytes(((UShort) value).intValue());
-        } else if (value instanceof UInteger) {
+        }
+        else if (value instanceof UInteger) {
             bytes = Bytes.toBytes(((UInteger) value).intValue());
-        } else if (value instanceof ULong) {
+        }
+        else if (value instanceof ULong) {
             bytes = ByteBuffer.allocate(Long.BYTES).putLong(((ULong) value).longValue()).array();
-        } else if (value instanceof Date) {
+        }
+        else if (value instanceof Date) {
             bytes = ByteBuffer.allocate(Long.BYTES).putLong(((Date) value).getTime()).array();
-        } else if (value instanceof Timestamp) {
+        }
+        else if (value instanceof Timestamp) {
             bytes = ByteBuffer.allocate(Long.BYTES).putLong(((Timestamp) value).getTime()).array();
-        } else if (value instanceof JSON) {
+        }
+        else if (value instanceof JSON) {
             bytes = Bytes.toBytes(value.toString());
-        } else {
+        }
+        else {
             throw new IllegalArgumentException(
-                    "Adding object <" + value + "> with type <" + value.getClass().getName() + "> to HBase is not supported"
+                    "Adding object <" + value + "> with type <" + value.getClass().getName()
+                            + "> to HBase is not supported"
             );
         }
         return bytes;

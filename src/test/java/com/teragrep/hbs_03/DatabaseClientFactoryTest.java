@@ -47,9 +47,6 @@ package com.teragrep.hbs_03;
 
 import com.teragrep.cnf_01.Configuration;
 import com.teragrep.cnf_01.PropertiesConfiguration;
-import org.jooq.conf.MappedSchema;
-import org.jooq.conf.RenderMapping;
-import org.jooq.conf.Settings;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -59,8 +56,6 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.testcontainers.containers.MariaDBContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -77,13 +72,7 @@ public class DatabaseClientFactoryTest {
     )
     public void setup() {
         mariadb = Assertions
-                .assertDoesNotThrow(
-                        () -> new MariaDBContainer<>(DockerImageName.parse("mariadb:10.5"))
-                                .withPrivilegedMode(false)
-                                .withUsername("user")
-                                .withPassword("password")
-                                .withDatabaseName("journaldb")
-                );
+                .assertDoesNotThrow(() -> new MariaDBContainer<>(DockerImageName.parse("mariadb:10.5")).withPrivilegedMode(false).withUsername("user").withPassword("password").withDatabaseName("journaldb"));
         mariadb.start();
     }
 

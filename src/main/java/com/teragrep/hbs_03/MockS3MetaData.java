@@ -47,7 +47,6 @@ package com.teragrep.hbs_03;
 
 import org.jooq.DSLContext;
 import org.jooq.Field;
-import org.jooq.Record20;
 import org.jooq.Record21;
 import org.jooq.Result;
 import org.jooq.SQLDialect;
@@ -75,11 +74,13 @@ public class MockS3MetaData implements MockDataProvider {
         final String sql = ctx.sql();
         if (sql.toUpperCase().startsWith("ONE")) {
             mock = generateResult(1);
-        } else if (sql.toUpperCase().startsWith("ROWS_")) {
+        }
+        else if (sql.toUpperCase().startsWith("ROWS_")) {
             final int customRows = Integer.parseInt(sql.substring("ROWS_".length()));
             mock = generateResult(customRows);
-        } else {
-            mock = new MockResult[]{
+        }
+        else {
+            mock = new MockResult[] {
                     new MockResult(0, this.ctx.newResult())
             };
         }
@@ -95,30 +96,8 @@ public class MockS3MetaData implements MockDataProvider {
                 );
         final Field<Long> logtimeField = DSL.field("logtime", Long.class);
 
-        final Result<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong,String, String, String, String, String, String, ULong, UInteger, String, String, Long>> result =
-                ctx.newResult(
-                        JOURNALDB.LOGFILE.ID.as("id"),
-                        JOURNALDB.LOGFILE.LOGDATE.as("logdate"),
-                        JOURNALDB.LOGFILE.EXPIRATION.as("expiration"),
-                        JOURNALDB.BUCKET.NAME.as("bucket"),
-                        JOURNALDB.LOGFILE.PATH.as("path"),
-                        JOURNALDB.LOGFILE.OBJECT_KEY_HASH.as("hash"),
-                        JOURNALDB.HOST.NAME.as("host"),
-                        JOURNALDB.LOGFILE.ORIGINAL_FILENAME.as("file_name"),
-                        JOURNALDB.LOGFILE.ARCHIVED.as("archived"),
-                        JOURNALDB.LOGFILE.FILE_SIZE.as("file_size"),
-                        JOURNALDB.METADATA_VALUE.VALUE.as("meta"),
-                        JOURNALDB.LOGFILE.SHA256_CHECKSUM.as("checksum"),
-                        JOURNALDB.LOGFILE.ARCHIVE_ETAG.as("etag"),
-                        JOURNALDB.LOGFILE.LOGTAG.as("logtag"),
-                        JOURNALDB.SOURCE_SYSTEM.NAME.as("source_system"),
-                        JOURNALDB.CATEGORY.NAME.as("category"),
-                        JOURNALDB.LOGFILE.UNCOMPRESSED_FILE_SIZE.as("uncompressed_filesize"),
-                        STREAMDB.STREAM.ID.as("stream_id"),
-                        STREAMDB.STREAM.STREAM_.as("stream"),
-                        STREAMDB.STREAM.DIRECTORY.as("directory"),
-                        logtimeFunction.as(logtimeField)
-                );
+        final Result<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> result = ctx
+                .newResult(JOURNALDB.LOGFILE.ID.as("id"), JOURNALDB.LOGFILE.LOGDATE.as("logdate"), JOURNALDB.LOGFILE.EXPIRATION.as("expiration"), JOURNALDB.BUCKET.NAME.as("bucket"), JOURNALDB.LOGFILE.PATH.as("path"), JOURNALDB.LOGFILE.OBJECT_KEY_HASH.as("hash"), JOURNALDB.HOST.NAME.as("host"), JOURNALDB.LOGFILE.ORIGINAL_FILENAME.as("file_name"), JOURNALDB.LOGFILE.ARCHIVED.as("archived"), JOURNALDB.LOGFILE.FILE_SIZE.as("file_size"), JOURNALDB.METADATA_VALUE.VALUE.as("meta"), JOURNALDB.LOGFILE.SHA256_CHECKSUM.as("checksum"), JOURNALDB.LOGFILE.ARCHIVE_ETAG.as("etag"), JOURNALDB.LOGFILE.LOGTAG.as("logtag"), JOURNALDB.SOURCE_SYSTEM.NAME.as("source_system"), JOURNALDB.CATEGORY.NAME.as("category"), JOURNALDB.LOGFILE.UNCOMPRESSED_FILE_SIZE.as("uncompressed_filesize"), STREAMDB.STREAM.ID.as("stream_id"), STREAMDB.STREAM.STREAM_.as("stream"), STREAMDB.STREAM.DIRECTORY.as("directory"), logtimeFunction.as(logtimeField));
 
         for (long l = 1; l <= numOfResults; l++) {
             int year = 2010;
@@ -132,55 +111,16 @@ public class MockS3MetaData implements MockDataProvider {
             final Date expireDate = Date.valueOf(localExpiration);
             // archived date as epoch + 1000
             final long epoch = date.getTime();
-            final String path = String.format("%s/%s-%s/110000-sc-99-99-10-10/afe23b85-io/io-%s%s%s23.log.gz", year, month, day, year, month, day);
-            result.add(ctx.newRecord(
-                    JOURNALDB.LOGFILE.ID.as("id"),
-                    JOURNALDB.LOGFILE.LOGDATE.as("logdate"),
-                    JOURNALDB.LOGFILE.EXPIRATION.as("expiration"),
-                    JOURNALDB.BUCKET.NAME.as("bucket"),
-                    JOURNALDB.LOGFILE.PATH.as("path"),
-                    JOURNALDB.LOGFILE.OBJECT_KEY_HASH.as("hash"),
-                    JOURNALDB.HOST.NAME.as("host"),
-                    JOURNALDB.LOGFILE.ORIGINAL_FILENAME.as("file_name"),
-                    JOURNALDB.LOGFILE.ARCHIVED.as("archived"),
-                    JOURNALDB.LOGFILE.FILE_SIZE.as("file_size"),
-                    JOURNALDB.METADATA_VALUE.VALUE.as("file_size"),
-                    JOURNALDB.LOGFILE.SHA256_CHECKSUM.as("checksum"),
-                    JOURNALDB.LOGFILE.ARCHIVE_ETAG.as("etag"),
-                    JOURNALDB.LOGFILE.LOGTAG.as("logtag"),
-                    JOURNALDB.SOURCE_SYSTEM.NAME.as("source_system"),
-                    JOURNALDB.CATEGORY.NAME.as("category"),
-                    JOURNALDB.LOGFILE.UNCOMPRESSED_FILE_SIZE.as("uncompressed_filesize"),
-                    STREAMDB.STREAM.ID.as("stream_id"),
-                    STREAMDB.STREAM.STREAM_.as("stream"),
-                    STREAMDB.STREAM.DIRECTORY.as("directory"),
-                    logtimeFunction.as(logtimeField)
-            ).values(
-                    ULong.valueOf(l),
-                    date,
-                    expireDate,
-                    "BUCKET name",
-                    path,
-                    "key_hash",
-                    "host",
-                    "original_name",
-                    timestamp,
-                    ULong.valueOf(1000L),
-                    "metadata_value",
-                    "check_sum",
-                    "ARCHIVE_ETAG",
-                    "LOGTAG",
-                    "source_system",
-                    "category",
-                    ULong.valueOf(100000L),
-                    UInteger.valueOf(l + 1000),
-                    "stream",
-                    "directory",
-                    epoch
-            ));
+            final String path = String
+                    .format(
+                            "%s/%s-%s/110000-sc-99-99-10-10/afe23b85-io/io-%s%s%s23.log.gz", year, month, day, year,
+                            month, day
+                    );
+            result
+                    .add(ctx.newRecord(JOURNALDB.LOGFILE.ID.as("id"), JOURNALDB.LOGFILE.LOGDATE.as("logdate"), JOURNALDB.LOGFILE.EXPIRATION.as("expiration"), JOURNALDB.BUCKET.NAME.as("bucket"), JOURNALDB.LOGFILE.PATH.as("path"), JOURNALDB.LOGFILE.OBJECT_KEY_HASH.as("hash"), JOURNALDB.HOST.NAME.as("host"), JOURNALDB.LOGFILE.ORIGINAL_FILENAME.as("file_name"), JOURNALDB.LOGFILE.ARCHIVED.as("archived"), JOURNALDB.LOGFILE.FILE_SIZE.as("file_size"), JOURNALDB.METADATA_VALUE.VALUE.as("file_size"), JOURNALDB.LOGFILE.SHA256_CHECKSUM.as("checksum"), JOURNALDB.LOGFILE.ARCHIVE_ETAG.as("etag"), JOURNALDB.LOGFILE.LOGTAG.as("logtag"), JOURNALDB.SOURCE_SYSTEM.NAME.as("source_system"), JOURNALDB.CATEGORY.NAME.as("category"), JOURNALDB.LOGFILE.UNCOMPRESSED_FILE_SIZE.as("uncompressed_filesize"), STREAMDB.STREAM.ID.as("stream_id"), STREAMDB.STREAM.STREAM_.as("stream"), STREAMDB.STREAM.DIRECTORY.as("directory"), logtimeFunction.as(logtimeField)).values(ULong.valueOf(l), date, expireDate, "BUCKET name", path, "key_hash", "host", "original_name", timestamp, ULong.valueOf(1000L), "metadata_value", "check_sum", "ARCHIVE_ETAG", "LOGTAG", "source_system", "category", ULong.valueOf(100000L), UInteger.valueOf(l + 1000), "stream", "directory", epoch));
         }
 
-        return new MockResult[]{
+        return new MockResult[] {
                 new MockResult(numOfResults, result)
         };
     }
