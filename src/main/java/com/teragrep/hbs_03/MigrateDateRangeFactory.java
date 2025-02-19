@@ -84,7 +84,8 @@ public class MigrateDateRangeFactory implements Factory<MigrateDateRange> {
             // defaults to system local date
             // TODO: this could be forced to certain timezone for example UTC with LocalDate.now(ZoneOffset.UTC)
             endDate = new ValidDateString(map.getOrDefault("migration.end", LocalDate.now().toString())).date();
-        } catch (final ConfigurationException e) {
+        }
+        catch (final ConfigurationException e) {
             throw new HbsRuntimeException("Error getting migration configuration", e);
         }
 
