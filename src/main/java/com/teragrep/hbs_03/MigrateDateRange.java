@@ -76,6 +76,7 @@ public class MigrateDateRange implements AutoCloseable {
     }
 
     public void start() {
+        long startTime = System.nanoTime();
         final LogfileTable logfileTable = hbaseClient.logfile();
         logfileTable.create();
         LOGGER.info("Replication started from <{}> to <{}>", start, end);
@@ -89,7 +90,9 @@ public class MigrateDateRange implements AutoCloseable {
             LOGGER.info("Processing date <{}> affected <{}> row(s)", date, rows);
             rollingDay = rollingDay.plusDays(1);
         }
-        LOGGER.info("Replication finished on date <{}>, total rows <{}>", rollingDay, totalRows);
+        long endTime = System.nanoTime();
+        LOGGER.info("Total rows migrated <{}>", totalRows);
+        LOGGER.info("Migration took <{}>ms", (endTime - startTime) / 1000000);
     }
 
     @Override

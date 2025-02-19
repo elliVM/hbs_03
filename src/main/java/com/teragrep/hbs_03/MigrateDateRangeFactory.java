@@ -59,9 +59,15 @@ public class MigrateDateRangeFactory implements Factory<MigrateDateRange> {
     private static final Logger LOGGER = LoggerFactory.getLogger(MigrateDateRangeFactory.class);
 
     private final Configuration config;
+    private final String prefix;
 
-    public MigrateDateRangeFactory(Configuration config) {
+    public MigrateDateRangeFactory(final Configuration config) {
+        this(config, "hbs.");
+    }
+
+    public MigrateDateRangeFactory(final Configuration config, final String prefix) {
         this.config = config;
+        this.prefix = prefix;
     }
 
     @Override
@@ -74,25 +80,24 @@ public class MigrateDateRangeFactory implements Factory<MigrateDateRange> {
         try {
             final Map<String, String> map = config.asMap();
             validate(map);
-            startDate = new ValidDateString(map.get("migration.start")).date();
+            startDate = new ValidDateString(map.get(prefix + "migration.start")).date();
             // defaults to system local date
             // TODO: this could be forced to certain timezone for example UTC with LocalDate.now(ZoneOffset.UTC)
             endDate = new ValidDateString(map.getOrDefault("migration.end", LocalDate.now().toString())).date();
-        }
-        catch (final ConfigurationException e) {
-            throw new HbsRuntimeException("Error getting configuration", e);
+        } catch (final ConfigurationException e) {
+            throw new HbsRuntimeException("Error getting migration configuration", e);
         }
 
         return new MigrateDateRange(startDate, endDate, databaseClient, hbaseClient);
     }
 
     private void validate(final Map<String, String> map) {
-        if (!map.containsKey("migration.start")) {
-            LOGGER.info("<migration.start> option missing ");
-            throw new IllegalArgumentException("<migration.start> option missing");
+        if (!map.containsKey(prefix + "migration.start")) {
+            LOGGER.info("<{}migration.start> option missing", prefix);
+            throw new IllegalArgumentException("<" + prefix + "migration.start> option missing");
         }
-        if (!map.containsKey("migration.end")) {
-            LOGGER.info("<migration.end> option missing, using system-dependent date for today");
+        if (!map.containsKey(prefix + "migration.end")) {
+            LOGGER.info("<{}migration.end> option missing, using system-dependent date for today", prefix);
         }
     }
 }

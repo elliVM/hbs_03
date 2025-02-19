@@ -71,14 +71,24 @@ public final class LogfileTable {
     private static final Logger LOGGER = LoggerFactory.getLogger(LogfileTable.class);
     private final Connection connection;
     private final LogfileTableTableDescriptor tableDescriptor;
+    private final boolean useDynamicBufferSize;
 
     public LogfileTable(final Connection connection, final String tableName) {
-        this(connection, new LogfileTableTableDescriptor(tableName));
+        this(connection, new LogfileTableTableDescriptor(tableName), false);
     }
 
-    public LogfileTable(final Connection connection, final LogfileTableTableDescriptor tableDescriptor) {
+    public LogfileTable(final Connection connection, final String tableName, final boolean useDynamicBufferSize) {
+        this(connection, new LogfileTableTableDescriptor(tableName), useDynamicBufferSize);
+    }
+
+    public LogfileTable(
+            final Connection connection,
+            final LogfileTableTableDescriptor tableDescriptor,
+            final boolean useDynamicBufferSize
+    ) {
         this.connection = connection;
         this.tableDescriptor = tableDescriptor;
+        this.useDynamicBufferSize = useDynamicBufferSize;
     }
 
     public void create() {
@@ -159,16 +169,8 @@ public final class LogfileTable {
      * @param rows List of puts that are added to the BufferedMutator
      */
     public void putAll(final List<MetaRow> rows) {
-
-        final TableName name = tableDescriptor.name();
-
-        final BufferedMutatorParams defaultParams = new BufferedMutatorParams(name)
-                .listener((e, mutator) -> LOGGER.error("Error during mutation: <{}>", e.getMessage(), e))
-                .writeBufferSize(32 * 1024 * 1024);
-
-        final MetaRow exampleRow = rows.get(0); // select one row used to batch size
-        final BufferedMutatorParams params = new DynamicMutatorParams(name, rows.size(), exampleRow).params();
-        try (final BufferedMutator mutator = connection.getBufferedMutator(defaultParams)) {
+        final BufferedMutatorParams params = bufferParams(rows);
+        try (final BufferedMutator mutator = connection.getBufferedMutator(params)) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Putting <{}> objects", rows.size());
             }
@@ -185,5 +187,22 @@ public final class LogfileTable {
         catch (final IOException e) {
             throw new HbsRuntimeException("Error creating BufferedMutator", e);
         }
+    }
+
+    private BufferedMutatorParams bufferParams(final List<MetaRow> rows) {
+        final TableName name = tableDescriptor.name();
+        final BufferedMutatorParams bufferParams;
+
+        if (useDynamicBufferSize) {
+            final MetaRow exampleRow = rows.get(0); // select one row used to batch size
+            bufferParams = new DynamicMutatorParams(name, rows.size(), exampleRow).params();
+        }
+        else {
+            bufferParams = new BufferedMutatorParams(name)
+                    .listener((e, mutator) -> LOGGER.error("Error during mutation: <{}>", e.getMessage(), e))
+                    .writeBufferSize(32 * 1024 * 1024);
+        }
+
+        return bufferParams;
     }
 }

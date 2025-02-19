@@ -84,12 +84,12 @@ public final class DatabaseClient implements AutoCloseable {
         LOGGER.debug("migrateForDate called with day <{}> and batch size <{}>", day, fetchSize);
         final long start = System.nanoTime();
 
-        final LogfileTableFlatDayQuery logfileTableFlatDayQuery = new LogfileTableFlatDayQuery(ctx, day, fetchSize);
+        final LogfileTableFlatQuery logfileTableFlatQuery = new LogfileTableFlatQuery(ctx, day, fetchSize);
         final List<MetaRow> hbaseRows = new ArrayList<>(fetchSize);
 
         int totalRows = 0;
         try (
-                final Cursor<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> cursor = logfileTableFlatDayQuery
+                final Cursor<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> cursor = logfileTableFlatQuery
                         .asCursor()
         ) {
             while (cursor.hasNext()) {

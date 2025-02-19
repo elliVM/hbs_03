@@ -60,25 +60,21 @@ import static com.teragrep.hbs_03.jooq.generated.journaldb.Journaldb.JOURNALDB;
 import static com.teragrep.hbs_03.jooq.generated.streamdb.Streamdb.STREAMDB;
 
 /**
- * Queries all values used by HBase row
+ * Flat query with all the fields selected for migration
  */
-public class LogfileTableFlatDayQuery {
+public class LogfileTableFlatQuery {
 
     final DSLContext ctx;
-    final LogfileTableDayQuery logfileTableDayQuery;
+    final LogfileTableDayQuery dayQuery;
     final int fetchSize;
 
-    public LogfileTableFlatDayQuery(final DSLContext ctx, final Date day, final int fetchSize) {
+    public LogfileTableFlatQuery(final DSLContext ctx, final Date day, final int fetchSize) {
         this(ctx, new LogfileTableDayQuery(ctx, day), fetchSize);
     }
 
-    public LogfileTableFlatDayQuery(
-            final DSLContext ctx,
-            final LogfileTableDayQuery logfileTableDayQuery,
-            final int fetchSize
-    ) {
+    public LogfileTableFlatQuery(final DSLContext ctx, final LogfileTableDayQuery dayQuery, final int fetchSize) {
         this.ctx = ctx;
-        this.logfileTableDayQuery = logfileTableDayQuery;
+        this.dayQuery = dayQuery;
         this.fetchSize = fetchSize;
     }
 
@@ -99,9 +95,9 @@ public class LogfileTableFlatDayQuery {
                         JOURNALDB.SOURCE_SYSTEM.NAME.as("source_system"), JOURNALDB.CATEGORY.NAME.as("category"), JOURNALDB.LOGFILE.UNCOMPRESSED_FILE_SIZE, STREAMDB.STREAM.ID.as("stream_id"), // row key id
                         STREAMDB.STREAM.STREAM_, STREAMDB.STREAM.DIRECTORY, logTimeFunctionField()
                 )
-                .from(logfileTableDayQuery.asTable())
+                .from(dayQuery.asTable())
                 .join(JOURNALDB.LOGFILE)
-                .on(JOURNALDB.LOGFILE.ID.eq(logfileTableDayQuery.idField()))
+                .on(JOURNALDB.LOGFILE.ID.eq(dayQuery.idField()))
                 .join(JOURNALDB.HOST)
                 .on(JOURNALDB.LOGFILE.HOST_ID.eq(JOURNALDB.HOST.ID))
                 .join(JOURNALDB.BUCKET)

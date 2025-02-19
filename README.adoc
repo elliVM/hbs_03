@@ -25,23 +25,72 @@ Automates the process of syncing data from MySQL to HBase, reducing manual inter
 === Configurable Settings
 Provides configurable options for customizing the migration process, such as date range and schema mappings.
 
-
 == Documentation
 
 See the official documentation on https://docs.teragrep.com[docs.teragrep.com].
 
 == Limitations
 
-// If your project has limitations, please list them. Otherwise remove this section.
+Expects that you have a running instance of MySQL or MariaDB and
+HBase the project can connect to.
 
+MariaDB is expected to have the Teragrep metadata schema.
+Configured database user should have select permissions on journaldb, streamdb, bloomdb.
+
+Smallest supported migration range is one date.
+
+Executable job that starts until it finishes the migration range or exists with exception.
+Exit code 0 for success and exit code 1 for exception.
+
+== Options
+
+You can configure the project using command line arguments.
+
+=== Database option
+Here we set options for the MySQL database configuration.
+[source]
+----
+hbs.db.url=<database_url> // required
+hbs.db.user=<database_user> // required
+hbs.db.password=<database_password> // required
+hbs.db.journaldb.name=<journaldb_name> // default 'journaldb'
+hbs.db.streamdb.name=<streamdb_name> // default 'streamdb'
+hbs.db.bloomdb.name=<bloomdb_name> // default 'bloomdb'
+hbs.db.batch.size=<batch_size> // default '5000'
+----
+
+=== HBase options
+
+Here we set configuration options for the hadoop configuration.
+You can also provide a path to a .xml file for hadoop options
+
+[source]
+----
+hbs.hadoop.logfile.table.name=<logfile_tablename> // default 'logfile'
+hbs.hadoop.config.path=<path_to_xml_file> // you can give hadoop config using hbase-site.xml
+hbs.hadoop.hbase.zookeeper.quorum=<localhost> // example how to give a hbase option
+hbs.hadoop.* // set any option supported by hadoop.config.Configuration object
+----
+
+=== Migration options
+Here we set the date range for the migration process.
+Expects ISO format YYYY-MM-DD, dates are in system local time.
+----
+hbs.migration.start=<start_date> // required
+hbs.migration.end=<end_date> // default local date today
+----
 == How to
 
 Package and execute jar file
 
-Example script how to replicate between a date range (2010-2030):
-[source,shell]
+Example script how to replicate between a date range between the dates 2010-01-01 and 2030-01-01.
+
+[source]
 ----
-java -jar hbs_03.jar hbs.db.username=user hbs.db.password=password hbs.db.url=database_url hbs.hadoop.hbase.zookeeper.quorum=zookeeper_quorum hbs.hadop.hbase.zookeeper.property.clientPort=port migration.start=2010-01-01 migration.end=2030-01-01
+java -jar hbs_03.jar hbs.db.username=user hbs.db.password=password
+hbs.db.url=database_url hbs.hadoop.hbase.zookeeper.quorum=zookeeper_quorum
+hbs.hadop.hbase.zookeeper.property.clientPort=port
+hbs.migration.start=2010-01-01 hbs.migration.end=2030-01-01
 ----
 
 == Contributing

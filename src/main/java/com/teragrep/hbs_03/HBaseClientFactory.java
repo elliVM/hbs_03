@@ -46,21 +46,34 @@
 package com.teragrep.hbs_03;
 
 import com.teragrep.cnf_01.Configuration;
+import com.teragrep.cnf_01.ConfigurationException;
+
+import java.util.Map;
 
 public final class HBaseClientFactory implements Factory<HBaseClient> {
 
+    private final Configuration config;
     private final HBaseConfigFromConfiguration hbaseConfigFromConfig;
 
     public HBaseClientFactory(final Configuration config) {
-        this(new HBaseConfigFromConfiguration(config));
+        this(config, new HBaseConfigFromConfiguration(config));
     }
 
-    public HBaseClientFactory(final HBaseConfigFromConfiguration hbaseConfigFromConfig) {
+    public HBaseClientFactory(final Configuration config, final HBaseConfigFromConfiguration hbaseConfigFromConfig) {
+        this.config = config;
         this.hbaseConfigFromConfig = hbaseConfigFromConfig;
     }
 
     public HBaseClient object() {
-        return new HBaseClient(hbaseConfigFromConfig.config());
+        final String logfileTableName;
+        try {
+            final Map<String, String> map = config.asMap();
+            logfileTableName = map.getOrDefault("hbs_03.hadoop.logfile.table.name", "logfile");
+        }
+        catch (final ConfigurationException e) {
+            throw new HbsRuntimeException("Error getting configuration", e);
+        }
+        return new HBaseClient(hbaseConfigFromConfig.config(), logfileTableName);
     }
 
 }
