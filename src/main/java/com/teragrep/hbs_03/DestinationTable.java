@@ -83,7 +83,12 @@ public final class DestinationTable implements HBaseTable {
     }
 
     public DestinationTable(final Connection connection, final TableName name, final boolean useDynamicBufferSize) {
-        this(connection, name, new DestinationTableDescription(name), new ConfiguredMutator(name, useDynamicBufferSize));
+        this(
+                connection,
+                name,
+                new DestinationTableDescription(name),
+                new ConfiguredMutator(name, useDynamicBufferSize)
+        );
     }
 
     public DestinationTable(final Connection connection, final TableName name, final double overheadSize) {
