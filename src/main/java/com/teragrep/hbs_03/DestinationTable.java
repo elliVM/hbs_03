@@ -74,20 +74,20 @@ public final class DestinationTable implements HBaseTable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DestinationTable.class);
     private final Connection connection;
-    private final LogfileTableDescription tableDescriptor;
+    private final DestinationTableDescription tableDescriptor;
     private final TableName name;
     private final ConfiguredMutator mutator;
 
     public DestinationTable(final Connection connection, final TableName name) {
-        this(connection, name, new LogfileTableDescription(name), new ConfiguredMutator(name, false));
+        this(connection, name, new DestinationTableDescription(name), new ConfiguredMutator(name, false));
     }
 
     public DestinationTable(final Connection connection, final TableName name, final boolean useDynamicBufferSize) {
-        this(connection, name, new LogfileTableDescription(name), new ConfiguredMutator(name, useDynamicBufferSize));
+        this(connection, name, new DestinationTableDescription(name), new ConfiguredMutator(name, useDynamicBufferSize));
     }
 
     public DestinationTable(final Connection connection, final TableName name, final double overheadSize) {
-        this(connection, name, new LogfileTableDescription(name), new ConfiguredMutator(name, overheadSize));
+        this(connection, name, new DestinationTableDescription(name), new ConfiguredMutator(name, overheadSize));
     }
 
     public DestinationTable(
@@ -99,7 +99,7 @@ public final class DestinationTable implements HBaseTable {
         this(
                 connection,
                 name,
-                new LogfileTableDescription(name),
+                new DestinationTableDescription(name),
                 new ConfiguredMutator(name, useDynamicBuffer, overheadSize)
         );
     }
@@ -107,7 +107,7 @@ public final class DestinationTable implements HBaseTable {
     public DestinationTable(
             final Connection connection,
             final TableName name,
-            final LogfileTableDescription tableDescriptor,
+            final DestinationTableDescription tableDescriptor,
             final ConfiguredMutator mutator
     ) {
 

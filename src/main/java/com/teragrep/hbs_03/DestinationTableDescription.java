@@ -57,15 +57,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public final class LogfileTableDescription {
+public final class DestinationTableDescription {
 
     private final TableName name;
 
-    public LogfileTableDescription(final String tableName) {
+    public DestinationTableDescription(final String tableName) {
         this(TableName.valueOf(tableName));
     }
 
-    public LogfileTableDescription(final TableName name) {
+    public DestinationTableDescription(final TableName name) {
         this.name = name;
     }
 
