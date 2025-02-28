@@ -46,28 +46,51 @@
 package com.teragrep.hbs_03;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.concurrent.Executors;
 
 public final class HBaseClient implements AutoCloseable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HBaseClient.class);
 
-    private final Configuration configuration;
-    private final String name;
     private static Connection conn = null;
 
-    public HBaseClient(final Configuration configuration) {
-        this(configuration, "logfile");
-    }
+    private final Configuration configuration;
+    private final TableName name;
+    private final int fixedThreadPoolCount;
+    private final boolean useDynamicBufferSize;
+    private final double overheadMultiplier;
 
     public HBaseClient(final Configuration configuration, final String name) {
+        this(configuration, TableName.valueOf(name), false, 2.0, 1);
+    }
+
+    public HBaseClient(final Configuration configuration, final String name, final int fixedThreadPoolCount) {
+        this(configuration, TableName.valueOf(name), false, 2.0, fixedThreadPoolCount);
+    }
+
+    public HBaseClient(final Configuration configuration, final String name, final boolean useDynamicBufferSize) {
+        this(configuration, TableName.valueOf(name), useDynamicBufferSize, 2.0, 1);
+    }
+
+    public HBaseClient(
+            final Configuration configuration,
+            final TableName name,
+            final boolean useDynamicBufferSize,
+            final double overheadMultiplier,
+            final int fixedThreadPoolCount
+    ) {
         this.configuration = configuration;
         this.name = name;
+        this.useDynamicBufferSize = useDynamicBufferSize;
+        this.overheadMultiplier = overheadMultiplier;
+        this.fixedThreadPoolCount = fixedThreadPoolCount;
     }
 
     /**
@@ -79,9 +102,14 @@ public final class HBaseClient implements AutoCloseable {
     private Connection connection() {
         if (conn == null) {
             try {
-                LOGGER.debug("Initializing connection");
-                conn = ConnectionFactory.createConnection(configuration);
-
+                if (fixedThreadPoolCount > 1) {
+                    conn = ConnectionFactory
+                            .createConnection(configuration, Executors.newFixedThreadPool(fixedThreadPoolCount));
+                }
+                else {
+                    conn = ConnectionFactory.createConnection(configuration);
+                }
+                LOGGER.debug("Created connection: <{}>", conn);
             }
             catch (final IOException e) {
                 throw new HbsRuntimeException("Error creating connection", e);
@@ -103,7 +131,7 @@ public final class HBaseClient implements AutoCloseable {
         }
     }
 
-    public LogfileTable logfile() {
-        return new LogfileTable(connection(), name);
+    public HBaseTable destinationTable() {
+        return new DestinationTable(connection(), name, useDynamicBufferSize, overheadMultiplier);
     }
 }

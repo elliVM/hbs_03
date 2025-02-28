@@ -45,55 +45,60 @@
  */
 package com.teragrep.hbs_03;
 
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.ColumnFamilyDescriptor;
-import org.apache.hadoop.hbase.client.ColumnFamilyDescriptorBuilder;
-import org.apache.hadoop.hbase.client.TableDescriptor;
-import org.apache.hadoop.hbase.client.TableDescriptorBuilder;
-import org.apache.hadoop.hbase.regionserver.BloomType;
-import org.apache.hadoop.hbase.util.Bytes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.sql.Date;
+import java.time.LocalDate;
 
-public class LogfileTableTableDescriptor {
+/**
+ * SQL Teragrep metadata to HBase between set date range
+ */
+public final class ReplicateDateRange implements AutoCloseable {
 
-    private final TableName name;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReplicateDateRange.class);
 
-    public LogfileTableTableDescriptor(final String tableName) {
-        this(TableName.valueOf(tableName));
+    private final Date start;
+    private final Date end;
+    private final DatabaseClient databaseClient;
+    private final HBaseClient hbaseClient;
+
+    public ReplicateDateRange(
+            final Date start,
+            final Date end,
+            final DatabaseClient databaseClient,
+            final HBaseClient hbaseClient
+    ) {
+        this.start = start;
+        this.end = end;
+        this.databaseClient = databaseClient;
+        this.hbaseClient = hbaseClient;
     }
 
-    public LogfileTableTableDescriptor(final TableName name) {
-        this.name = name;
+    public void start() {
+        final long startTime = System.nanoTime(); // logging
+
+        final HBaseTable destinationTable = hbaseClient.destinationTable();
+        destinationTable.createIfNotExists();
+
+        LOGGER.info("Replication started from <{}> to <{}>", start, end);
+        final LocalDate startDate = start.toLocalDate();
+        final LocalDate endDate = end.toLocalDate();
+        long totalRows = 0;
+
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            totalRows += databaseClient.replicateDate(Date.valueOf(date), destinationTable);
+        }
+
+        final long endTime = System.nanoTime(); // logging
+        LOGGER.info("Total rows replicated <{}>", totalRows);
+        LOGGER.info("Replication took <{}>ms", (endTime - startTime) / 1000000);
     }
 
-    public TableDescriptor descriptor() {
-        return TableDescriptorBuilder
-                .newBuilder(name)
-                .setColumnFamilies(columnFamilyDescriptors())
-                .setReadOnly(false)
-                .build();
-    }
-
-    public TableName name() {
-        return name;
-    }
-
-    private List<ColumnFamilyDescriptor> columnFamilyDescriptors() {
-        final ColumnFamilyDescriptor metaFamilyBuilder = ColumnFamilyDescriptorBuilder
-                .newBuilder(Bytes.toBytes("meta"))
-                .setMaxVersions(1) // number of allowed copies per column e.g. with the same row key
-                .setBloomFilterType(BloomType.ROW)
-                .build();
-
-        final ColumnFamilyDescriptor bloomFamilyBuilder = ColumnFamilyDescriptorBuilder
-                .newBuilder(Bytes.toBytes("bloom"))
-                .setMaxVersions(1) // number of allowed copies per column e.g. with the same row key
-                .setBloomFilterType(BloomType.ROW)
-                .build();
-
-        return Collections.unmodifiableList(Arrays.asList(metaFamilyBuilder, bloomFamilyBuilder));
+    @Override
+    public void close() {
+        LOGGER.info("Closing clients");
+        databaseClient.close();
+        hbaseClient.close();
     }
 }

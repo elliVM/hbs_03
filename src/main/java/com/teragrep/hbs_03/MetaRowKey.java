@@ -50,9 +50,9 @@ import java.nio.ByteOrder;
 import java.util.Objects;
 
 /**
- * Represents a row key for HBase row
+ * Represents a row key for an HBase meta-column family row
  */
-public final class MetaRowKey {
+public final class MetaRowKey implements Binary {
 
     private final long streamId;
     private final long logtime;
@@ -79,7 +79,7 @@ public final class MetaRowKey {
 
     @Override
     public String toString() {
-        byte[] rowKeyBytes = bytes();
+        final byte[] rowKeyBytes = bytes();
         final StringBuilder byteString = new StringBuilder();
         for (final byte b : rowKeyBytes) {
             byteString.append(String.format("%02x ", b));

@@ -64,63 +64,96 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-public final class LogfileTable {
+/**
+ * HBase table that is the destination of the migration data
+ */
+public final class DestinationTable implements HBaseTable {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(LogfileTable.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DestinationTable.class);
     private final Connection connection;
-    private final LogfileTableTableDescriptor tableDescriptor;
-    private final boolean useDynamicBufferSize;
+    private final LogfileTableDescription tableDescriptor;
+    private final TableName name;
+    private final ConfiguredMutator mutator;
 
-    public LogfileTable(final Connection connection, final String tableName) {
-        this(connection, new LogfileTableTableDescriptor(tableName), false);
+    public DestinationTable(final Connection connection, final TableName name) {
+        this(connection, name, new LogfileTableDescription(name), new ConfiguredMutator(name, false));
     }
 
-    public LogfileTable(final Connection connection, final String tableName, final boolean useDynamicBufferSize) {
-        this(connection, new LogfileTableTableDescriptor(tableName), useDynamicBufferSize);
+    public DestinationTable(final Connection connection, final TableName name, final boolean useDynamicBufferSize) {
+        this(connection, name, new LogfileTableDescription(name), new ConfiguredMutator(name, useDynamicBufferSize));
     }
 
-    public LogfileTable(
+    public DestinationTable(final Connection connection, final TableName name, final double overheadSize) {
+        this(connection, name, new LogfileTableDescription(name), new ConfiguredMutator(name, overheadSize));
+    }
+
+    public DestinationTable(
             final Connection connection,
-            final LogfileTableTableDescriptor tableDescriptor,
-            final boolean useDynamicBufferSize
+            final TableName name,
+            final boolean useDynamicBuffer,
+            final double overheadSize
     ) {
+        this(
+                connection,
+                name,
+                new LogfileTableDescription(name),
+                new ConfiguredMutator(name, useDynamicBuffer, overheadSize)
+        );
+    }
+
+    public DestinationTable(
+            final Connection connection,
+            final TableName name,
+            final LogfileTableDescription tableDescriptor,
+            final ConfiguredMutator mutator
+    ) {
+
         this.connection = connection;
+        this.name = name;
         this.tableDescriptor = tableDescriptor;
-        this.useDynamicBufferSize = useDynamicBufferSize;
+        this.mutator = mutator;
     }
 
     public void create() {
-        final TableName name = tableDescriptor.name();
         try (final Admin admin = connection.getAdmin()) {
-            if (!admin.tableExists(name)) {
-                final TableDescriptor descriptor = tableDescriptor.descriptor();
-                admin.createTable(descriptor);
-                LOGGER.debug("Created <{}> table to HBase", name);
-            }
-            else {
-                LOGGER.debug("Table <{}> already exists, skipping creation", name);
-            }
+            final TableDescriptor descriptor = tableDescriptor.description();
+            admin.createTable(descriptor);
+            LOGGER.debug("Created <{}> table to HBase", name);
         }
         catch (final MasterNotRunningException e) {
-            throw new HbsRuntimeException("Master war not running", e);
+            throw new HbsRuntimeException("Master was not running", e);
         }
         catch (final IllegalArgumentException e) {
-            throw new HbsRuntimeException(name + " restricted", e);
+            throw new HbsRuntimeException("Table name was restricted", e);
         }
         catch (final IOException e) {
             throw new HbsRuntimeException("Error creating logfile table", e);
         }
     }
 
+    public void createIfNotExists() {
+        try (final Admin admin = connection.getAdmin()) {
+            if (!admin.tableExists(name)) {
+                create();
+            }
+            else {
+                LOGGER.debug("Table <{}> already exists, skipping creation", name);
+            }
+        }
+        catch (IOException e) {
+            throw new HbsRuntimeException("Error creating logfile table", e);
+        }
+    }
+
     public void delete() {
-        final TableName name = tableDescriptor.name();
         try (final Admin admin = connection.getAdmin()) {
             if (admin.tableExists(name)) {
                 if (!admin.isTableDisabled(name)) {
-                    LOGGER.debug("Disabled table <{}>", name);
                     admin.disableTable(name);
+                    LOGGER.debug("Disabled table <{}>", name);
                 }
                 admin.deleteTable(name);
                 LOGGER.debug("Deleted table <{}>", name);
@@ -132,7 +165,6 @@ public final class LogfileTable {
     }
 
     public List<Result> scan(final Scan scan) {
-        final TableName name = tableDescriptor.name();
         final List<Result> results = new ArrayList<>();
         try (final Table table = connection.getTable(name)) {
             try (final ResultScanner scanner = table.getScanner(scan)) {
@@ -150,8 +182,7 @@ public final class LogfileTable {
         return Collections.unmodifiableList(results);
     }
 
-    public void put(final Put put) {
-        final TableName name = tableDescriptor.name();
+    public long put(final Put put) {
         try (final Table table = connection.getTable(name)) {
             table.put(put);
             if (LOGGER.isDebugEnabled()) {
@@ -161,22 +192,20 @@ public final class LogfileTable {
         catch (final IOException e) {
             throw new HbsRuntimeException("Error writing files to table", e);
         }
+        return 1L;
     }
 
-    /**
-     * Uses BufferedMutator to mutate puts and flush
-     *
-     * @param rows List of puts that are added to the BufferedMutator
-     */
-    public void putAll(final List<MetaRow> rows) {
-        final BufferedMutatorParams params = bufferParams(rows);
+    public long putAll(final List<Row> rows) {
+        final AtomicLong successfulInserts = new AtomicLong(0); // mutate() is asynchronous
+        final BufferedMutatorParams params = mutator.paramsForRows(rows);
         try (final BufferedMutator mutator = connection.getBufferedMutator(params)) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Putting <{}> objects", rows.size());
             }
             try {
-                final List<Put> putList = rows.stream().map(MetaRow::put).collect(Collectors.toList());
+                final List<Put> putList = rows.stream().map(Row::put).collect(Collectors.toList());
                 mutator.mutate(putList);
+                successfulInserts.addAndGet(rows.size());
                 mutator.flush();
             }
             catch (final IOException e) {
@@ -187,22 +216,7 @@ public final class LogfileTable {
         catch (final IOException e) {
             throw new HbsRuntimeException("Error creating BufferedMutator", e);
         }
-    }
 
-    private BufferedMutatorParams bufferParams(final List<MetaRow> rows) {
-        final TableName name = tableDescriptor.name();
-        final BufferedMutatorParams bufferParams;
-
-        if (useDynamicBufferSize) {
-            final MetaRow exampleRow = rows.get(0); // select one row used to batch size
-            bufferParams = new DynamicMutatorParams(name, rows.size(), exampleRow).params();
-        }
-        else {
-            bufferParams = new BufferedMutatorParams(name)
-                    .listener((e, mutator) -> LOGGER.error("Error during mutation: <{}>", e.getMessage(), e))
-                    .writeBufferSize(32 * 1024 * 1024);
-        }
-
-        return bufferParams;
+        return successfulInserts.get();
     }
 }

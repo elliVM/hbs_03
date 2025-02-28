@@ -45,60 +45,28 @@
  */
 package com.teragrep.hbs_03;
 
+import com.teragrep.cnf_01.ArgsConfiguration;
 import com.teragrep.cnf_01.Configuration;
-import com.teragrep.cnf_01.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Date;
-import java.time.LocalDate;
-import java.util.Map;
+/** Executable class to for replication */
+public final class TeragrepMetadataReplication {
 
-public class MigrateDateRangeFactory implements Factory<MigrateDateRange> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TeragrepMetadataReplication.class);
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MigrateDateRangeFactory.class);
-
-    private final Configuration config;
-    private final String prefix;
-
-    public MigrateDateRangeFactory(final Configuration config) {
-        this(config, "hbs.");
-    }
-
-    public MigrateDateRangeFactory(final Configuration config, final String prefix) {
-        this.config = config;
-        this.prefix = prefix;
-    }
-
-    @Override
-    public MigrateDateRange object() {
-        final Date startDate;
-        final Date endDate;
-        final DatabaseClient databaseClient = new DatabaseClientFactory(config).object();
-        final HBaseClient hbaseClient = new HBaseClientFactory(config).object();
-
+    public static void main(final String[] args) {
         try {
-            final Map<String, String> map = config.asMap();
-            validate(map);
-            startDate = new ValidDateString(map.get(prefix + "migration.start")).date();
-            // defaults to system local date
-            // TODO: this could be forced to certain timezone for example UTC with LocalDate.now(ZoneOffset.UTC)
-            endDate = new ValidDateString(map.getOrDefault("migration.end", LocalDate.now().toString())).date();
+            final Configuration config = new ArgsConfiguration(args);
+            final Factory<ReplicateDateRange> migrateDateRangeFactory = new ReplicateDateRangeFactory(config);
+            try (final ReplicateDateRange replicateDateRange = migrateDateRangeFactory.object()) {
+                replicateDateRange.start();
+            }
+            System.exit(0); // success
         }
-        catch (final ConfigurationException e) {
-            throw new HbsRuntimeException("Error getting migration configuration", e);
-        }
-
-        return new MigrateDateRange(startDate, endDate, databaseClient, hbaseClient);
-    }
-
-    private void validate(final Map<String, String> map) {
-        if (!map.containsKey(prefix + "migration.start")) {
-            LOGGER.info("<{}migration.start> option missing", prefix);
-            throw new IllegalArgumentException("<" + prefix + "migration.start> option missing");
-        }
-        if (!map.containsKey(prefix + "migration.end")) {
-            LOGGER.info("<{}migration.end> option missing, using system-dependent date for today", prefix);
+        catch (final HbsRuntimeException e) {
+            LOGGER.error("Exception executing migration <{}>", e.getMessage(), e);
+            System.exit(1); // failure
         }
     }
 }

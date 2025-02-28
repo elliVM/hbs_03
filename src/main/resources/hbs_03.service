@@ -1,0 +1,27 @@
+[Unit]
+Description=Teragrep Metadata Using HBase
+Documentation=https://github.com/teragrep/hbs_03
+After=network.target
+
+[Service]
+User=hbs_03
+Group=Teragrep
+EnvironmentFile=/etc/sysconfig/hbs_03
+WorkingDirectory=/opt/teragrep/hbs_03
+ExecStart=/usr/bin/java $JAVA_OPT -jar /opt/teragrep/hbs_03/lib/hbs_03.jar \
+$DB_URL_OPT \
+$DB_USER_OPT \
+$DB_PASSWORD_OPT \
+$START_OPT \
+$END_OPT \
+$JOURNALDB_NAME_OPT \
+$BLOOMDB_NAME_OPT \
+$HBASE_OPT \
+$EXTRA_OPT
+SuccessExitStatus=0
+Restart=no
+StandardOutput=append:/var/log/hbs_03/hbs_03.log
+StandardError=append:/var/log/hbs_03/hbs_03-error.log
+
+[Install]
+WantedBy=multi-user.target

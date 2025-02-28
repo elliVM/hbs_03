@@ -47,33 +47,47 @@ package com.teragrep.hbs_03;
 
 import com.teragrep.cnf_01.Configuration;
 import com.teragrep.cnf_01.ConfigurationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 public final class HBaseClientFactory implements Factory<HBaseClient> {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseClientFactory.class);
+
     private final Configuration config;
-    private final HBaseConfigFromConfiguration hbaseConfigFromConfig;
+    private final HBaseConfiguration hbaseConfigFromConfig;
+    private final String prefix;
 
     public HBaseClientFactory(final Configuration config) {
-        this(config, new HBaseConfigFromConfiguration(config));
+        this(config, new HBaseConfiguration(config), "hbs.");
     }
 
-    public HBaseClientFactory(final Configuration config, final HBaseConfigFromConfiguration hbaseConfigFromConfig) {
+    public HBaseClientFactory(
+            final Configuration config,
+            final HBaseConfiguration hbaseConfigFromConfig,
+            final String prefix
+    ) {
         this.config = config;
         this.hbaseConfigFromConfig = hbaseConfigFromConfig;
+        this.prefix = prefix;
     }
 
     public HBaseClient object() {
         final String logfileTableName;
+        final boolean useDynamicBufferSize;
         try {
             final Map<String, String> map = config.asMap();
-            logfileTableName = map.getOrDefault("hbs_03.hadoop.logfile.table.name", "logfile");
+            logfileTableName = map.getOrDefault(prefix + "hadoop.logfile.table.name", "logfile");
+            LOGGER.debug("Set HBase logfile table name <{}>", logfileTableName);
+            useDynamicBufferSize = Boolean
+                    .parseBoolean(map.getOrDefault(prefix + "dynamicBufferSize.enabled", "false"));
         }
         catch (final ConfigurationException e) {
             throw new HbsRuntimeException("Error getting configuration", e);
         }
-        return new HBaseClient(hbaseConfigFromConfig.config(), logfileTableName);
+        return new HBaseClient(hbaseConfigFromConfig.config(), logfileTableName, useDynamicBufferSize);
     }
 
 }

@@ -45,13 +45,51 @@
  */
 package com.teragrep.hbs_03;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.ColumnFamilyDescriptor;
+import org.apache.hadoop.hbase.client.ColumnFamilyDescriptorBuilder;
+import org.apache.hadoop.hbase.client.TableDescriptor;
+import org.apache.hadoop.hbase.client.TableDescriptorBuilder;
+import org.apache.hadoop.hbase.regionserver.BloomType;
+import org.apache.hadoop.hbase.util.Bytes;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class LogfileTableTest {
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-    @Test
-    public void testCreate() {
+public final class LogfileTableDescription {
+
+    private final TableName name;
+
+    public LogfileTableDescription(final String tableName) {
+        this(TableName.valueOf(tableName));
+    }
+
+    public LogfileTableDescription(final TableName name) {
+        this.name = name;
+    }
+
+    public TableDescriptor description() {
+        return TableDescriptorBuilder
+                .newBuilder(name)
+                .setColumnFamilies(columnFamilyDescriptions())
+                .setReadOnly(false)
+                .build();
+    }
+
+    private List<ColumnFamilyDescriptor> columnFamilyDescriptions() {
+        final ColumnFamilyDescriptor metaFamilyBuilder = ColumnFamilyDescriptorBuilder
+                .newBuilder(Bytes.toBytes("meta"))
+                .setMaxVersions(1) // number of allowed copies per column e.g. with the same row key
+                .setBloomFilterType(BloomType.ROW)
+                .build();
+
+        final ColumnFamilyDescriptor bloomFamilyBuilder = ColumnFamilyDescriptorBuilder
+                .newBuilder(Bytes.toBytes("bloom"))
+                .setMaxVersions(1) // number of allowed copies per column e.g. with the same row key
+                .setBloomFilterType(BloomType.ROW)
+                .build();
+
+        return Collections.unmodifiableList(Arrays.asList(metaFamilyBuilder, bloomFamilyBuilder));
     }
 }

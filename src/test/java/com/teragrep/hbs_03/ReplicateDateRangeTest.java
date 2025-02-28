@@ -47,33 +47,45 @@ package com.teragrep.hbs_03;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.Admin;
-import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.jooq.DSLContext;
+import org.jooq.SQLDialect;
+import org.jooq.conf.MappedSchema;
+import org.jooq.conf.RenderMapping;
+import org.jooq.conf.Settings;
+import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.Test;
+
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.DriverManager;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public final class HBaseClientTest {
+public final class ReplicateDateRangeTest {
 
     final Configuration config = HBaseConfiguration.create();
+    final String testTableName = "replication_range_test";
+    final String username = "streamdb";
+    final String password = "streamdb_pass";
+    final String url = "jdbc:mariadb://192.168.49.2:30601/archiver_journal_tyrael";
+    final Settings settings = new Settings()
+            .withRenderMapping(new RenderMapping().withSchemata(new MappedSchema().withInput("streamdb").withOutput("archiver_streamdb_tyrael"), new MappedSchema().withInput("journaldb").withOutput("archiver_journal_tyrael"), new MappedSchema().withInput("bloomdb").withOutput("bloomdb")));
+    final Connection connection = Assertions
+            .assertDoesNotThrow(() -> DriverManager.getConnection(url, username, password));
+    final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
     HBaseClient client;
 
     @BeforeAll
     public void setup() {
         config.set("hbase.zookeeper.quorum", "localhost");
         config.set("hbase.zookeeper.property.clientPort", "2181");
-        this.client = new HBaseClient(config, "logfile_test");
-    }
-
-    @AfterEach
-    public void afterEach() {
+        this.client = new HBaseClient(config, testTableName, true);
         client.destinationTable().delete();
+        client.destinationTable().create();
     }
 
     @AfterAll
@@ -82,13 +94,18 @@ public final class HBaseClientTest {
     }
 
     @Test
-    @Disabled("Local hbase only")
-    public void testConfiguredConnection() {
-        client.destinationTable().create();
-        Assertions.assertDoesNotThrow(() -> {
-            final Admin admin = ConnectionFactory.createConnection(config).getAdmin();
-            final boolean exists = admin.tableExists(TableName.valueOf("logfile_test"));
-            Assertions.assertTrue(exists);
-        });
+    public void testHadoopConfig() {
+        System.out.println(config);
+    }
+
+    @Test
+    @Disabled("Requires local MariaDB and HBase")
+    public void testRange() {
+        final DatabaseClient sqlClient = new DatabaseClient(ctx, connection, 5000);
+        final Date start = Date.valueOf("2015-1-1");
+        final Date end = Date.valueOf("2025-1-1");
+        final ReplicateDateRange replicateDateRange = new ReplicateDateRange(start, end, sqlClient, client);
+
+        replicateDateRange.start();
     }
 }

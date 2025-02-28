@@ -76,7 +76,7 @@ import static com.teragrep.hbs_03.jooq.generated.journaldb.Journaldb.JOURNALDB;
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class LogfileTableDayQueryTest {
+public final class DestinationTableDayQueryTest {
 
     @Container
     private MariaDBContainer<?> mariadb;

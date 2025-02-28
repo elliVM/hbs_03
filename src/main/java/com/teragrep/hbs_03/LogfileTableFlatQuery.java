@@ -62,7 +62,7 @@ import static com.teragrep.hbs_03.jooq.generated.streamdb.Streamdb.STREAMDB;
 /**
  * Flat query with all the fields selected for migration
  */
-public class LogfileTableFlatQuery {
+public final class LogfileTableFlatQuery {
 
     final DSLContext ctx;
     final LogfileTableDayQuery dayQuery;

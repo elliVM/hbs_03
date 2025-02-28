@@ -47,22 +47,20 @@ package com.teragrep.hbs_03;
 
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.jooq.JSON;
 import org.jooq.Record21;
 import org.jooq.types.UInteger;
 import org.jooq.types.ULong;
-import org.jooq.types.UShort;
 
-import java.nio.ByteBuffer;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MetaRow implements Row {
+/** Represents a row for logfile table meta-column family */
+public final class MetaRow implements Row {
 
     private final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record;
-    private final MetaRowKey metaRowKey;
+    private final Binary rowKey;
 
     public MetaRow(
             final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record
@@ -72,10 +70,10 @@ public class MetaRow implements Row {
 
     public MetaRow(
             final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record,
-            MetaRowKey metaRowKey
+            final Binary rowKey
     ) {
         this.record = record;
-        this.metaRowKey = metaRowKey;
+        this.rowKey = rowKey;
     }
 
     public Put put() {
@@ -104,14 +102,13 @@ public class MetaRow implements Row {
         map.put("d", record.field20().get(record)); // stream directory
         map.put("t", record.field21().get(record)); // logtime
 
-        final Put put = new Put(metaRowKey.bytes(), true);
+        final Put put = new Put(rowKey.bytes(), true);
         final byte[] familyBytes = Bytes.toBytes("meta");
         for (final Map.Entry<String, Object> entry : map.entrySet()) {
             final String key = entry.getKey();
-            final Object value = entry.getValue();
             final byte[] qualifierBytes = Bytes.toBytes(key);
-            final byte[] valueBytes = objectBytes(value);
-            put.addColumn(familyBytes, qualifierBytes, valueBytes);
+            final Binary objectToBinary = new ObjectToBinary(entry.getValue());
+            put.addColumn(familyBytes, qualifierBytes, objectToBinary.bytes());
         }
 
         return put;
@@ -119,47 +116,7 @@ public class MetaRow implements Row {
 
     @Override
     public String id() {
-        return metaRowKey.toString();
+        return rowKey.toString();
     }
 
-    private byte[] objectBytes(final Object value) {
-        final byte[] bytes;
-        if (value == null) { // empty array if null
-            bytes = new byte[0];
-        }
-        else if (value instanceof String) {
-            bytes = Bytes.toBytes((String) value);
-        }
-        else if (value instanceof Integer) {
-            bytes = Bytes.toBytes((Integer) value);
-        }
-        else if (value instanceof Long) {
-            bytes = ByteBuffer.allocate(Long.BYTES).putLong((Long) value).array();
-        }
-        else if (value instanceof UShort) {
-            bytes = Bytes.toBytes(((UShort) value).intValue());
-        }
-        else if (value instanceof UInteger) {
-            bytes = Bytes.toBytes(((UInteger) value).intValue());
-        }
-        else if (value instanceof ULong) {
-            bytes = ByteBuffer.allocate(Long.BYTES).putLong(((ULong) value).longValue()).array();
-        }
-        else if (value instanceof Date) {
-            bytes = ByteBuffer.allocate(Long.BYTES).putLong(((Date) value).getTime()).array();
-        }
-        else if (value instanceof Timestamp) {
-            bytes = ByteBuffer.allocate(Long.BYTES).putLong(((Timestamp) value).getTime()).array();
-        }
-        else if (value instanceof JSON) {
-            bytes = Bytes.toBytes(value.toString());
-        }
-        else {
-            throw new IllegalArgumentException(
-                    "Adding object <" + value + "> with type <" + value.getClass().getName()
-                            + "> to HBase is not supported"
-            );
-        }
-        return bytes;
-    }
 }

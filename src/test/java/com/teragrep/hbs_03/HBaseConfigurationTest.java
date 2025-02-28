@@ -52,17 +52,15 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Properties;
 
-public class HBaseConfigFromConfigurationTest {
+public final class HBaseConfigurationTest {
 
     @Test
     public void testDefaultConfig() {
         final Properties props = new Properties();
         final Configuration configuration = new PropertiesConfiguration(props);
-        final org.apache.hadoop.conf.Configuration hbaseConfig = new HBaseConfigFromConfiguration(
-                configuration,
-                "prefix."
-        ).config();
-        Assertions.assertEquals("localhost", hbaseConfig.get("hbase.zookeeper.quorum"));
+        final org.apache.hadoop.conf.Configuration hbaseConfig = new HBaseConfiguration(configuration, "prefix.")
+                .config();
+        Assertions.assertEquals("host_from_file", hbaseConfig.get("hbase.zookeeper.quorum"));
     }
 
     @Test
@@ -70,12 +68,9 @@ public class HBaseConfigFromConfigurationTest {
         final Properties props = new Properties();
         props.put("prefix.zookeeper.quorum", "testhost");
         final Configuration configuration = new PropertiesConfiguration(props);
-        final org.apache.hadoop.conf.Configuration hbaseConfig = new HBaseConfigFromConfiguration(
-                configuration,
-                "prefix."
-        ).config();
+        final org.apache.hadoop.conf.Configuration hbaseConfig = new HBaseConfiguration(configuration, "prefix.")
+                .config();
         Assertions.assertEquals("testhost", hbaseConfig.get("zookeeper.quorum"));
-
     }
 
     @Test
@@ -83,10 +78,8 @@ public class HBaseConfigFromConfigurationTest {
         final Properties props = new Properties();
         props.put("prefix.config.path", "src/test/resources/hbase-site.xml");
         final Configuration configuration = new PropertiesConfiguration(props);
-        final org.apache.hadoop.conf.Configuration hbaseConfig = new HBaseConfigFromConfiguration(
-                configuration,
-                "prefix."
-        ).config();
+        final org.apache.hadoop.conf.Configuration hbaseConfig = new HBaseConfiguration(configuration, "prefix.")
+                .config();
         Assertions.assertEquals("host_from_file", hbaseConfig.get("hbase.zookeeper.quorum"));
     }
 
@@ -96,7 +89,7 @@ public class HBaseConfigFromConfigurationTest {
         props.put("prefix.config.path", "broken/path/");
         final Configuration configuration = new PropertiesConfiguration(props);
         final HbsRuntimeException ex = Assertions
-                .assertThrows(HbsRuntimeException.class, () -> new HBaseConfigFromConfiguration(configuration, "prefix.").config());
+                .assertThrows(HbsRuntimeException.class, () -> new HBaseConfiguration(configuration, "prefix.").config());
         final String expectedMessage = "Could not find a file in given file path (caused by: MalformedURLException: No file in path)";
         Assertions.assertEquals(expectedMessage, ex.getMessage());
     }
