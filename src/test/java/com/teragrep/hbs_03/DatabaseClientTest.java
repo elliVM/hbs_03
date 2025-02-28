@@ -68,7 +68,7 @@ import java.util.List;
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class DatabaseClientTest {
+public final class DatabaseClientTest {
 
     @Container
     private MariaDBContainer<?> mariadb;

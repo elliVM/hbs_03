@@ -45,29 +45,23 @@
  */
 package com.teragrep.hbs_03;
 
-import com.teragrep.cnf_01.ArgsConfiguration;
-import com.teragrep.cnf_01.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.Scan;
 
-/** Entry point class to start replication */
-public final class TeragrepMetaDataMigration {
+import java.util.List;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TeragrepMetaDataMigration.class);
+public interface HBaseTable {
 
-    public static void main(final String[] args) {
-        try {
-            final Configuration config = new ArgsConfiguration(args);
-            LOGGER.info("Loaded argument configuration <{}>", config);
-            final Factory<MigrateDateRange> migrateDateRangeFactory = new MigrateDateRangeFactory(config);
-            try (final MigrateDateRange migrateDateRange = migrateDateRangeFactory.object()) {
-                migrateDateRange.start();
-            }
-            System.exit(0); // success
-        }
-        catch (final HbsRuntimeException e) {
-            LOGGER.error("Exception executing migration <{}>", e.getMessage(), e);
-            System.exit(1); // failure
-        }
-    }
+    public abstract void create();
+
+    public abstract void createIfNotExists();
+
+    public abstract void delete();
+
+    public abstract List<Result> scan(Scan scan);
+
+    public abstract long put(Put put);
+
+    public abstract long putAll(List<Row> rows);
 }

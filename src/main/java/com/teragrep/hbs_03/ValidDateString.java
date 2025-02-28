@@ -49,13 +49,14 @@ import java.sql.Date;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-public class ValidDateString {
+/** Matches date string against ISO 8601 regex */
+public final class ValidDateString {
 
     private final Pattern pattern;
     private final String dateString;
 
     public ValidDateString(final String dateString) {
-        this(dateString, Pattern.compile("\\d{4}-\\d{2}-\\d{2}"));
+        this(dateString, Pattern.compile("^(\\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$"));
     }
 
     private ValidDateString(final String dateString, final Pattern pattern) {
@@ -64,14 +65,18 @@ public class ValidDateString {
     }
 
     public Date date() {
-        if (valid()) {
-            return Date.valueOf(dateString);
+        if (!valid()) {
+            throw new HbsRuntimeException(
+                    "Invalid date format <" + dateString + "> Expected format YYYY-MM-DD",
+                    new IllegalArgumentException("Invalid date format")
+            );
         }
-        throw new IllegalArgumentException("Invalid date format <" + dateString + ">. Expected format YYYY-MM-DD");
+
+        return Date.valueOf(dateString);
     }
 
     private boolean valid() {
-        return dateString != null && pattern.matcher(dateString).matches();
+        return dateString != null && !dateString.isEmpty() && pattern.matcher(dateString).matches();
     }
 
     @Override

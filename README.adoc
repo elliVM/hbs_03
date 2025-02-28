@@ -76,21 +76,22 @@ hbs.hadoop.* // set any option supported by hadoop.config.Configuration object
 Here we set the date range for the migration process.
 Expects ISO format YYYY-MM-DD, dates are in system local time.
 ----
-hbs.migration.start=<start_date> // required
-hbs.migration.end=<end_date> // default local date today
+hbs.start=<start_date> // default minus 1 day from local date today
+hbs.end=<end_date> // default local date today
 ----
+
 == How to
 
-Package and execute jar file
+After maven packaging the project, you can execute from the generated .jar file
 
-Example script how to replicate between a date range between the dates 2010-01-01 and 2030-01-01.
+Example script how to replicate between a date range between the dates 2010-01-01 and 2020-01-01.
 
 [source]
 ----
 java -jar hbs_03.jar hbs.db.username=user hbs.db.password=password
 hbs.db.url=database_url hbs.hadoop.hbase.zookeeper.quorum=zookeeper_quorum
-hbs.hadop.hbase.zookeeper.property.clientPort=port
-hbs.migration.start=2010-01-01 hbs.migration.end=2030-01-01
+hbs.hadop.hbase.zookeeper.property.clientPort=port hbs.dp.journaldb.name=journaldb hbs.db.streamdb.name=streamdb
+hbs.start=2010-01-01 hbs.end=2020-01-01
 ----
 
 == Contributing

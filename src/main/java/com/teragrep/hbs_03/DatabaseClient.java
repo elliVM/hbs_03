@@ -80,45 +80,58 @@ public final class DatabaseClient implements AutoCloseable {
         this.fetchSize = fetchSize;
     }
 
-    public int migrateForDate(final Date day, final LogfileTable hBaseTable) {
-        LOGGER.debug("migrateForDate called with day <{}> and batch size <{}>", day, fetchSize);
-        final long start = System.nanoTime();
+    public long replicateDate(final Date day, final HBaseTable destinationTable) {
+        final long start = System.nanoTime(); // logging
+
+        LOGGER.debug("replicateDate() called with day <{}> and batch size <{}>", day, fetchSize);
 
         final LogfileTableFlatQuery logfileTableFlatQuery = new LogfileTableFlatQuery(ctx, day, fetchSize);
-        final List<MetaRow> hbaseRows = new ArrayList<>(fetchSize);
+        final List<Row> cursorBatchRowList = new ArrayList<>(fetchSize);
 
-        int totalRows = 0;
+        long totalQueriedRows = 0;
+        long totalInsertedRows = 0;
         try (
                 final Cursor<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> cursor = logfileTableFlatQuery
                         .asCursor()
         ) {
             while (cursor.hasNext()) {
-                long cursorStart = System.nanoTime();
-                final Result<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> nextResult = cursor
+                final long batchStart = System.nanoTime(); // logging
+
+                final Result<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> cursorBatch = cursor
                         .fetchNext(fetchSize);
 
                 for (
-                    final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> row : nextResult
+                    final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record : cursorBatch
                 ) {
-                    hbaseRows.add(new MetaRow(row));
+                    final Row row = new MetaRow(record);
+                    cursorBatchRowList.add(row);
                 }
 
-                if (hbaseRows.size() == 1) {
-                    hBaseTable.put(hbaseRows.get(0).put());
+                if (cursorBatchRowList.size() == 1) {
+                    totalInsertedRows += destinationTable.put(cursorBatchRowList.get(0).put());
                 }
                 else {
-                    hBaseTable.putAll(hbaseRows);
+                    totalInsertedRows += destinationTable.putAll(cursorBatchRowList);
                 }
-                totalRows = totalRows + hbaseRows.size();
-                hbaseRows.clear();
+                totalQueriedRows += cursorBatchRowList.size();
+                cursorBatchRowList.clear();
 
-                long cursorEnd = System.nanoTime();
-                LOGGER.debug("migrateForDate cursor batch took <{}>ms", ((cursorEnd - cursorStart) / 1000000));
+                final long batchEnd = System.nanoTime(); // logging
+                LOGGER.debug("replicateDate() batch took <{}>ms", ((batchEnd - batchStart) / 1000000));
             }
         }
-        final long end = System.nanoTime();
-        LOGGER.debug("migrateForDate() took <{}>ms", ((end - start) / 1000000));
-        return totalRows;
+        final long end = System.nanoTime(); // logging
+        LOGGER.debug("replicateDate() took <{}>ms", ((end - start) / 1000000));
+
+        if (totalQueriedRows != totalInsertedRows) {
+            LOGGER
+                    .error(
+                            "Miss matching size of extracted SQL rows <{}> and inserted HBase rows <{}>",
+                            totalQueriedRows, totalInsertedRows
+                    );
+        }
+
+        return totalInsertedRows;
     }
 
     @Override
@@ -136,7 +149,7 @@ public final class DatabaseClient implements AutoCloseable {
         final String grantsSQL = "SHOW GRANTS FOR CURRENT_USER()";
         final Result<Record> grants = ctx.fetch(grantsSQL);
         final List<String> grantsList = grants.getValues(0, String.class);
-        LOGGER.info("Grants for current user <[{}]>", grantsList);
+        LOGGER.debug("Fetched grants for current user <{}>", grantsList);
         return grantsList;
     }
 }

@@ -64,7 +64,7 @@ import java.time.LocalDate;
 import static com.teragrep.hbs_03.jooq.generated.journaldb.Journaldb.JOURNALDB;
 import static com.teragrep.hbs_03.jooq.generated.streamdb.Streamdb.STREAMDB;
 
-public class MockS3MetaData implements MockDataProvider {
+public final class MockS3MetaData implements MockDataProvider {
 
     @Override
     public MockResult[] execute(final MockExecuteContext mockCtx) {
@@ -100,8 +100,8 @@ public class MockS3MetaData implements MockDataProvider {
                 .newResult(JOURNALDB.LOGFILE.ID.as("id"), JOURNALDB.LOGFILE.LOGDATE.as("logdate"), JOURNALDB.LOGFILE.EXPIRATION.as("expiration"), JOURNALDB.BUCKET.NAME.as("bucket"), JOURNALDB.LOGFILE.PATH.as("path"), JOURNALDB.LOGFILE.OBJECT_KEY_HASH.as("hash"), JOURNALDB.HOST.NAME.as("host"), JOURNALDB.LOGFILE.ORIGINAL_FILENAME.as("file_name"), JOURNALDB.LOGFILE.ARCHIVED.as("archived"), JOURNALDB.LOGFILE.FILE_SIZE.as("file_size"), JOURNALDB.METADATA_VALUE.VALUE.as("meta"), JOURNALDB.LOGFILE.SHA256_CHECKSUM.as("checksum"), JOURNALDB.LOGFILE.ARCHIVE_ETAG.as("etag"), JOURNALDB.LOGFILE.LOGTAG.as("logtag"), JOURNALDB.SOURCE_SYSTEM.NAME.as("source_system"), JOURNALDB.CATEGORY.NAME.as("category"), JOURNALDB.LOGFILE.UNCOMPRESSED_FILE_SIZE.as("uncompressed_filesize"), STREAMDB.STREAM.ID.as("stream_id"), STREAMDB.STREAM.STREAM_.as("stream"), STREAMDB.STREAM.DIRECTORY.as("directory"), logtimeFunction.as(logtimeField));
 
         for (long l = 1; l <= numOfResults; l++) {
-            int year = 2010;
-            int month = 10;
+            final int year = 2010;
+            final int month = 10;
             // day between 1-28
             final int day = (l % 28) == 0 ? 28 : (int) l % 28;
             final Timestamp timestamp = Timestamp.valueOf(String.format("%s-%s-%s 10:00:00", year, month, day));

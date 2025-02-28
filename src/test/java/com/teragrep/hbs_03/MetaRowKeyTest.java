@@ -49,7 +49,7 @@ import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class MetaRowKeyTest {
+public final class MetaRowKeyTest {
 
     @Test
     public void testRowKey() {

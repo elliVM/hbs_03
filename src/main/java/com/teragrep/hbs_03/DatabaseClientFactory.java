@@ -96,6 +96,7 @@ public final class DatabaseClientFactory implements Factory<DatabaseClient> {
             streamdbName = map.getOrDefault(prefix + "streamdb.name", "streamdb");
             bloomdbName = map.getOrDefault(prefix + "bloomdb.name", "bloomdb");
             batchSize = Integer.parseInt(map.getOrDefault(prefix + "batch.size", "5000"));
+
         }
         catch (final ConfigurationException e) {
             throw new HbsRuntimeException("Error getting configuration", e);

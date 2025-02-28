@@ -45,9 +45,31 @@
  */
 package com.teragrep.hbs_03;
 
-public final class HbsRuntimeException extends RuntimeException {
+import nl.jqno.equalsverifier.EqualsVerifier;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-    public HbsRuntimeException(final String message, final Throwable cause) {
-        super(message + " (caused by: " + cause.getClass().getSimpleName() + ": " + cause.getMessage() + ")", cause);
+import java.sql.Date;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class ValidDateStringTest {
+
+    @Test
+    public void testValidDate() {
+        final Date date = new ValidDateString("2010-01-01").date();
+        Assertions.assertEquals(Date.valueOf("2010-01-01"), date);
+    }
+
+    @Test
+    public void testInvalidFormat() {
+        final ValidDateString date = new ValidDateString("2010-41-01");
+        final HbsRuntimeException ex = assertThrows(HbsRuntimeException.class, date::date);
+        System.out.println(ex.getMessage());
+    }
+
+    @Test
+    public void testContract() {
+        EqualsVerifier.forClass(ValidDateString.class).withNonnullFields("pattern", "dateString").verify();
     }
 }

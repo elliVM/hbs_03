@@ -64,7 +64,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class DatabaseClientFactoryTest {
+public final class DatabaseClientFactoryTest {
 
     @Container
     private MariaDBContainer<?> mariadb;

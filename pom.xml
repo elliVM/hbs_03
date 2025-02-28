@@ -34,7 +34,7 @@
     <java.version>11</java.version>
     <jooq.verion>3.14.8</jooq.verion>
     <junit.version>5.10.2</junit.version>
-    <main.class>com.teragrep.hbs_03.TeragrepMetaDataMigration</main.class>
+    <main.class>com.teragrep.hbs_03.TeragrepMetadataReplication</main.class>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -232,7 +232,7 @@
           </execution>
         </executions>
       </plugin>
-      <!-- Add main class -->
+      <!-- Add main class executable -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
@@ -240,7 +240,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>com.teragrep.hbs_03.TeragrepMetaDataMigration</mainClass>
+              <mainClass>com.teragrep.hbs_03.TeragrepMetadataReplication</mainClass>
             </manifest>
           </archive>
         </configuration>
@@ -390,10 +390,13 @@
             <exclude>pom.xml</exclude>
             <exclude>dependency-reduced-pom.xml</exclude>
             <exclude>eclipse-java-formatter.xml</exclude>
+            <exclude>rpm/rpm.pom.xml</exclude>
             <!-- readme -->
             <exclude>README.adoc</exclude>
             <!-- resources -->
             <exclude>src/test/resources/*</exclude>
+            <exclude>src/main/resources/hbs_03.service</exclude>
+            <exclude>src/main/resources/hbs_03</exclude>
             <exclude>database/*</exclude>
             <exclude>add_license_to_generated.sh</exclude>
           </excludes>
@@ -486,6 +489,7 @@
                   <module name="UniqueProperties"></module>
                 </module>
               </checkstyleRules>
+              <excludes>src/main/java/com/teragrep/hbs_03/jooq/generated</excludes>
             </configuration>
           </execution>
           <!-- These are warnings but will not fail the build -->
@@ -500,6 +504,7 @@
               <logViolationsToConsole>true</logViolationsToConsole>
               <failOnViolation>false</failOnViolation>
               <failsOnError>false</failsOnError>
+              <excludes>src/main/java/com/teragrep/hbs_03/jooq/generated</excludes>
               <checkstyleRules>
                 <module name="Checker">
                   <module name="TreeWalker">
@@ -693,6 +698,9 @@
     <!-- jooq no code generation -->
     <profile>
       <id>build-nogenerate</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <properties>
         <jooq.regenerate.skip>true</jooq.regenerate.skip>
       </properties>
@@ -700,6 +708,10 @@
     <!-- Required when publishing to Maven Central -->
     <profile>
       <id>publish-maven-central</id>
+      <!-- Skips jooq generation for publishing for now -->
+      <properties>
+        <jooq.regenerate.skip>true</jooq.regenerate.skip>
+      </properties>
       <build>
         <plugins>
           <plugin>
@@ -747,6 +759,10 @@
           <url>https://maven.pkg.github.com/teragrep/hbs_03</url>
         </repository>
       </distributionManagement>
+      <!-- Skips jooq generation for publishing for now -->
+      <properties>
+        <jooq.regenerate.skip>true</jooq.regenerate.skip>
+      </properties>
       <build>
         <plugins>
           <plugin>

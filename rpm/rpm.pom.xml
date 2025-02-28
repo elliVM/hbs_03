@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <packaging>rpm</packaging>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>hbs_03</artifactId>
+    <version>${revision}${sha1}${changelist}.${env.TARGET_OS}.x86_64</version>
+    <name>hbs_03</name>
+    <description>Teragrep Metadata Using HBase</description>
+    <groupId>com.teragrep</groupId>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <java.version>11</java.version>
+        <revision>0.0.1</revision>
+        <changelist>-SNAPSHOT</changelist>
+        <sha1/>
+    </properties>
+    <build>
+        <directory>${project.basedir}/target</directory>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skipTests>true</skipTests>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>rpm-maven-plugin</artifactId>
+                <version>2.2.0</version>
+                <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <id>default-rpm</id>
+                        <goals>
+                            <goal>rpm</goal>
+                        </goals>
+                        <phase>package</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <summary>${project.groupId}-${project.artifactId}</summary>
+                    <name>${project.groupId}-${project.artifactId}</name>
+                    <version>${project.version}</version>
+                    <release>${env.BUILD_ID}</release>
+                    <license>Proprietary</license>
+                    <distribution>teragrep Log Management Suite</distribution>
+                    <vendor>https://teragrep.net/</vendor>
+                    <packager>teragrep &lt;servicedesk@teragrep.com&gt;</packager>
+                    <group>teragrep/LogManagementSuite</group>
+                    <description>${project.groupId}-${project.artifactId}</description>
+                    <needarch>true</needarch>
+                    <defaultUsername>srv-relp</defaultUsername>
+                    <defaultGroupname>srv-relp</defaultGroupname>
+                    <defaultFilemode>0644</defaultFilemode>
+                    <defaultDirmode>0755</defaultDirmode>
+                    <defineStatements>
+                        <defineStatement>_build_id_links none</defineStatement>
+                        <defineStatement>__provides_exclude ^osgi\\(.*$</defineStatement>
+                        <defineStatement>__requires_exclude ^osgi\\(.*$</defineStatement>
+                    </defineStatements>
+                    <mappings>
+                        <!-- executable jar -->
+                        <mapping>
+                            <directory>/opt/teragrep/${project.artifactId}/lib</directory>
+                            <directoryIncluded>true</directoryIncluded>
+                            <filemode>755</filemode>
+                            <dirmode>755</dirmode>
+                            <recurseDirectories>true</recurseDirectories>
+                            <sources>
+                                <source>
+                                    <location>${project.basedir}/../target/hbs_03-${revision}${changelist}${sha1}.jar
+                                    </location>
+                                    <destination>hbs_03.jar</destination>
+                                </source>
+                            </sources>
+                        </mapping>
+                        <!-- system service file -->
+                        <mapping>
+                            <directory>/usr/lib/systemd/system</directory>
+                            <directoryIncluded>false</directoryIncluded>
+                            <username>root</username>
+                            <groupname>root</groupname>
+                            <sources>
+                                <source>
+                                    <location>${project.basedir}/../src/main/resources/hbs_03.service
+                                    </location>
+                                </source>
+                            </sources>
+                        </mapping>
+                        <!-- system service environment file -->
+                        <mapping>
+                            <directory>/etc/sysconfig/hbs_03</directory>
+                            <directoryIncluded>false</directoryIncluded>
+                            <filemode>755</filemode>
+                            <dirmode>755</dirmode>
+                            <sources>
+                                <source>
+                                    <location>${project.basedir}/../src/main/resources/hbs_03
+                                    </location>
+                                </source>
+                            </sources>
+                        </mapping>
+                    </mappings>
+                    <requires>
+                        <require>java-11-openjdk</require>
+                    </requires>
+                    <preinstallScriptlet>
+                        <script>
+                            getent group srv-relp > /dev/null || groupadd -r srv-relp;
+                            getent passwd srv-relp > /dev/null || useradd -r -g srv-relp -d
+                            /opt/teragrep/${project.artifactId}/var -s /sbin/nologin -c "Service User" srv-relp;
+                            exit 0;
+                        </script>
+                    </preinstallScriptlet>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>2.8.2</version>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <skipMain>true</skipMain>
+                            <!-- required for configuration tag-->
+                            <basedir/>
+                            <buildDirectory/>
+                            <outputDirectory/>
+                            <projectArtifact/>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

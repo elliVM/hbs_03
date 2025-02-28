@@ -49,24 +49,25 @@ import com.teragrep.cnf_01.Configuration;
 import com.teragrep.cnf_01.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
-public class HBaseConfigFromConfiguration {
+public final class HBaseConfiguration {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseConfigFromConfiguration.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseConfiguration.class);
 
     private final Configuration config;
     private final String prefix;
 
-    public HBaseConfigFromConfiguration(final Configuration config) {
+    public HBaseConfiguration(final Configuration config) {
         this(config, "hbs.hadoop.");
     }
 
-    public HBaseConfigFromConfiguration(final Configuration config, final String prefix) {
+    public HBaseConfiguration(final Configuration config, final String prefix) {
         this.config = config;
         this.prefix = prefix;
     }
@@ -82,15 +83,18 @@ public class HBaseConfigFromConfiguration {
         return hbaseConfigFromMap(map);
     }
 
+    @SuppressWarnings("checkstyle:NestedIfDepth")
     private org.apache.hadoop.conf.Configuration hbaseConfigFromMap(final Map<String, String> map) {
 
-        final org.apache.hadoop.conf.Configuration hbaseConfig = new org.apache.hadoop.conf.Configuration();
+        // create an instance from the static settings
+        final org.apache.hadoop.conf.Configuration hbaseConfig = new org.apache.hadoop.conf.Configuration(
+                org.apache.hadoop.hbase.HBaseConfiguration.create()
+        );
         final String filePrefix = prefix + "config.path";
 
         for (final Map.Entry<String, String> entry : map.entrySet()) {
             final String key = entry.getKey();
             final String value = entry.getValue();
-            LOGGER.debug("key <{}>, value <{}>", key, value);
 
             if (key.matches(filePrefix)) { // from file
                 final Path path = Paths.get(value);
@@ -114,7 +118,18 @@ public class HBaseConfigFromConfiguration {
             }
             else if (key.startsWith(prefix)) {
                 final String hbaseOption = key.substring(prefix.length());
-                LOGGER.info("Set HBase configuration option: <{}>=<{}>", hbaseOption, value);
+                if (hbaseConfig.get(hbaseOption) != null) {
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER
+                                .info(
+                                        "Replacing set option <{}>=<{}> with new value <{}>", hbaseOption,
+                                        hbaseConfig.get(hbaseOption), value
+                                );
+                    }
+                }
+                else {
+                    LOGGER.info("Set HBase configuration option: <{}>=<{}>", hbaseOption, value);
+                }
                 hbaseConfig.set(hbaseOption, value);
             }
         }
@@ -132,7 +147,6 @@ public class HBaseConfigFromConfiguration {
         hbaseConfig.setIfUnset("hbase.client.write.buffer", "2097152"); // write buffer size bytes
 
         hbaseConfig.setIfUnset("hbase.regionserver.durability", "SYNC_WAL"); // default safest data durability
-        hbaseConfig.setIfUnset("hbase.rootdir", "file:///tmp/hbase"); // default to use local filesystem
 
         return hbaseConfig;
     }

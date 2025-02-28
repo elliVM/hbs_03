@@ -45,60 +45,66 @@
  */
 package com.teragrep.hbs_03;
 
+import com.teragrep.cnf_01.Configuration;
+import com.teragrep.cnf_01.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Date;
 import java.time.LocalDate;
+import java.util.Map;
 
-/**
- *
- */
-public class MigrateDateRange implements AutoCloseable {
+public final class ReplicateDateRangeFactory implements Factory<ReplicateDateRange> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MigrateDateRange.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReplicateDateRangeFactory.class);
 
-    private final Date start;
-    private final Date end;
-    private final DatabaseClient metaSQLClient;
-    private final HBaseClient hbaseClient;
+    private final Configuration config;
+    private final String prefix;
 
-    public MigrateDateRange(
-            final Date start,
-            final Date end,
-            DatabaseClient metaSQLClient,
-            final HBaseClient hbaseClient
-    ) {
-        this.start = start;
-        this.end = end;
-        this.metaSQLClient = metaSQLClient;
-        this.hbaseClient = hbaseClient;
+    public ReplicateDateRangeFactory(final Configuration config) {
+        this(config, "hbs.");
     }
 
-    public void start() {
-        long startTime = System.nanoTime();
-        final LogfileTable logfileTable = hbaseClient.logfile();
-        logfileTable.create();
-        LOGGER.info("Replication started from <{}> to <{}>", start, end);
-        final LocalDate endDate = end.toLocalDate();
-        long totalRows = 0;
-        LocalDate rollingDay = start.toLocalDate();
-        while (rollingDay.isBefore(endDate)) {
-            final Date date = Date.valueOf(rollingDay);
-            final int rows = metaSQLClient.migrateForDate(date, logfileTable);
-            totalRows += rows;
-            LOGGER.info("Processing date <{}> affected <{}> row(s)", date, rows);
-            rollingDay = rollingDay.plusDays(1);
-        }
-        long endTime = System.nanoTime();
-        LOGGER.info("Total rows migrated <{}>", totalRows);
-        LOGGER.info("Migration took <{}>ms", (endTime - startTime) / 1000000);
+    public ReplicateDateRangeFactory(final Configuration config, final String prefix) {
+        this.config = config;
+        this.prefix = prefix;
     }
 
     @Override
-    public void close() {
-        LOGGER.info("Closing clients");
-        metaSQLClient.close();
-        hbaseClient.close();
+    public ReplicateDateRange object() {
+        final Date start;
+        final Date end;
+        final DatabaseClient databaseClient = new DatabaseClientFactory(config).object();
+        final HBaseClient hbaseClient = new HBaseClientFactory(config).object();
+
+        try {
+            final Map<String, String> map = config.asMap();
+
+            // start date
+            if (map.containsKey(prefix + "hbs.start")) {
+                start = new ValidDateString(map.get(prefix + "hbs.start")).date();
+            }
+            else {
+                // default local date - 1 day
+                start = Date.valueOf(LocalDate.now().minusDays(1));
+                LOGGER.info("Using default start date <{}>", start);
+            }
+
+            // end date
+            if (map.containsKey(prefix + "hbs.end")) {
+                end = new ValidDateString(map.get("hbs.end")).date();
+            }
+            else {
+                // default local date
+                end = Date.valueOf(LocalDate.now());
+                LOGGER.info("Using default end date <{}>", end);
+            }
+
+        }
+        catch (final ConfigurationException e) {
+            throw new HbsRuntimeException("Error getting migration configuration", e);
+        }
+
+        return new ReplicateDateRange(start, end, databaseClient, hbaseClient);
     }
 }

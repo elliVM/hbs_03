@@ -62,7 +62,7 @@ import org.junit.jupiter.api.Test;
 import java.sql.Date;
 import java.sql.Timestamp;
 
-public class MetaRowTest {
+public final class MetaRowTest {
 
     // SQL Mock
     final MockS3MetaData provider = new MockS3MetaData();
