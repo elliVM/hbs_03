@@ -68,6 +68,10 @@ import java.util.List;
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@EnabledIfSystemProperty(
+        named = "runContainerTests",
+        matches = "true"
+)
 public final class DatabaseClientTest {
 
     @Container
@@ -77,10 +81,7 @@ public final class DatabaseClientTest {
             .withRenderMapping(new RenderMapping().withSchemata(new MappedSchema().withInput("streamdb").withOutput("journaldb"), new MappedSchema().withInput("journaldb").withOutput("journaldb"), new MappedSchema().withInput("bloomdb").withOutput("journaldb")));
 
     @BeforeAll
-    @EnabledIfSystemProperty(
-            named = "runContainerTests",
-            matches = "true"
-    )
+
     public void setup() {
         mariadb = Assertions
                 .assertDoesNotThrow(() -> new MariaDBContainer<>(DockerImageName.parse("mariadb:10.5")).withPrivilegedMode(false).withUsername("user").withPassword("password").withDatabaseName("journaldb"));
@@ -93,19 +94,11 @@ public final class DatabaseClientTest {
     }
 
     @AfterAll
-    @EnabledIfSystemProperty(
-            named = "runContainerTests",
-            matches = "true"
-    )
     public void tearDown() {
         mariadb.stop();
     }
 
     @Test
-    @EnabledIfSystemProperty(
-            named = "runContainerTests",
-            matches = "true"
-    )
     public void testInit() {
         final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
         final DatabaseClient client = new DatabaseClient(ctx, connection);

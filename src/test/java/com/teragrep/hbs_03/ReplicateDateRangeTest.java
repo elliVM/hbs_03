@@ -65,6 +65,7 @@ import java.sql.Date;
 import java.sql.DriverManager;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Disabled("Requires local MariaDB and HBase")
 public final class ReplicateDateRangeTest {
 
     final Configuration config = HBaseConfiguration.create();
@@ -99,7 +100,6 @@ public final class ReplicateDateRangeTest {
     }
 
     @Test
-    @Disabled("Requires local MariaDB and HBase")
     public void testRange() {
         final DatabaseClient sqlClient = new DatabaseClient(ctx, connection, 5000);
         final Date start = Date.valueOf("2015-1-1");

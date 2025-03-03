@@ -4,7 +4,7 @@
     <packaging>rpm</packaging>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>hbs_03</artifactId>
-    <version>${revision}${sha1}${changelist}.${env.TARGET_OS}.x86_64</version>
+    <version>${revision}${sha1}${changelist}</version>
     <name>hbs_03</name>
     <description>Teragrep Metadata Using HBase</description>
     <groupId>com.teragrep</groupId>
@@ -63,7 +63,7 @@
                         <defineStatement>__requires_exclude ^osgi\\(.*$</defineStatement>
                     </defineStatements>
                     <mappings>
-                        <!-- executable jar -->
+                        <!-- executable JAR -->
                         <mapping>
                             <directory>/opt/teragrep/${project.artifactId}/lib</directory>
                             <directoryIncluded>true</directoryIncluded>
@@ -78,7 +78,7 @@
                                 </source>
                             </sources>
                         </mapping>
-                        <!-- system service file -->
+                        <!-- service file -->
                         <mapping>
                             <directory>/usr/lib/systemd/system</directory>
                             <directoryIncluded>false</directoryIncluded>
@@ -91,9 +91,9 @@
                                 </source>
                             </sources>
                         </mapping>
-                        <!-- system service environment file -->
+                        <!-- service configuration file -->
                         <mapping>
-                            <directory>/etc/sysconfig/hbs_03</directory>
+                            <directory>/etc/sysconfig/</directory>
                             <directoryIncluded>false</directoryIncluded>
                             <filemode>755</filemode>
                             <dirmode>755</dirmode>
@@ -140,9 +140,9 @@
                             <skipMain>true</skipMain>
                             <!-- required for configuration tag-->
                             <basedir/>
-                            <buildDirectory/>
                             <outputDirectory/>
                             <projectArtifact/>
+                            <mojoStatusPath/>
                         </configuration>
                     </execution>
                 </executions>

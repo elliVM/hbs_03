@@ -76,6 +76,10 @@ import static com.teragrep.hbs_03.jooq.generated.journaldb.Journaldb.JOURNALDB;
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@EnabledIfSystemProperty(
+        named = "runContainerTests",
+        matches = "true"
+)
 public final class DestinationTableDayQueryTest {
 
     @Container
@@ -85,10 +89,6 @@ public final class DestinationTableDayQueryTest {
             .withRenderMapping(new RenderMapping().withSchemata(new MappedSchema().withInput("streamdb").withOutput("streamdb"), new MappedSchema().withInput("journaldb").withOutput("journaldb"), new MappedSchema().withInput("bloomdb").withOutput("bloomdb")));
 
     @BeforeAll
-    @EnabledIfSystemProperty(
-            named = "runContainerTests",
-            matches = "true"
-    )
     public void setup() {
 
         mariadb = Assertions
@@ -107,10 +107,6 @@ public final class DestinationTableDayQueryTest {
     }
 
     @AfterAll
-    @EnabledIfSystemProperty(
-            named = "runContainerTests",
-            matches = "true"
-    )
     public void tearDown() {
         mariadb.stop();
     }

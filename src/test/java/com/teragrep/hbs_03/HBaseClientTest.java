@@ -59,6 +59,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Disabled("Local hbase only")
 public final class HBaseClientTest {
 
     final Configuration config = HBaseConfiguration.create();
@@ -82,7 +83,6 @@ public final class HBaseClientTest {
     }
 
     @Test
-    @Disabled("Local hbase only")
     public void testConfiguredConnection() {
         client.destinationTable().create();
         Assertions.assertDoesNotThrow(() -> {

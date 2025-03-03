@@ -160,7 +160,6 @@
   </dependencies>
   <build>
     <directory>${project.basedir}/target</directory>
-    <finalName>hbs_03</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

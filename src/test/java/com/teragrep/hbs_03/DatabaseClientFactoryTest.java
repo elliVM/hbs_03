@@ -64,16 +64,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@EnabledIfSystemProperty(
+        named = "runContainerTests",
+        matches = "true"
+)
 public final class DatabaseClientFactoryTest {
 
     @Container
     private MariaDBContainer<?> mariadb;
 
     @BeforeAll
-    @EnabledIfSystemProperty(
-            named = "runContainerTests",
-            matches = "true"
-    )
     public void setup() {
         mariadb = Assertions
                 .assertDoesNotThrow(() -> new MariaDBContainer<>(DockerImageName.parse("mariadb:10.5")).withPrivilegedMode(false).withUsername("user").withPassword("password").withDatabaseName("journaldb"));
@@ -81,10 +81,6 @@ public final class DatabaseClientFactoryTest {
     }
 
     @AfterAll
-    @EnabledIfSystemProperty(
-            named = "runContainerTests",
-            matches = "true"
-    )
     public void tearDown() {
         mariadb.stop();
     }
@@ -126,10 +122,6 @@ public final class DatabaseClientFactoryTest {
     }
 
     @Test
-    @EnabledIfSystemProperty(
-            named = "runContainerTests",
-            matches = "true"
-    )
     public void testValid() {
         Properties props = new Properties();
         props.setProperty("hbs.db.url", mariadb.getJdbcUrl());
