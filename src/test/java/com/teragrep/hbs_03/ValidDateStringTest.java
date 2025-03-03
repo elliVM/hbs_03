@@ -63,9 +63,26 @@ public class ValidDateStringTest {
 
     @Test
     public void testInvalidFormat() {
-        final ValidDateString date = new ValidDateString("2010-41-01");
+        final ValidDateString date = new ValidDateString("2010.30.01");
         final HbsRuntimeException ex = assertThrows(HbsRuntimeException.class, date::date);
-        System.out.println(ex.getMessage());
+        final String expectedMessage = "Invalid date format <2010.30.01> Expected format YYYY-MM-DD (caused by: IllegalArgumentException: Invalid date format)";
+        Assertions.assertEquals(expectedMessage, ex.getMessage());
+    }
+
+    @Test
+    public void testInvalidDay() {
+        final ValidDateString date = new ValidDateString("2010-01-33");
+        final HbsRuntimeException ex = assertThrows(HbsRuntimeException.class, date::date);
+        final String expectedMessage = "Invalid date format <2010-01-33> Expected format YYYY-MM-DD (caused by: IllegalArgumentException: Invalid date format)";
+        Assertions.assertEquals(expectedMessage, ex.getMessage());
+    }
+
+    @Test
+    public void testInvalidMonth() {
+        final ValidDateString date = new ValidDateString("2010-13-10");
+        final HbsRuntimeException ex = assertThrows(HbsRuntimeException.class, date::date);
+        final String expectedMessage = "Invalid date format <2010-13-10> Expected format YYYY-MM-DD (caused by: IllegalArgumentException: Invalid date format)";
+        Assertions.assertEquals(expectedMessage, ex.getMessage());
     }
 
     @Test
