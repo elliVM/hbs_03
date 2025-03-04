@@ -45,66 +45,69 @@
  */
 package com.teragrep.hbs_03;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.jooq.DSLContext;
-import org.jooq.SQLDialect;
-import org.jooq.conf.MappedSchema;
-import org.jooq.conf.RenderMapping;
-import org.jooq.conf.Settings;
-import org.jooq.impl.DSL;
+import com.teragrep.cnf_01.Configuration;
+import com.teragrep.cnf_01.PropertiesConfiguration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.testcontainers.containers.MariaDBContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
-import java.sql.Connection;
 import java.sql.Date;
-import java.sql.DriverManager;
+import java.time.LocalDate;
+import java.util.Properties;
 
+@Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @EnabledIfSystemProperty(
         named = "runContainerTests",
         matches = "true"
 )
-public final class ReplicateDateRangeTest {
+public class ReplicateDateRangeFactoryTest {
 
-    final Configuration config = HBaseConfiguration.create();
-    final String testTableName = "replication_range_test";
-    final String username = "streamdb";
-    final String password = "streamdb_pass";
-    final String url = "jdbc:mariadb://192.168.49.2:30601/archiver_journal_tyrael";
-    final Settings settings = new Settings()
-            .withRenderMapping(new RenderMapping().withSchemata(new MappedSchema().withInput("streamdb").withOutput("archiver_streamdb_tyrael"), new MappedSchema().withInput("journaldb").withOutput("archiver_journal_tyrael"), new MappedSchema().withInput("bloomdb").withOutput("bloomdb")));
-    final Connection connection = Assertions
-            .assertDoesNotThrow(() -> DriverManager.getConnection(url, username, password));
-    final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
+    @Container
+    private MariaDBContainer<?> mariadb;
 
     @BeforeAll
     public void setup() {
-        config.set("hbase.zookeeper.quorum", "localhost");
-        config.set("hbase.zookeeper.property.clientPort", "2181");
+        mariadb = Assertions
+                .assertDoesNotThrow(() -> new MariaDBContainer<>(DockerImageName.parse("mariadb:10.5")).withPrivilegedMode(false).withUsername("user").withPassword("password").withDatabaseName("journaldb"));
+        mariadb.start();
     }
 
     @AfterAll
     public void tearDown() {
-        Assertions.assertDoesNotThrow(() -> new HBaseClient(config, testTableName).close());
+        mariadb.stop();
     }
 
     @Test
-    public void testHadoopConfig() {
-        System.out.println(config);
+    public void testCorrectDates() {
+        Properties props = new Properties();
+        props.setProperty("hbs.start", "2010-02-03");
+        props.setProperty("hbs.end", "2020-02-03");
+        props.setProperty("hbs.db.url", mariadb.getJdbcUrl());
+        props.setProperty("hbs.db.username", mariadb.getUsername());
+        props.setProperty("hbs.db.password", mariadb.getPassword());
+        Configuration config = new PropertiesConfiguration(props);
+        ReplicateDateRange replicateRange = new ReplicateDateRangeFactory(config).object();
+        Assertions.assertEquals(Date.valueOf("2010-02-03"), replicateRange.startDate());
+        Assertions.assertEquals(Date.valueOf("2020-02-03"), replicateRange.endDate());
     }
 
     @Test
-    public void testRange() {
-        final HBaseClient client = new HBaseClient(config, "replication_range_test");
-        final DatabaseClient sqlClient = new DatabaseClient(ctx, connection, 5000);
-        final Date start = Date.valueOf("2015-1-1");
-        final Date end = Date.valueOf("2030-1-1");
-        final ReplicateDateRange replicateDateRange = new ReplicateDateRange(start, end, sqlClient, client);
-        replicateDateRange.start();
+    public void testDefaultDates() {
+        Properties props = new Properties();
+        props.setProperty("hbs.db.url", mariadb.getJdbcUrl());
+        props.setProperty("hbs.db.username", mariadb.getUsername());
+        props.setProperty("hbs.db.password", mariadb.getPassword());
+        Configuration config = new PropertiesConfiguration(props);
+        ReplicateDateRange replicateRange = new ReplicateDateRangeFactory(config).object();
+        Assertions.assertEquals(Date.valueOf(LocalDate.now().minusDays(1)), replicateRange.startDate());
+        Assertions.assertEquals(Date.valueOf(LocalDate.now()), replicateRange.endDate());
     }
 }

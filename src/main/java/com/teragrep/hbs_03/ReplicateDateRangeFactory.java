@@ -72,38 +72,18 @@ public final class ReplicateDateRangeFactory implements Factory<ReplicateDateRan
 
     @Override
     public ReplicateDateRange object() {
-        final Date start;
-        final Date end;
-        final DatabaseClient databaseClient = new DatabaseClientFactory(config).object();
-        final HBaseClient hbaseClient = new HBaseClientFactory(config).object();
-
+        final Map<String, String> map;
         try {
-            final Map<String, String> map = config.asMap();
-
-            // start date
-            if (map.containsKey(prefix + "hbs.start")) {
-                start = new ValidDateString(map.get(prefix + "hbs.start")).date();
-            }
-            else {
-                // default local date - 1 day
-                start = Date.valueOf(LocalDate.now().minusDays(1));
-                LOGGER.info("Using default start date <{}>", start);
-            }
-
-            // end date
-            if (map.containsKey(prefix + "hbs.end")) {
-                end = new ValidDateString(map.get("hbs.end")).date();
-            }
-            else {
-                // default local date
-                end = Date.valueOf(LocalDate.now());
-                LOGGER.info("Using default end date <{}>", end);
-            }
-
+            map = config.asMap();
         }
         catch (final ConfigurationException e) {
             throw new HbsRuntimeException("Error getting migration configuration", e);
         }
+
+        final Date start = new StartDateFromMap(map, prefix + "start").value();
+        final Date end = new EndDateFromMap(map, prefix + "end").value();
+        final DatabaseClient databaseClient = new DatabaseClientFactory(config).object();
+        final HBaseClient hbaseClient = new HBaseClientFactory(config).object();
 
         return new ReplicateDateRange(start, end, databaseClient, hbaseClient);
     }

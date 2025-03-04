@@ -95,6 +95,19 @@ public final class ReplicateDateRange implements AutoCloseable {
         LOGGER.info("Replication took <{}>ms", (endTime - startTime) / 1000000);
     }
 
+    public Date startDate() {
+        return start;
+    }
+
+    public Date endDate() {
+        return end;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("ReplicateDateRange from %s to %s", start, end);
+    }
+
     @Override
     public void close() {
         LOGGER.info("Closing clients");

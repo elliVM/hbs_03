@@ -53,8 +53,8 @@
                     <group>teragrep/LogManagementSuite</group>
                     <description>${project.groupId}-${project.artifactId}</description>
                     <needarch>true</needarch>
-                    <defaultUsername>srv-relp</defaultUsername>
-                    <defaultGroupname>srv-relp</defaultGroupname>
+                    <defaultUsername>srv-hbs03</defaultUsername>
+                    <defaultGroupname>srv-hbs03</defaultGroupname>
                     <defaultFilemode>0644</defaultFilemode>
                     <defaultDirmode>0755</defaultDirmode>
                     <defineStatements>
@@ -65,7 +65,7 @@
                     <mappings>
                         <!-- executable JAR -->
                         <mapping>
-                            <directory>/opt/teragrep/${project.artifactId}/lib</directory>
+                            <directory>/opt/teragrep/${artifactId}/lib</directory>
                             <directoryIncluded>true</directoryIncluded>
                             <filemode>755</filemode>
                             <dirmode>755</dirmode>
@@ -86,7 +86,7 @@
                             <groupname>root</groupname>
                             <sources>
                                 <source>
-                                    <location>${project.basedir}/../src/main/resources/hbs_03.service
+                                    <location>${project.basedir}/../src/main/resources/hbs03.service
                                     </location>
                                 </source>
                             </sources>
@@ -99,7 +99,7 @@
                             <dirmode>755</dirmode>
                             <sources>
                                 <source>
-                                    <location>${project.basedir}/../src/main/resources/hbs_03
+                                    <location>${project.basedir}/../src/main/resources/hbs03
                                     </location>
                                 </source>
                             </sources>
@@ -110,8 +110,8 @@
                     </requires>
                     <preinstallScriptlet>
                         <script>
-                            getent group srv-relp > /dev/null || groupadd -r srv-relp;
-                            getent passwd srv-relp > /dev/null || useradd -r -g srv-relp -d
+                            getent group srv-hbs03 > /dev/null || groupadd -r srv-hbs03;
+                            getent passwd srv-hbs03 > /dev/null || useradd -r -g srv-hbs03 -d
                             /opt/teragrep/${project.artifactId}/var -s /sbin/nologin -c "Service User" srv-relp;
                             exit 0;
                         </script>
