@@ -83,6 +83,7 @@ public final class HBaseConfiguration {
         return hbaseConfigFromMap(map);
     }
 
+    // warning caused by logger guard
     @SuppressWarnings("checkstyle:NestedIfDepth")
     private org.apache.hadoop.conf.Configuration hbaseConfigFromMap(final Map<String, String> map) {
 
@@ -99,14 +100,14 @@ public final class HBaseConfiguration {
             if (key.matches(filePrefix)) { // from file
                 final Path path = Paths.get(value);
                 if (!Files.exists(path)) {
-                    LOGGER.warn("Found no file in given path <{}>, no options were set", value);
+                    LOGGER.warn("Found no file in given path <[{}]>, no options were set", value);
                     throw new HbsRuntimeException(
                             "Could not find a file in given file path",
                             new MalformedURLException("No file in path")
                     );
                 }
                 else {
-                    LOGGER.info("Loading options from file in path=<{}>", value);
+                    LOGGER.info("Loading options from file in path=<[{}}>", value);
                     try {
                         // checks the file system, not the class path
                         hbaseConfig.addResource(path.toAbsolutePath().toUri().toURL());
@@ -122,7 +123,7 @@ public final class HBaseConfiguration {
                     if (LOGGER.isInfoEnabled()) {
                         LOGGER
                                 .info(
-                                        "Replacing set option <{}>=<{}> with new value <{}>", hbaseOption,
+                                        "Replacing set option <[{}]>=<[{}]> with new value <{}>", hbaseOption,
                                         hbaseConfig.get(hbaseOption), value
                                 );
                     }
@@ -131,6 +132,9 @@ public final class HBaseConfiguration {
                     LOGGER.info("Set HBase configuration option: <{}>=<{}>", hbaseOption, value);
                 }
                 hbaseConfig.set(hbaseOption, value);
+            }
+            else {
+                LOGGER.debug("HbaseConfiguration skipped unrecognized hadoop option <[{}]>=<[{}]>", key, value);
             }
         }
 

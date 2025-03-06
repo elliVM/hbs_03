@@ -111,9 +111,7 @@
                     <preinstallScriptlet>
                         <script>
                             getent group srv-hbs03 > /dev/null || groupadd -r srv-hbs03;
-                            getent passwd srv-hbs03 > /dev/null || useradd -r -g srv-hbs03 -d
-                            /opt/teragrep/${project.artifactId}/var -s /sbin/nologin -c "Service User" srv-relp;
-                            exit 0;
+                            getent passwd srv-hbs03 > /dev/null || useradd -r -g srv-hbs03 -d /opt/teragrep/${project.artifactId}/var -s /sbin/nologin -c "Service User" srv-hbs03;
                         </script>
                     </preinstallScriptlet>
                 </configuration>

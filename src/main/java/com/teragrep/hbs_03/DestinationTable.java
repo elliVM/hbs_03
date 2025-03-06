@@ -68,7 +68,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /**
- * HBase table that is the destination of the migration data
+ * HBase table that is the destination of the migration data. Has two column families: META that contains teragrep
+ * metadata and BLOOM that contains bloomfilter data generated for the metadata.
  */
 public final class DestinationTable implements HBaseTable {
 

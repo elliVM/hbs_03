@@ -34,6 +34,8 @@ See the official documentation on https://docs.teragrep.com[docs.teragrep.com].
 Expects that you have a running instance of MySQL or MariaDB and
 HBase the project can connect to.
 
+Maven RPM (Red Hat Package Manager) packaging expects command line tool (rpm) to be installed
+
 MariaDB is expected to have the Teragrep metadata schema.
 Configured database user should have select permissions on journaldb, streamdb, bloomdb.
 

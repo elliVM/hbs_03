@@ -56,7 +56,7 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Represents a row for logfile table meta-column family */
+/** Represents a row for meta-column family */
 public final class MetaRow implements Row {
 
     private final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record;

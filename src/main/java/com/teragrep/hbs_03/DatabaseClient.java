@@ -50,6 +50,9 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Record21;
 import org.jooq.Result;
+import org.jooq.SQLDialect;
+import org.jooq.conf.Settings;
+import org.jooq.impl.DSL;
 import org.jooq.types.UInteger;
 import org.jooq.types.ULong;
 import org.slf4j.Logger;
@@ -69,6 +72,14 @@ public final class DatabaseClient implements AutoCloseable {
     private final DSLContext ctx;
     private final Connection connection;
     private final int fetchSize;
+
+    public DatabaseClient(final Connection conn, final Settings settings) {
+        this(DSL.using(conn, SQLDialect.MYSQL, settings), conn);
+    }
+
+    public DatabaseClient(final Connection conn, final Settings settings, final int fetchSize) {
+        this(DSL.using(conn, SQLDialect.MYSQL, settings), conn, fetchSize);
+    }
 
     public DatabaseClient(final DSLContext ctx, final Connection connection) {
         this(ctx, connection, 5000);

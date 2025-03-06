@@ -45,42 +45,29 @@
  */
 package com.teragrep.hbs_03;
 
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.cnf_01.PropertiesConfiguration;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.jooq.conf.MappedSchema;
+import org.jooq.conf.RenderMapping;
+import org.jooq.conf.Settings;
 
-import java.sql.Date;
-import java.time.LocalDate;
 import java.util.Map;
-import java.util.Properties;
 
-public final class EndDateFromMapTest {
+public class DatabaseSettingsFromMap implements OptionValue<Settings> {
 
-    @Test
-    public void testDate() {
-        final Properties props = new Properties();
-        props.setProperty("hbs.db.url", "url");
-        props.setProperty("hbs.db.username", "username");
-        props.setProperty("hbs.db.password", "password");
-        props.put("hbs.migration.end", "2010-01-01");
-        final Configuration config = new PropertiesConfiguration(props);
-        final Map<String, String> map = Assertions.assertDoesNotThrow(config::asMap);
-        final EndDateFromMap endDateFromMap = new EndDateFromMap(map, "hbs.migration.end");
-        final Date endDate = endDateFromMap.value();
-        Assertions.assertEquals(Date.valueOf("2010-01-01"), endDate);
+    private final Map<String, String> map;
+    private final String prefix;
+
+    public DatabaseSettingsFromMap(final Map<String, String> map, final String prefix) {
+        this.map = map;
+        this.prefix = prefix;
     }
 
-    @Test
-    public void testDefaultDate() {
-        final Properties props = new Properties();
-        props.setProperty("hbs.db.url", "url");
-        props.setProperty("hbs.db.username", "username");
-        props.setProperty("hbs.db.password", "password");
-        final Configuration config = new PropertiesConfiguration(props);
-        final Map<String, String> map = Assertions.assertDoesNotThrow(config::asMap);
-        final EndDateFromMap endDateFromMap = new EndDateFromMap(map, "hbs.migration.end");
-        final Date endDate = endDateFromMap.value();
-        Assertions.assertEquals(Date.valueOf(LocalDate.now()), endDate);
+    @Override
+    public Settings value() {
+        final String journaldbName = map.getOrDefault(prefix + "journaldb.name", "journaldb");
+        final String streamdbName = map.getOrDefault(prefix + "streamdb.name", "streamdb");
+        final String bloomdbName = map.getOrDefault(prefix + "bloomdb.name", "bloomdb");
+
+        return new Settings()
+                .withRenderMapping(new RenderMapping().withSchemata(new MappedSchema().withInput("streamdb").withOutput(streamdbName), new MappedSchema().withInput("journaldb").withOutput(journaldbName), new MappedSchema().withInput("bloomdb").withOutput(bloomdbName)));
     }
 }

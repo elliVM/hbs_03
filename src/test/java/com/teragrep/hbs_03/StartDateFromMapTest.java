@@ -55,7 +55,7 @@ import java.time.LocalDate;
 import java.util.Map;
 import java.util.Properties;
 
-public final class EndDateFromMapTest {
+public final class StartDateFromMapTest {
 
     @Test
     public void testDate() {
@@ -63,10 +63,10 @@ public final class EndDateFromMapTest {
         props.setProperty("hbs.db.url", "url");
         props.setProperty("hbs.db.username", "username");
         props.setProperty("hbs.db.password", "password");
-        props.put("hbs.migration.end", "2010-01-01");
+        props.put("hbs.migration.start", "2010-01-01");
         final Configuration config = new PropertiesConfiguration(props);
         final Map<String, String> map = Assertions.assertDoesNotThrow(config::asMap);
-        final EndDateFromMap endDateFromMap = new EndDateFromMap(map, "hbs.migration.end");
+        final StartDateFromMap endDateFromMap = new StartDateFromMap(map, "hbs.migration.start");
         final Date endDate = endDateFromMap.value();
         Assertions.assertEquals(Date.valueOf("2010-01-01"), endDate);
     }
@@ -79,8 +79,8 @@ public final class EndDateFromMapTest {
         props.setProperty("hbs.db.password", "password");
         final Configuration config = new PropertiesConfiguration(props);
         final Map<String, String> map = Assertions.assertDoesNotThrow(config::asMap);
-        final EndDateFromMap endDateFromMap = new EndDateFromMap(map, "hbs.migration.end");
+        final StartDateFromMap endDateFromMap = new StartDateFromMap(map, "hbs.migration.end");
         final Date endDate = endDateFromMap.value();
-        Assertions.assertEquals(Date.valueOf(LocalDate.now()), endDate);
+        Assertions.assertEquals(Date.valueOf(LocalDate.now().minusDays(1)), endDate);
     }
 }
