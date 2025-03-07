@@ -77,7 +77,7 @@ public final class LogfileTableDayQuery {
     }
 
     public LogfileTableDayQuery(final DSLContext ctx, final String name, final Date day) {
-        this(ctx, name, LOGFILE.LOGDATE.eq(DSL.date(day)));
+        this(ctx, name, JOURNALDB.LOGFILE.LOGDATE.eq(DSL.date(day)));
     }
 
     public LogfileTableDayQuery(final DSLContext ctx, final String name, final Condition dateCondition) {

@@ -30,9 +30,9 @@
   <properties>
     <changelist>-SNAPSHOT</changelist>
     <cnf_01.version>1.3.1</cnf_01.version>
-    <hbase.verion>2.6.1</hbase.verion>
+    <hbase.version>2.6.1</hbase.version>
     <java.version>11</java.version>
-    <jooq.verion>3.14.8</jooq.verion>
+    <jooq.version>3.14.8</jooq.version>
     <junit.version>5.10.2</junit.version>
     <main.class>com.teragrep.hbs_03.TeragrepMetadataReplication</main.class>
     <maven.compiler.source>11</maven.compiler.source>
@@ -57,12 +57,12 @@
     <dependency>
       <groupId>org.jooq</groupId>
       <artifactId>jooq-codegen</artifactId>
-      <version>${jooq.verion}</version>
+      <version>${jooq.version}</version>
     </dependency>
     <dependency>
       <groupId>org.jooq</groupId>
       <artifactId>jooq</artifactId>
-      <version>${jooq.verion}</version>
+      <version>${jooq.version}</version>
     </dependency>
     <!-- unsigned data types support -->
     <dependency>
@@ -79,19 +79,19 @@
     <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase-client</artifactId>
-      <version>${hbase.verion}</version>
+      <version>${hbase.version}</version>
     </dependency>
     <!-- HBase testing -->
     <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase-testing-util</artifactId>
-      <version>${hbase.verion}</version>
+      <version>${hbase.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase-server</artifactId>
-      <version>${hbase.verion}</version>
+      <version>${hbase.version}</version>
       <scope>test</scope>
     </dependency>
     <!-- avoid dynamic versioning by hbase-server -->

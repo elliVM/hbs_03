@@ -115,6 +115,19 @@ public class ValidDatabaseClientOptionsMapTest {
     }
 
     @Test
+    public void testJournalDBName() {
+        final Properties props = new Properties();
+        props.setProperty(prefix + "password", "password");
+        props.setProperty(prefix + "url", "url");
+        props.setProperty(prefix + "username", "username");
+        props.setProperty(prefix + "journaldb.name", "jornl");
+        final Configuration propertiesConfiguration = new PropertiesConfiguration(props);
+        final Map<String, String> map = Assertions.assertDoesNotThrow(propertiesConfiguration::asMap);
+        final ValidDatabaseClientOptionsMap valid = new ValidDatabaseClientOptionsMap(map, prefix);
+        Assertions.assertDoesNotThrow(valid::value);
+    }
+
+    @Test
     public void testJournalDBNameEmpty() {
         final Properties props = new Properties();
         props.setProperty(prefix + "password", "password");

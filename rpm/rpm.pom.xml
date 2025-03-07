@@ -94,6 +94,7 @@
                         <!-- service configuration file -->
                         <mapping>
                             <directory>/etc/sysconfig/</directory>
+                            <configuration>noreplace</configuration>
                             <directoryIncluded>false</directoryIncluded>
                             <filemode>755</filemode>
                             <dirmode>755</dirmode>

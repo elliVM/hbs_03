@@ -3,6 +3,7 @@
 /.vscode/
 /.idea/
 /*.iml
+/rpm/target
 /.classpath
 /.factorypath
 /.flattened-pom.xml

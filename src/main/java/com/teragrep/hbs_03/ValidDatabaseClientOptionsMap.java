@@ -95,7 +95,7 @@ public final class ValidDatabaseClientOptionsMap implements OptionValue<Map<Stri
         if (map.containsKey(streamdbNameKey) && map.get(streamdbNameKey).isEmpty()) {
             throw new IllegalArgumentException("<[" + streamdbNameKey + "]> was empty");
         }
-        else {
+        else if (!map.containsKey(streamdbNameKey)) {
             LOGGER.info("No <{}> option. Using default streamdb name <streamdb>", streamdbNameKey);
         }
 
@@ -103,7 +103,7 @@ public final class ValidDatabaseClientOptionsMap implements OptionValue<Map<Stri
         if (map.containsKey(journaldbNameKey) && map.get(journaldbNameKey).isEmpty()) {
             throw new IllegalArgumentException("<[" + journaldbNameKey + "]> was empty");
         }
-        else {
+        else if (!map.containsKey(journaldbNameKey)) {
             LOGGER.info("No <{}> option. Using default journaldb name <journaldb>", journaldbNameKey);
         }
 
@@ -111,7 +111,7 @@ public final class ValidDatabaseClientOptionsMap implements OptionValue<Map<Stri
         if (map.containsKey(bloomdbNameKey) && map.get(bloomdbNameKey).isEmpty()) {
             throw new IllegalArgumentException("<[" + bloomdbNameKey + "]> was empty");
         }
-        else {
+        else if (!map.containsKey(bloomdbNameKey)) {
             LOGGER.info("No <{}> option. Using default bloomdb name <bloomdb>", bloomdbNameKey);
         }
     }
