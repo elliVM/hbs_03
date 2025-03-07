@@ -59,7 +59,6 @@ import org.slf4j.LoggerFactory;
 import java.sql.Date;
 
 import static com.teragrep.hbs_03.jooq.generated.journaldb.Journaldb.JOURNALDB;
-import static com.teragrep.hbs_03.jooq.generated.journaldb.Tables.LOGFILE;
 
 /**
  * Queries logfile.id columns from the logfile table by date
