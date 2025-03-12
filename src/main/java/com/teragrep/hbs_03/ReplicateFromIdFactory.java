@@ -50,8 +50,6 @@ import org.jooq.types.ULong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-
 public final class ReplicateFromIdFactory implements Factory<ReplicateFromId> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReplicateFromIdFactory.class);
