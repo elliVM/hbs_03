@@ -64,7 +64,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /**
@@ -74,6 +73,7 @@ import java.util.stream.Collectors;
 public final class DestinationTable implements HBaseTable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DestinationTable.class);
+
     private final Connection connection;
     private final DestinationTableDescription tableDescriptor;
     private final TableName name;
@@ -125,9 +125,14 @@ public final class DestinationTable implements HBaseTable {
 
     public void create() {
         try (final Admin admin = connection.getAdmin()) {
-            final TableDescriptor descriptor = tableDescriptor.description();
-            admin.createTable(descriptor);
-            LOGGER.debug("Created <{}> table to HBase", name);
+            if (!admin.tableExists(name)) {
+                final TableDescriptor descriptor = tableDescriptor.description();
+                admin.createTable(descriptor);
+                LOGGER.debug("Created <{}> table to HBase", name);
+            }
+            else {
+                LOGGER.debug("Table <{}> already exists, skipping creation", name);
+            }
         }
         catch (final MasterNotRunningException e) {
             throw new HbsRuntimeException("Master was not running", e);
@@ -140,21 +145,7 @@ public final class DestinationTable implements HBaseTable {
         }
     }
 
-    public void createIfNotExists() {
-        try (final Admin admin = connection.getAdmin()) {
-            if (!admin.tableExists(name)) {
-                create();
-            }
-            else {
-                LOGGER.debug("Table <{}> already exists, skipping creation", name);
-            }
-        }
-        catch (IOException e) {
-            throw new HbsRuntimeException("Error creating logfile table", e);
-        }
-    }
-
-    public void delete() {
+    public void drop() {
         try (final Admin admin = connection.getAdmin()) {
             if (admin.tableExists(name)) {
                 if (!admin.isTableDisabled(name)) {
@@ -201,28 +192,33 @@ public final class DestinationTable implements HBaseTable {
         return 1L;
     }
 
-    public long putAll(final List<Row> rows) {
-        final AtomicLong successfulInserts = new AtomicLong(0); // mutate() is asynchronous
+    public void putAll(final List<Row> rows) {
+
+        if (rows.size() == 1) {
+            put(rows.get(0).put());
+        }
+
         final BufferedMutatorParams params = mutator.paramsForRows(rows);
+
         try (final BufferedMutator mutator = connection.getBufferedMutator(params)) {
+
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Putting <{}> objects", rows.size());
             }
+
             try {
                 final List<Put> putList = rows.stream().map(Row::put).collect(Collectors.toList());
                 mutator.mutate(putList);
-                successfulInserts.addAndGet(rows.size());
                 mutator.flush();
             }
             catch (final IOException e) {
                 LOGGER.error("Error executing mutator <{}>", mutator);
                 throw new HbsRuntimeException("Error executing mutator", e);
             }
+
         }
         catch (final IOException e) {
             throw new HbsRuntimeException("Error creating BufferedMutator", e);
         }
-
-        return successfulInserts.get();
     }
 }

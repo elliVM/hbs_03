@@ -78,8 +78,8 @@ public final class MetaRowTest {
         );
         final String expected = "RowKey(streamId=<1001>, logtime=1285880400000, logfileId=1)\n"
                 + " bytes=<[00 00 00 00 00 00 03 e9 23 00 00 01 2b 64 71 c8 80 23 00 00 00 00 00 00 00 01]>";
-        final String rowKey = row.id();
-        Assertions.assertEquals(expected, rowKey);
+        Binary rowKey = row.rowKey();
+        Assertions.assertEquals(expected, rowKey.toString());
     }
 
     @Test

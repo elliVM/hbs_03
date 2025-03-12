@@ -45,53 +45,37 @@
  */
 package com.teragrep.hbs_03;
 
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.cnf_01.ConfigurationException;
-import org.jooq.conf.Settings;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Map;
+public class LastIdReadFromFileTest {
 
-public final class DatabaseClientFactory implements Factory<DatabaseClient> {
-
-    private final Configuration config;
-    private final String prefix;
-
-    public DatabaseClientFactory(final Configuration config) {
-        this(config, "hbs.db.");
+    @Test
+    public void testLastId() {
+        final String path = "src/test/resources/last_id_test.txt";
+        final LastIdReadFromFile lastIdReadFromFile = new LastIdReadFromFile(path);
+        final long readLastId = Assertions.assertDoesNotThrow(lastIdReadFromFile::read);
+        Assertions.assertEquals(10L, readLastId);
     }
 
-    public DatabaseClientFactory(final Configuration config, final String prefix) {
-        this.config = config;
-        this.prefix = prefix;
+    @Test
+    public void testWrongPath() {
+        final String path = "src/test/resources/not_exists";
+        final LastIdReadFromFile lastIdReadFromFile = new LastIdReadFromFile(path);
+        HbsRuntimeException hbsRuntimeException = Assertions
+                .assertThrows(HbsRuntimeException.class, lastIdReadFromFile::read);
+        final String expectedMessage = "Could not find file (caused by: FileNotFoundException: src/test/resources/not_exists (No such file or directory))";
+        Assertions.assertEquals(expectedMessage, hbsRuntimeException.getMessage());
     }
 
-    public DatabaseClient object() {
-
-        final Map<String, String> map;
-        try {
-            map = new ValidDatabaseClientOptionsMap(config.asMap(), prefix).value();
-        }
-        catch (final ConfigurationException e) {
-            throw new HbsRuntimeException("Error getting configuration as map", e);
-        }
-
-        final String url = map.get(prefix + "url");
-        final String username = map.get(prefix + "username");
-        final String password = map.get(prefix + "password");
-        final int batchSize = Integer.parseInt(map.getOrDefault(prefix + "batch.size", "5000"));
-        final Settings databaseSettings = new DatabaseSettingsFromMap(map, prefix).value();
-
-        final Connection conn;
-        try {
-            conn = DriverManager.getConnection(url, username, password);
-        }
-        catch (final SQLException e) {
-            throw new HbsRuntimeException("Error creating database client", e);
-        }
-
-        return new DatabaseClient(conn, databaseSettings);
+    @Test
+    public void testInvalidValueInFile() {
+        final String path = "src/test/resources/invalid_id_format.txt";
+        final LastIdReadFromFile lastIdReadFromFile = new LastIdReadFromFile(path);
+        final HbsRuntimeException hbsRuntimeException = Assertions
+                .assertThrows(HbsRuntimeException.class, lastIdReadFromFile::read);
+        final String expectedMessage = "Error parsing file value to long (caused by: NumberFormatException: For input string: \"invalid\")";
+        Assertions.assertEquals(expectedMessage, hbsRuntimeException.getMessage());
     }
+
 }

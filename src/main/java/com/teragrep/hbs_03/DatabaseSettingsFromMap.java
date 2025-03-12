@@ -63,11 +63,16 @@ public class DatabaseSettingsFromMap implements OptionValue<Settings> {
 
     @Override
     public Settings value() {
+        final String executeLoggingValue = map.getOrDefault(prefix + "executeLogging", "false");
+        return new Settings().withRenderMapping(renderMapping()).withExecuteLogging("true".equals(executeLoggingValue));
+    }
+
+    private RenderMapping renderMapping() {
         final String journaldbName = map.getOrDefault(prefix + "journaldb.name", "journaldb");
         final String streamdbName = map.getOrDefault(prefix + "streamdb.name", "streamdb");
         final String bloomdbName = map.getOrDefault(prefix + "bloomdb.name", "bloomdb");
 
-        return new Settings()
-                .withRenderMapping(new RenderMapping().withSchemata(new MappedSchema().withInput("streamdb").withOutput(streamdbName), new MappedSchema().withInput("journaldb").withOutput(journaldbName), new MappedSchema().withInput("bloomdb").withOutput(bloomdbName)));
+        return new RenderMapping()
+                .withSchemata(new MappedSchema().withInput("streamdb").withOutput(streamdbName), new MappedSchema().withInput("journaldb").withOutput(journaldbName), new MappedSchema().withInput("bloomdb").withOutput(bloomdbName));
     }
 }

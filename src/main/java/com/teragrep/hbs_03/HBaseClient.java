@@ -71,10 +71,6 @@ public final class HBaseClient implements AutoCloseable {
         this(configuration, TableName.valueOf(name), false, 2.0, 1);
     }
 
-    public HBaseClient(final Configuration configuration, final String name, final int fixedThreadPoolCount) {
-        this(configuration, TableName.valueOf(name), false, 2.0, fixedThreadPoolCount);
-    }
-
     public HBaseClient(final Configuration configuration, final String name, final boolean useDynamicBufferSize) {
         this(configuration, TableName.valueOf(name), useDynamicBufferSize, 2.0, 1);
     }

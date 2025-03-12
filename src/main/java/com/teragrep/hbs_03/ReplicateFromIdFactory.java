@@ -46,52 +46,49 @@
 package com.teragrep.hbs_03;
 
 import com.teragrep.cnf_01.Configuration;
-import com.teragrep.cnf_01.ConfigurationException;
-import org.jooq.conf.Settings;
+import org.jooq.types.ULong;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Map;
+import java.io.IOException;
 
-public final class DatabaseClientFactory implements Factory<DatabaseClient> {
+public final class ReplicateFromIdFactory implements Factory<ReplicateFromId> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReplicateFromIdFactory.class);
 
     private final Configuration config;
     private final String prefix;
 
-    public DatabaseClientFactory(final Configuration config) {
-        this(config, "hbs.db.");
+    public ReplicateFromIdFactory(final Configuration config) {
+        this(config, "hbs.");
     }
 
-    public DatabaseClientFactory(final Configuration config, final String prefix) {
+    public ReplicateFromIdFactory(final Configuration config, final String prefix) {
         this.config = config;
         this.prefix = prefix;
     }
 
-    public DatabaseClient object() {
+    @Override
+    public ReplicateFromId object() {
 
-        final Map<String, String> map;
-        try {
-            map = new ValidDatabaseClientOptionsMap(config.asMap(), prefix).value();
-        }
-        catch (final ConfigurationException e) {
-            throw new HbsRuntimeException("Error getting configuration as map", e);
-        }
+        final DatabaseClient databaseClient = new DatabaseClientFactory(config, prefix + "db.").object();
+        final HBaseClient hbaseClient = new HBaseClientFactory(config, prefix + "hadoop.").object();
 
-        final String url = map.get(prefix + "url");
-        final String username = map.get(prefix + "username");
-        final String password = map.get(prefix + "password");
-        final int batchSize = Integer.parseInt(map.getOrDefault(prefix + "batch.size", "5000"));
-        final Settings databaseSettings = new DatabaseSettingsFromMap(map, prefix).value();
+        final long lastIdFromFile = new LastIdReadFromFile().read();
+        final long minIdInDatabase = databaseClient.firstAvailableId().longValue();
 
-        final Connection conn;
-        try {
-            conn = DriverManager.getConnection(url, username, password);
+        final long startId;
+        if (minIdInDatabase > lastIdFromFile) {
+            LOGGER.info("First available id value was larger than given start id");
+            startId = minIdInDatabase;
         }
-        catch (final SQLException e) {
-            throw new HbsRuntimeException("Error creating database client", e);
+        else {
+            startId = lastIdFromFile;
         }
 
-        return new DatabaseClient(conn, databaseSettings);
+        final ULong endId = databaseClient.lastId();
+
+        final LogfileIdStream logfileIdStream = new LogfileIdStream(startId, endId.longValue(), 10000);
+        return new ReplicateFromId(databaseClient, hbaseClient, logfileIdStream);
     }
 }

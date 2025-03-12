@@ -74,7 +74,7 @@ public final class HBaseClientTest {
 
     @AfterEach
     public void afterEach() {
-        client.destinationTable().delete();
+        client.destinationTable().drop();
     }
 
     @AfterAll

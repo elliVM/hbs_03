@@ -45,9 +45,11 @@
  */
 package com.teragrep.hbs_03;
 
+import java.io.IOException;
+
 /** Class to produce a configured immutable typed object */
 public interface Factory<T> {
 
-    public abstract T object();
+    public abstract T object() throws IOException;
 
 }

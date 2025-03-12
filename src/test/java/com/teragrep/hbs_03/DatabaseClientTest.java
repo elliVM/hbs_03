@@ -99,7 +99,7 @@ public final class DatabaseClientTest {
     }
 
     @Test
-    public void testInit() {
+    public void testDatabaseListGrants() {
         final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
         final DatabaseClient client = new DatabaseClient(ctx, connection);
         final List<String> result = client.grants();

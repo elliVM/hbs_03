@@ -45,53 +45,37 @@
  */
 package com.teragrep.hbs_03;
 
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.cnf_01.ConfigurationException;
-import org.jooq.conf.Settings;
+public final class BlockValid implements Block {
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Map;
+    private final Block origin;
 
-public final class DatabaseClientFactory implements Factory<DatabaseClient> {
-
-    private final Configuration config;
-    private final String prefix;
-
-    public DatabaseClientFactory(final Configuration config) {
-        this(config, "hbs.db.");
+    public BlockValid(final Block origin) {
+        this.origin = origin;
     }
 
-    public DatabaseClientFactory(final Configuration config, final String prefix) {
-        this.config = config;
-        this.prefix = prefix;
+    @Override
+    public long start() {
+        validate();
+        return origin.start();
     }
 
-    public DatabaseClient object() {
+    @Override
+    public long end() {
+        validate();
+        return origin.end();
+    }
 
-        final Map<String, String> map;
-        try {
-            map = new ValidDatabaseClientOptionsMap(config.asMap(), prefix).value();
-        }
-        catch (final ConfigurationException e) {
-            throw new HbsRuntimeException("Error getting configuration as map", e);
-        }
+    @Override
+    public boolean isStub() {
+        return false;
+    }
 
-        final String url = map.get(prefix + "url");
-        final String username = map.get(prefix + "username");
-        final String password = map.get(prefix + "password");
-        final int batchSize = Integer.parseInt(map.getOrDefault(prefix + "batch.size", "5000"));
-        final Settings databaseSettings = new DatabaseSettingsFromMap(map, prefix).value();
-
-        final Connection conn;
-        try {
-            conn = DriverManager.getConnection(url, username, password);
+    private void validate() {
+        if (origin.end() <= origin.start()) {
+            throw new HbsRuntimeException(
+                    "Error validating block",
+                    new IllegalStateException("end value was not after start value")
+            );
         }
-        catch (final SQLException e) {
-            throw new HbsRuntimeException("Error creating database client", e);
-        }
-
-        return new DatabaseClient(conn, databaseSettings);
     }
 }

@@ -45,53 +45,46 @@
  */
 package com.teragrep.hbs_03;
 
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.cnf_01.ConfigurationException;
-import org.jooq.conf.Settings;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Map;
+import static org.junit.jupiter.api.Assertions.*;
 
-public final class DatabaseClientFactory implements Factory<DatabaseClient> {
+public final class BlockPositiveValuesTest {
 
-    private final Configuration config;
-    private final String prefix;
-
-    public DatabaseClientFactory(final Configuration config) {
-        this(config, "hbs.db.");
+    @Test
+    public void testPositiveValues() {
+        final Block block = new BlockPositiveValues(new BlockImpl(3, 9));
+        Assertions.assertEquals(3, block.start());
+        Assertions.assertEquals(9, block.end());
     }
 
-    public DatabaseClientFactory(final Configuration config, final String prefix) {
-        this.config = config;
-        this.prefix = prefix;
+    @Test
+    public void testNotStub() {
+        final Block block = new BlockPositiveValues(new BlockImpl(3, 9));
+        Assertions.assertFalse(block.isStub());
     }
 
-    public DatabaseClient object() {
+    @Test
+    public void testNegativeStart() {
+        final Block block = new BlockPositiveValues(new BlockImpl(-1, 9));
+        final HbsRuntimeException exception = assertThrows(HbsRuntimeException.class, block::start);
+        final String expectedMessage = "Negative value (caused by: IllegalStateException: start value was negative: -1)";
+        Assertions.assertEquals(expectedMessage, exception.getMessage());
+    }
 
-        final Map<String, String> map;
-        try {
-            map = new ValidDatabaseClientOptionsMap(config.asMap(), prefix).value();
-        }
-        catch (final ConfigurationException e) {
-            throw new HbsRuntimeException("Error getting configuration as map", e);
-        }
+    @Test
+    public void testNegativeEnd() {
+        final Block block = new BlockPositiveValues(new BlockImpl(1, -1));
+        final HbsRuntimeException exception = assertThrows(HbsRuntimeException.class, block::start);
+        final String expectedMessage = "Negative value (caused by: IllegalStateException: end value was negative: -1)";
+        Assertions.assertEquals(expectedMessage, exception.getMessage());
+    }
 
-        final String url = map.get(prefix + "url");
-        final String username = map.get(prefix + "username");
-        final String password = map.get(prefix + "password");
-        final int batchSize = Integer.parseInt(map.getOrDefault(prefix + "batch.size", "5000"));
-        final Settings databaseSettings = new DatabaseSettingsFromMap(map, prefix).value();
-
-        final Connection conn;
-        try {
-            conn = DriverManager.getConnection(url, username, password);
-        }
-        catch (final SQLException e) {
-            throw new HbsRuntimeException("Error creating database client", e);
-        }
-
-        return new DatabaseClient(conn, databaseSettings);
+    @Test
+    public void testZero() {
+        final Block block = new BlockPositiveValues(new BlockImpl(0, 0));
+        Assertions.assertEquals(0, block.start());
+        Assertions.assertEquals(0, block.end());
     }
 }

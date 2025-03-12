@@ -45,25 +45,24 @@
  */
 package com.teragrep.hbs_03;
 
-import org.jooq.Cursor;
 import org.jooq.DSLContext;
 import org.jooq.Record;
-import org.jooq.Record21;
+import org.jooq.Record1;
 import org.jooq.Result;
 import org.jooq.SQLDialect;
+import org.jooq.SelectJoinStep;
+import org.jooq.SelectSelectStep;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
-import org.jooq.types.UInteger;
 import org.jooq.types.ULong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.List;
+
+import static com.teragrep.hbs_03.jooq.generated.journaldb.Journaldb.JOURNALDB;
 
 public final class DatabaseClient implements AutoCloseable {
 
@@ -71,78 +70,59 @@ public final class DatabaseClient implements AutoCloseable {
 
     private final DSLContext ctx;
     private final Connection connection;
-    private final int fetchSize;
 
     public DatabaseClient(final Connection conn, final Settings settings) {
         this(DSL.using(conn, SQLDialect.MYSQL, settings), conn);
     }
 
-    public DatabaseClient(final Connection conn, final Settings settings, final int fetchSize) {
-        this(DSL.using(conn, SQLDialect.MYSQL, settings), conn, fetchSize);
-    }
-
     public DatabaseClient(final DSLContext ctx, final Connection connection) {
-        this(ctx, connection, 5000);
-    }
-
-    public DatabaseClient(final DSLContext ctx, final Connection connection, final int fetchSize) {
         this.ctx = ctx;
         this.connection = connection;
-        this.fetchSize = fetchSize;
     }
 
-    public long replicateDate(final Date day, final HBaseTable destinationTable) {
-        final long start = System.nanoTime(); // logging
-
-        LOGGER.debug("replicateDate() called with day <{}> and batch size <{}>", day, fetchSize);
-
-        final LogfileTableFlatQuery logfileTableFlatQuery = new LogfileTableFlatQuery(ctx, day, fetchSize);
-        final List<Row> cursorBatchRowList = new ArrayList<>(fetchSize);
-
-        long totalQueriedRows = 0;
-        long totalInsertedRows = 0;
+    public ULong lastId() {
+        final ULong maxId;
         try (
-                final Cursor<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> cursor = logfileTableFlatQuery
-                        .asCursor()
+                final SelectSelectStep<Record1<ULong>> selectMaxOrDefaultStep = ctx
+                        .select(DSL.coalesce(DSL.max(JOURNALDB.LOGFILE.ID), DSL.val(ULong.valueOf(2L))));
+                final SelectJoinStep<Record1<ULong>> selectMaxOrDefaultFromStep = selectMaxOrDefaultStep
+                        .from(JOURNALDB.LOGFILE)
         ) {
-            while (cursor.hasNext()) {
-                final long batchStart = System.nanoTime(); // logging
+            maxId = selectMaxOrDefaultFromStep.fetchOneInto(ULong.class);
+        }
+        LOGGER.trace("MAX(LOGFILE.ID)=<{}>", maxId);
+        return maxId;
+    }
 
-                final Result<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> cursorBatch = cursor
-                        .fetchNext(fetchSize);
+    public ULong firstAvailableId() {
+        final ULong minIdLongValue;
+        try (
+                final SelectSelectStep<Record1<ULong>> selectMinOrZero = ctx
+                        .select(DSL.coalesce(DSL.min(JOURNALDB.LOGFILE.ID), DSL.val(ULong.valueOf(0L))));
+                final SelectJoinStep<Record1<ULong>> selectMinOrZeroFrom = selectMinOrZero.from(JOURNALDB.LOGFILE);
+        ) {
+            minIdLongValue = selectMinOrZeroFrom.fetchOneInto(ULong.class);
+        }
+        return minIdLongValue;
+    }
 
-                for (
-                    final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record : cursorBatch
-                ) {
-                    final Row row = new MetaRow(record);
-                    cursorBatchRowList.add(row);
-                }
+    public long replicateRangeAndReturnLastId(final Block block, final HBaseTable destinationTable) {
 
-                if (cursorBatchRowList.size() == 1) {
-                    totalInsertedRows += destinationTable.put(cursorBatchRowList.get(0).put());
-                }
-                else {
-                    totalInsertedRows += destinationTable.putAll(cursorBatchRowList);
-                }
-                totalQueriedRows += cursorBatchRowList.size();
-                cursorBatchRowList.clear();
+        final LogfileTableFlatQuery logfileTableFlatQuery = new LogfileTableFlatQuery(ctx, block.start(), block.end());
 
-                final long batchEnd = System.nanoTime(); // logging
-                LOGGER.debug("replicateDate() batch took <{}>ms", ((batchEnd - batchStart) / 1000000));
+        final List<Row> rowList = logfileTableFlatQuery.resultRowList();
+
+        destinationTable.putAll(rowList);
+
+        long maxIdInList = 0;
+        for (final Row row : rowList) {
+            final long rowIdValue = row.id().longValue();
+            if (rowIdValue > maxIdInList) {
+                maxIdInList = rowIdValue;
             }
         }
-        final long end = System.nanoTime(); // logging
-        LOGGER.debug("replicateDate() took <{}>ms", ((end - start) / 1000000));
 
-        if (totalQueriedRows != totalInsertedRows) {
-            LOGGER
-                    .error(
-                            "Miss matching size of extracted SQL rows <{}> and inserted HBase rows <{}>",
-                            totalQueriedRows, totalInsertedRows
-                    );
-        }
-
-        return totalInsertedRows;
+        return maxIdInList;
     }
 
     @Override

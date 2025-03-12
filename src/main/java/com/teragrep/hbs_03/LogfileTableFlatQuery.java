@@ -45,16 +45,24 @@
  */
 package com.teragrep.hbs_03;
 
-import org.jooq.Cursor;
 import org.jooq.DSLContext;
+import org.jooq.Explain;
 import org.jooq.Field;
+import org.jooq.Record1;
 import org.jooq.Record21;
+import org.jooq.Result;
+import org.jooq.SelectOnConditionStep;
+import org.jooq.Table;
 import org.jooq.impl.DSL;
 import org.jooq.types.UInteger;
 import org.jooq.types.ULong;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.teragrep.hbs_03.jooq.generated.journaldb.Journaldb.JOURNALDB;
 import static com.teragrep.hbs_03.jooq.generated.streamdb.Streamdb.STREAMDB;
@@ -64,18 +72,17 @@ import static com.teragrep.hbs_03.jooq.generated.streamdb.Streamdb.STREAMDB;
  */
 public final class LogfileTableFlatQuery {
 
-    final DSLContext ctx;
-    final LogfileTableDayQuery dayQuery;
-    final int fetchSize;
+    private static final Logger LOGGER = LoggerFactory.getLogger(LogfileTableFlatQuery.class);
+    private final DSLContext ctx;
+    private final Table<Record1<ULong>> rangeIdTable;
 
-    public LogfileTableFlatQuery(final DSLContext ctx, final Date day, final int fetchSize) {
-        this(ctx, new LogfileTableDayQuery(ctx, day), fetchSize);
+    public LogfileTableFlatQuery(final DSLContext ctx, final long startId, final long endId) {
+        this(ctx, new LogfileTableIdBatchQuery(ctx, startId, endId).asTable());
     }
 
-    public LogfileTableFlatQuery(final DSLContext ctx, final LogfileTableDayQuery dayQuery, final int fetchSize) {
+    public LogfileTableFlatQuery(final DSLContext ctx, final Table<Record1<ULong>> rangeIdTable) {
         this.ctx = ctx;
-        this.dayQuery = dayQuery;
-        this.fetchSize = fetchSize;
+        this.rangeIdTable = rangeIdTable;
     }
 
     public Field<Long> logTimeFunctionField() {
@@ -84,9 +91,35 @@ public final class LogfileTableFlatQuery {
         return DSL.field(dateFromPathRegex, Long.class, JOURNALDB.LOGFILE.PATH).as(logtimeField);
     }
 
-    public Cursor<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> asCursor() {
-        // TODO: all joined rows might not have not have streamdb information, left join them and handle nulls
-        // TODO: expects 1 to 1 with all select values
+    public List<Row> resultRowList() {
+
+        if (LOGGER.isDebugEnabled()) {
+            final Explain explain = ctx.explain(selectFlatQueryStep());
+            LOGGER.debug("Explain flat query <{}>", explain);
+        }
+
+        final List<Row> rowList;
+        try (
+                final SelectOnConditionStep<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> selectStep = selectFlatQueryStep()
+        ) {
+
+            final Result<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> result = selectStep
+                    .fetch();
+            rowList = new ArrayList<>(result.size());
+
+            for (
+                final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record : result
+            ) {
+                final Row row = new MetaRow(record);
+                rowList.add(row);
+            }
+        }
+
+        return rowList;
+    }
+
+    private SelectOnConditionStep<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> selectFlatQueryStep() {
+        final Field<ULong> dayQueryIdField = rangeIdTable.field("id", ULong.class);
         return ctx
                 .select(
                         JOURNALDB.LOGFILE.ID, JOURNALDB.LOGFILE.LOGDATE, JOURNALDB.LOGFILE.EXPIRATION,
@@ -95,9 +128,9 @@ public final class LogfileTableFlatQuery {
                         JOURNALDB.SOURCE_SYSTEM.NAME.as("source_system"), JOURNALDB.CATEGORY.NAME.as("category"), JOURNALDB.LOGFILE.UNCOMPRESSED_FILE_SIZE, STREAMDB.STREAM.ID.as("stream_id"), // row key id
                         STREAMDB.STREAM.STREAM_, STREAMDB.STREAM.DIRECTORY, logTimeFunctionField()
                 )
-                .from(dayQuery.asTable())
+                .from(rangeIdTable.asTable())
                 .join(JOURNALDB.LOGFILE)
-                .on(JOURNALDB.LOGFILE.ID.eq(dayQuery.idField()))
+                .on(JOURNALDB.LOGFILE.ID.eq(dayQueryIdField))
                 .join(JOURNALDB.HOST)
                 .on(JOURNALDB.LOGFILE.HOST_ID.eq(JOURNALDB.HOST.ID))
                 .join(JOURNALDB.BUCKET)
@@ -113,8 +146,6 @@ public final class LogfileTableFlatQuery {
                 .join(STREAMDB.LOG_GROUP)
                 .on(STREAMDB.HOST.GID.eq(STREAMDB.LOG_GROUP.ID))
                 .join(STREAMDB.STREAM)
-                .on(STREAMDB.LOG_GROUP.ID.eq(STREAMDB.STREAM.GID).and(JOURNALDB.LOGFILE.LOGTAG.eq(STREAMDB.STREAM.TAG)))
-                .fetchSize(fetchSize) // set fetch size for the JDBC driver
-                .fetchLazy();
+                .on(STREAMDB.LOG_GROUP.ID.eq(STREAMDB.STREAM.GID).and(JOURNALDB.LOGFILE.LOGTAG.eq(STREAMDB.STREAM.TAG)));
     }
 }

@@ -394,8 +394,9 @@
             <exclude>README.adoc</exclude>
             <!-- resources -->
             <exclude>src/test/resources/*</exclude>
-            <exclude>src/main/resources/hbs03.service</exclude>
-            <exclude>src/main/resources/hbs03</exclude>
+            <exclude>src/main/resources/hbs_03.service</exclude>
+            <exclude>src/main/resources/hbs_03</exclude>
+            <exclude>src/main/resources/last_processed_id.txt</exclude>
             <exclude>database/*</exclude>
             <exclude>add_license_to_generated.sh</exclude>
           </excludes>

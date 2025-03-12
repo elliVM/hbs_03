@@ -45,53 +45,8 @@
  */
 package com.teragrep.hbs_03;
 
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.cnf_01.ConfigurationException;
-import org.jooq.conf.Settings;
+public interface Stubable {
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Map;
+    public abstract boolean isStub();
 
-public final class DatabaseClientFactory implements Factory<DatabaseClient> {
-
-    private final Configuration config;
-    private final String prefix;
-
-    public DatabaseClientFactory(final Configuration config) {
-        this(config, "hbs.db.");
-    }
-
-    public DatabaseClientFactory(final Configuration config, final String prefix) {
-        this.config = config;
-        this.prefix = prefix;
-    }
-
-    public DatabaseClient object() {
-
-        final Map<String, String> map;
-        try {
-            map = new ValidDatabaseClientOptionsMap(config.asMap(), prefix).value();
-        }
-        catch (final ConfigurationException e) {
-            throw new HbsRuntimeException("Error getting configuration as map", e);
-        }
-
-        final String url = map.get(prefix + "url");
-        final String username = map.get(prefix + "username");
-        final String password = map.get(prefix + "password");
-        final int batchSize = Integer.parseInt(map.getOrDefault(prefix + "batch.size", "5000"));
-        final Settings databaseSettings = new DatabaseSettingsFromMap(map, prefix).value();
-
-        final Connection conn;
-        try {
-            conn = DriverManager.getConnection(url, username, password);
-        }
-        catch (final SQLException e) {
-            throw new HbsRuntimeException("Error creating database client", e);
-        }
-
-        return new DatabaseClient(conn, databaseSettings);
-    }
 }

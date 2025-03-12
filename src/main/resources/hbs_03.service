@@ -4,13 +4,12 @@ Documentation=https://github.com/teragrep/hbs_03
 After=network.target
 
 [Service]
-Type=oneshot
-RemainAfterExit=true
-User=srv-hbs03
-Group=srv-hbs03
-EnvironmentFile=/etc/sysconfig/hbs03
+Type=simple
+User=srv-hbs_03
+Group=srv-hbs_03
+EnvironmentFile=/etc/sysconfig/hbs_03
 WorkingDirectory=/opt/teragrep/hbs_03
-ExecStart=/usr/lib/jvm/java-11-openjdk/bin/java $JAVA_OPT -jar /opt/teragrep/hbs_03/lib/hbs_03.jar \
+ExecStart=/usr/lib/jvm/jre-11-openjdk/bin/java $JAVA_OPT -jar /opt/teragrep/hbs_03/lib/hbs_03.jar \
 $DB_URL_OPT \
 $DB_USER_OPT \
 $DB_PASSWORD_OPT \

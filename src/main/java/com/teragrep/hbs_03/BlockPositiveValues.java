@@ -45,45 +45,43 @@
  */
 package com.teragrep.hbs_03;
 
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.cnf_01.ConfigurationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+public final class BlockPositiveValues implements Block {
 
-import java.sql.Date;
-import java.util.Map;
+    private final Block origin;
 
-public final class ReplicateDateRangeFactory implements Factory<ReplicateDateRange> {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReplicateDateRangeFactory.class);
-
-    private final Configuration config;
-    private final String prefix;
-
-    public ReplicateDateRangeFactory(final Configuration config) {
-        this(config, "hbs.");
-    }
-
-    public ReplicateDateRangeFactory(final Configuration config, final String prefix) {
-        this.config = config;
-        this.prefix = prefix;
+    public BlockPositiveValues(final Block origin) {
+        this.origin = origin;
     }
 
     @Override
-    public ReplicateDateRange object() {
-        final Map<String, String> map;
-        try {
-            map = config.asMap();
-        }
-        catch (final ConfigurationException e) {
-            throw new HbsRuntimeException("Error getting migration configuration", e);
-        }
+    public long start() {
+        checkValues();
+        return origin.start();
+    }
 
-        final Date start = new StartDateFromMap(map, prefix + "start").value();
-        final Date end = new EndDateFromMap(map, prefix + "end").value();
-        final DatabaseClient databaseClient = new DatabaseClientFactory(config).object();
-        final HBaseClient hbaseClient = new HBaseClientFactory(config).object();
+    @Override
+    public long end() {
+        checkValues();
+        return origin.end();
+    }
 
-        return new ReplicateDateRange(start, end, databaseClient, hbaseClient);
+    @Override
+    public boolean isStub() {
+        return false;
+    }
+
+    public void checkValues() {
+        if (origin.start() < 0) {
+            throw new HbsRuntimeException(
+                    "Negative value",
+                    new IllegalStateException("start value was negative: " + origin.start())
+            );
+        }
+        if (origin.end() < 0) {
+            throw new HbsRuntimeException(
+                    "Negative value",
+                    new IllegalStateException("end value was negative: " + origin.end())
+            );
+        }
     }
 }

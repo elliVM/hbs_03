@@ -45,54 +45,71 @@
  */
 package com.teragrep.hbs_03;
 
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.cnf_01.ConfigurationException;
+import org.jooq.types.ULong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
-public final class HBaseClientFactory implements Factory<HBaseClient> {
+public final class LogfileIdStream implements Iterator<Block> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseClientFactory.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LogfileIdStream.class);
 
-    private final Configuration config;
-    private final HBaseConfiguration hbaseConfigFromConfig;
-    private final String prefix;
+    private Block lastBlock;
+    private final long startId;
+    private final long maxId;
+    private final long maxBatchSize;
 
-    public HBaseClientFactory(final Configuration config) {
-        this(config, new HBaseConfiguration(config), "hbs.");
+    public LogfileIdStream(final ULong startId, final ULong maxId, final long maxBatchSize) {
+        this(startId.longValue(), maxId.longValue(), maxBatchSize, new BlockStub());
     }
 
-    public HBaseClientFactory(final Configuration config, final String prefix) {
-        this(config, new HBaseConfiguration(config), prefix);
+    public LogfileIdStream(final long startId, final long maxId, final long maxBatchSize) {
+        this(startId, maxId, maxBatchSize, new BlockStub());
     }
 
-    public HBaseClientFactory(
-            final Configuration config,
-            final HBaseConfiguration hbaseConfigFromConfig,
-            final String prefix
-    ) {
-        this.config = config;
-        this.hbaseConfigFromConfig = hbaseConfigFromConfig;
-        this.prefix = prefix;
+    public LogfileIdStream(final long startId, final long maxId, final long maxBatchSize, final Block lastBlock) {
+        this.startId = startId;
+        this.maxId = maxId;
+        this.maxBatchSize = maxBatchSize;
+        this.lastBlock = lastBlock;
     }
 
-    public HBaseClient object() {
-        final String logfileTableName;
-        final boolean useDynamicBufferSize;
-        try {
-            final Map<String, String> map = config.asMap();
-            LOGGER.info("config map <{}>", map);
-            logfileTableName = map.getOrDefault(prefix + "hadoop.logfile.table.name", "logfile");
-            LOGGER.debug("Set HBase logfile table name <{}>", logfileTableName);
-            useDynamicBufferSize = Boolean
-                    .parseBoolean(map.getOrDefault(prefix + "dynamicBufferSize.enabled", "false"));
+    public long startId() {
+        return startId;
+    }
+
+    @Override
+    public boolean hasNext() {
+        final boolean hasNext;
+        if (lastBlock.isStub()) {
+            hasNext = startId < maxId;
         }
-        catch (final ConfigurationException e) {
-            throw new HbsRuntimeException("Error getting configuration", e);
+        else {
+            hasNext = lastBlock.end() < maxId;
         }
-        return new HBaseClient(hbaseConfigFromConfig.config(), logfileTableName, useDynamicBufferSize);
+        return hasNext;
     }
 
+    @Override
+    public Block next() {
+        final Block block;
+        if (hasNext()) {
+            final long lastEndId = lastBlock.isStub() ? startId : lastBlock.end(); // get last blocks end id or use start id if stub
+            final long endId = Math.min((lastEndId + maxBatchSize), maxId); // use max id if calculater next block exceeds it
+            block = new BlockValid(new BlockPositiveValues(new BlockImpl(lastEndId, endId)));
+        }
+        else {
+            throw new NoSuchElementException("No next block available");
+        }
+        lastBlock = block;
+        return block;
+    }
+
+    @Override
+    public String toString() {
+        return String
+                .format("Stream of IDs between %s and %s, batches with maximum size of %s", startId, maxId, maxBatchSize);
+    }
 }

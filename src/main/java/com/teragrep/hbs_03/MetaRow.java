@@ -114,9 +114,13 @@ public final class MetaRow implements Row {
         return put;
     }
 
+    public Binary rowKey() {
+        return rowKey;
+    }
+
     @Override
-    public String id() {
-        return rowKey.toString();
+    public ULong id() {
+        return record.field1().get(record);
     }
 
 }

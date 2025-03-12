@@ -45,53 +45,57 @@
  */
 package com.teragrep.hbs_03;
 
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.cnf_01.ConfigurationException;
-import org.jooq.conf.Settings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Map;
+/**
+ * Replicate SQL rows to HBase between the range for the LogfileIdStream
+ */
+public final class ReplicateFromId implements AutoCloseable {
 
-public final class DatabaseClientFactory implements Factory<DatabaseClient> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReplicateFromId.class);
 
-    private final Configuration config;
-    private final String prefix;
+    private final DatabaseClient databaseClient;
+    private final HBaseClient hbaseClient;
+    private final LogfileIdStream logfileIdStream;
 
-    public DatabaseClientFactory(final Configuration config) {
-        this(config, "hbs.db.");
+    public ReplicateFromId(
+            final DatabaseClient databaseClient,
+            final HBaseClient hbaseClient,
+            final LogfileIdStream logfileIdStream
+    ) {
+        this.databaseClient = databaseClient;
+        this.hbaseClient = hbaseClient;
+        this.logfileIdStream = logfileIdStream;
     }
 
-    public DatabaseClientFactory(final Configuration config, final String prefix) {
-        this.config = config;
-        this.prefix = prefix;
+    public void replicate() {
+        final long startTime = System.nanoTime(); // logging
+
+        final HBaseTable destinationTable = hbaseClient.destinationTable();
+        destinationTable.create();
+
+        LOGGER.info("Starting replication using stream <{}>", logfileIdStream);
+
+        long lastId = 0;
+        while (logfileIdStream.hasNext()) {
+            final Block block = logfileIdStream.next();
+            lastId = databaseClient.replicateRangeAndReturnLastId(block, destinationTable);
+        }
+        // save if new rows found
+        if (lastId > logfileIdStream.startId()) {
+            final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(lastId);
+            lastIdSavedToFile.save();
+        }
+
+        final long endTime = System.nanoTime(); // logging
+        LOGGER.info("Replication took <{}>ms", (endTime - startTime) / 1000000);
     }
 
-    public DatabaseClient object() {
-
-        final Map<String, String> map;
-        try {
-            map = new ValidDatabaseClientOptionsMap(config.asMap(), prefix).value();
-        }
-        catch (final ConfigurationException e) {
-            throw new HbsRuntimeException("Error getting configuration as map", e);
-        }
-
-        final String url = map.get(prefix + "url");
-        final String username = map.get(prefix + "username");
-        final String password = map.get(prefix + "password");
-        final int batchSize = Integer.parseInt(map.getOrDefault(prefix + "batch.size", "5000"));
-        final Settings databaseSettings = new DatabaseSettingsFromMap(map, prefix).value();
-
-        final Connection conn;
-        try {
-            conn = DriverManager.getConnection(url, username, password);
-        }
-        catch (final SQLException e) {
-            throw new HbsRuntimeException("Error creating database client", e);
-        }
-
-        return new DatabaseClient(conn, databaseSettings);
+    @Override
+    public void close() {
+        LOGGER.info("Closing clients");
+        databaseClient.close();
+        hbaseClient.close();
     }
 }

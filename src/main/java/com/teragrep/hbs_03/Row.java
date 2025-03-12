@@ -46,12 +46,15 @@
 package com.teragrep.hbs_03;
 
 import org.apache.hadoop.hbase.client.Put;
+import org.jooq.types.ULong;
 
 public interface Row {
 
     /** Row values as a Put object that can be inserted into the logfile table */
     public abstract Put put();
 
+    public abstract Binary rowKey();
+
     /** unique identifier for the row (row key, SQL id) */
-    public abstract String id();
+    public abstract ULong id();
 }

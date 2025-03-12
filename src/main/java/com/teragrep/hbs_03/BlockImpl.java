@@ -45,73 +45,28 @@
  */
 package com.teragrep.hbs_03;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+public final class BlockImpl implements Block {
 
-import java.sql.Date;
-import java.time.LocalDate;
+    private final long start;
+    private final long end;
 
-/**
- * SQL Teragrep metadata to HBase between set date range
- */
-public final class ReplicateDateRange implements AutoCloseable {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReplicateDateRange.class);
-
-    private final Date start;
-    private final Date end;
-    private final DatabaseClient databaseClient;
-    private final HBaseClient hbaseClient;
-
-    public ReplicateDateRange(
-            final Date start,
-            final Date end,
-            final DatabaseClient databaseClient,
-            final HBaseClient hbaseClient
-    ) {
+    public BlockImpl(final long start, final long end) {
         this.start = start;
         this.end = end;
-        this.databaseClient = databaseClient;
-        this.hbaseClient = hbaseClient;
     }
 
-    public void start() {
-        final long startTime = System.nanoTime(); // logging
-
-        final HBaseTable destinationTable = hbaseClient.destinationTable();
-        destinationTable.createIfNotExists();
-
-        LOGGER.info("Replication started from <{}> to <{}>", start, end);
-        final LocalDate startDate = start.toLocalDate();
-        final LocalDate endDate = end.toLocalDate();
-        long totalRows = 0;
-
-        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
-            totalRows += databaseClient.replicateDate(Date.valueOf(date), destinationTable);
-        }
-
-        final long endTime = System.nanoTime(); // logging
-        LOGGER.info("Total rows replicated <{}>", totalRows);
-        LOGGER.info("Replication took <{}>ms", (endTime - startTime) / 1000000);
-    }
-
-    public Date startDate() {
+    @Override
+    public long start() {
         return start;
     }
 
-    public Date endDate() {
+    @Override
+    public long end() {
         return end;
     }
 
     @Override
-    public String toString() {
-        return String.format("ReplicateDateRange from %s to %s", start, end);
-    }
-
-    @Override
-    public void close() {
-        LOGGER.info("Closing clients");
-        databaseClient.close();
-        hbaseClient.close();
+    public boolean isStub() {
+        return false;
     }
 }

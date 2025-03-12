@@ -45,53 +45,29 @@
  */
 package com.teragrep.hbs_03;
 
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.cnf_01.ConfigurationException;
-import org.jooq.conf.Settings;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Map;
+public class LastIdSavedToFileTest {
 
-public final class DatabaseClientFactory implements Factory<DatabaseClient> {
-
-    private final Configuration config;
-    private final String prefix;
-
-    public DatabaseClientFactory(final Configuration config) {
-        this(config, "hbs.db.");
+    @BeforeEach
+    public void setup() {
+        final String path = "src/test/resources/target_id_test.txt";
+        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(100, path);
+        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
     }
 
-    public DatabaseClientFactory(final Configuration config, final String prefix) {
-        this.config = config;
-        this.prefix = prefix;
-    }
-
-    public DatabaseClient object() {
-
-        final Map<String, String> map;
-        try {
-            map = new ValidDatabaseClientOptionsMap(config.asMap(), prefix).value();
-        }
-        catch (final ConfigurationException e) {
-            throw new HbsRuntimeException("Error getting configuration as map", e);
-        }
-
-        final String url = map.get(prefix + "url");
-        final String username = map.get(prefix + "username");
-        final String password = map.get(prefix + "password");
-        final int batchSize = Integer.parseInt(map.getOrDefault(prefix + "batch.size", "5000"));
-        final Settings databaseSettings = new DatabaseSettingsFromMap(map, prefix).value();
-
-        final Connection conn;
-        try {
-            conn = DriverManager.getConnection(url, username, password);
-        }
-        catch (final SQLException e) {
-            throw new HbsRuntimeException("Error creating database client", e);
-        }
-
-        return new DatabaseClient(conn, databaseSettings);
+    @Test
+    public void testSave() {
+        final String stringPath = "src/test/resources/target_id_test.txt";
+        final LastIdReadFromFile lastIdReadFromFile = Assertions
+                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
+        Assertions.assertEquals(100, lastIdReadFromFile.read());
+        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(1000, stringPath);
+        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
+        final LastIdReadFromFile newIdFromPath = Assertions
+                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
+        Assertions.assertEquals(1000, newIdFromPath.read());
     }
 }

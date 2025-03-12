@@ -55,13 +55,11 @@ public interface HBaseTable {
 
     public abstract void create();
 
-    public abstract void createIfNotExists();
-
-    public abstract void delete();
+    public abstract void drop();
 
     public abstract List<Result> scan(Scan scan);
 
     public abstract long put(Put put);
 
-    public abstract long putAll(List<Row> rows);
+    public abstract void putAll(List<Row> rows);
 }

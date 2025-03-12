@@ -45,53 +45,37 @@
  */
 package com.teragrep.hbs_03;
 
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.cnf_01.ConfigurationException;
-import org.jooq.conf.Settings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Map;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 
-public final class DatabaseClientFactory implements Factory<DatabaseClient> {
+public final class LastIdSavedToFile {
 
-    private final Configuration config;
-    private final String prefix;
+    private static final Logger LOGGER = LoggerFactory.getLogger(LastIdSavedToFile.class);
 
-    public DatabaseClientFactory(final Configuration config) {
-        this(config, "hbs.db.");
+    private final long value;
+    private final String path;
+
+    public LastIdSavedToFile(final long value) {
+        this(value, "/var/lib/hbs_03/last_processed_id.txt");
     }
 
-    public DatabaseClientFactory(final Configuration config, final String prefix) {
-        this.config = config;
-        this.prefix = prefix;
+    public LastIdSavedToFile(final long value, final String path) {
+        this.value = value;
+        this.path = path;
     }
 
-    public DatabaseClient object() {
-
-        final Map<String, String> map;
-        try {
-            map = new ValidDatabaseClientOptionsMap(config.asMap(), prefix).value();
+    public void save() {
+        try (final BufferedWriter writer = new BufferedWriter(new FileWriter(path, false))) {
+            writer.write(Long.toString(value));
+            LOGGER.debug("Saved last processed id to path=<{}>", path);
         }
-        catch (final ConfigurationException e) {
-            throw new HbsRuntimeException("Error getting configuration as map", e);
+        catch (final IOException e) {
+            throw new HbsRuntimeException("Error writing to file", e);
         }
-
-        final String url = map.get(prefix + "url");
-        final String username = map.get(prefix + "username");
-        final String password = map.get(prefix + "password");
-        final int batchSize = Integer.parseInt(map.getOrDefault(prefix + "batch.size", "5000"));
-        final Settings databaseSettings = new DatabaseSettingsFromMap(map, prefix).value();
-
-        final Connection conn;
-        try {
-            conn = DriverManager.getConnection(url, username, password);
-        }
-        catch (final SQLException e) {
-            throw new HbsRuntimeException("Error creating database client", e);
-        }
-
-        return new DatabaseClient(conn, databaseSettings);
     }
+
 }

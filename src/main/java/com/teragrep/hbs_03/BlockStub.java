@@ -45,56 +45,20 @@
  */
 package com.teragrep.hbs_03;
 
-import org.jooq.Condition;
-import org.jooq.DSLContext;
-import org.jooq.Field;
-import org.jooq.Record;
-import org.jooq.Record1;
-import org.jooq.Table;
-import org.jooq.impl.DSL;
-import org.jooq.types.ULong;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+public final class BlockStub implements Block {
 
-import java.sql.Date;
-
-import static com.teragrep.hbs_03.jooq.generated.journaldb.Journaldb.JOURNALDB;
-
-/**
- * Queries logfile.id columns from the logfile table by date
- */
-public final class LogfileTableDayQuery {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(LogfileTableDayQuery.class);
-
-    private final DSLContext ctx;
-    private final String name;
-    private final Condition dateCondition;
-
-    public LogfileTableDayQuery(final DSLContext ctx, final Date day) {
-        this(ctx, "logfile_day_table", day);
+    @Override
+    public long start() {
+        throw new UnsupportedOperationException("BlockStub does not implement start");
     }
 
-    public LogfileTableDayQuery(final DSLContext ctx, final String name, final Date day) {
-        this(ctx, name, JOURNALDB.LOGFILE.LOGDATE.eq(DSL.date(day)));
+    @Override
+    public long end() {
+        throw new UnsupportedOperationException("BlockStub does not implement end");
     }
 
-    public LogfileTableDayQuery(final DSLContext ctx, final String name, final Condition dateCondition) {
-        this.ctx = ctx;
-        this.name = name;
-        this.dateCondition = dateCondition;
-    }
-
-    private Table<Record> table() {
-        return DSL.table(DSL.name(name));
-    }
-
-    public Table<Record1<ULong>> asTable() {
-        LOGGER.debug("Select from logfile where <{}>", dateCondition);
-        return ctx.select(JOURNALDB.LOGFILE.ID).from(JOURNALDB.LOGFILE).where(dateCondition).asTable(table());
-    }
-
-    public Field<ULong> idField() {
-        return DSL.field(DSL.name(table().getName(), "id"), ULong.class);
+    @Override
+    public boolean isStub() {
+        return true;
     }
 }

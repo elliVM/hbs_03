@@ -50,6 +50,8 @@ import com.teragrep.cnf_01.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+
 /** Executable class to for replication */
 public final class TeragrepMetadataReplication {
 
@@ -58,13 +60,15 @@ public final class TeragrepMetadataReplication {
     public static void main(final String[] args) {
         try {
             final Configuration config = new ArgsConfiguration(args);
-            final Factory<ReplicateDateRange> migrateDateRangeFactory = new ReplicateDateRangeFactory(config);
-            try (final ReplicateDateRange replicateDateRange = migrateDateRangeFactory.object()) {
-                replicateDateRange.start();
+            final Factory<ReplicateFromId> replicateFromIdFactory = new ReplicateFromIdFactory(config);
+
+            try (final ReplicateFromId replicateFromId = replicateFromIdFactory.object()) {
+                replicateFromId.replicate();
             }
+
             System.exit(0); // success
         }
-        catch (final HbsRuntimeException e) {
+        catch (final HbsRuntimeException | IOException e) {
             LOGGER.error("Exception executing migration <{}>", e.getMessage(), e);
             System.exit(1); // failure
         }

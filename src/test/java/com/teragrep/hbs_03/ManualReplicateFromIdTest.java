@@ -45,6 +45,7 @@
  */
 package com.teragrep.hbs_03;
 
+import com.teragrep.cnf_01.PropertiesConfiguration;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.jooq.DSLContext;
@@ -56,20 +57,22 @@ import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.DriverManager;
+import java.util.Properties;
 
+/**
+ * Can be used to test replication on a local machine, requires configuration for JDBC and HBase connection
+ */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@EnabledIfSystemProperty(
-        named = "runContainerTests",
-        matches = "true"
-)
-public final class ReplicateDateRangeTest {
+@Disabled("Manual configurable test")
+public final class ManualReplicateFromIdTest {
 
     final Configuration config = HBaseConfiguration.create();
     final String testTableName = "replication_range_test";
@@ -93,18 +96,42 @@ public final class ReplicateDateRangeTest {
         Assertions.assertDoesNotThrow(() -> new HBaseClient(config, testTableName).close());
     }
 
-    @Test
-    public void testHadoopConfig() {
-        System.out.println(config);
+    @BeforeEach
+    public void resetFile() {
+        Assertions.assertDoesNotThrow(() -> new LastIdSavedToFile(0).save());
     }
 
     @Test
     public void testRange() {
         final HBaseClient client = new HBaseClient(config, "replication_range_test");
-        final DatabaseClient sqlClient = new DatabaseClient(ctx, connection, 5000);
-        final Date start = Date.valueOf("2015-1-1");
-        final Date end = Date.valueOf("2030-1-1");
-        final ReplicateDateRange replicateDateRange = new ReplicateDateRange(start, end, sqlClient, client);
-        replicateDateRange.start();
+        final DatabaseClient sqlClient = new DatabaseClient(ctx, connection);
+        final LogfileIdStream logfileIdStream = new LogfileIdStream(
+                sqlClient.firstAvailableId(),
+                sqlClient.lastId(),
+                10000
+        );
+        try (final ReplicateFromId replicateDateRange = new ReplicateFromId(sqlClient, client, logfileIdStream)) {
+            replicateDateRange.replicate();
+        }
+    }
+
+    @Test
+    public void testRangeWithFactory() {
+        final Properties properties = new Properties();
+        properties.put("hbs.db.url", url);
+        properties.put("hbs.db.username", username);
+        properties.put("hbs.db.password", password);
+        properties.put("hbs.db.journaldb.name", "archiver_journal_tyrael");
+        properties.put("hbs.db.streamdb.name", "archiver_streamdb_tyrael");
+        properties.put("hbs.db.executeLogging", "true");
+        properties.put("hbs.hadoop.logfile.table.name", testTableName);
+        properties.put("hbs.hadoop.hbase.zookeeper.quorum", "localhost");
+        properties.put("hbs.hadoop.hbase.zookeeper.property.clientPort", "2181");
+
+        final PropertiesConfiguration propertiesConfiguration = new PropertiesConfiguration(properties);
+        final ReplicateFromIdFactory factory = new ReplicateFromIdFactory(propertiesConfiguration);
+        try (final ReplicateFromId replicateDateRange = factory.object()) {
+            replicateDateRange.replicate();
+        }
     }
 }

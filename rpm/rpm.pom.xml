@@ -53,8 +53,8 @@
                     <group>teragrep/LogManagementSuite</group>
                     <description>${project.groupId}-${project.artifactId}</description>
                     <needarch>true</needarch>
-                    <defaultUsername>srv-hbs03</defaultUsername>
-                    <defaultGroupname>srv-hbs03</defaultGroupname>
+                    <defaultUsername>srv-hbs_03</defaultUsername>
+                    <defaultGroupname>srv-hbs_03</defaultGroupname>
                     <defaultFilemode>0644</defaultFilemode>
                     <defaultDirmode>0755</defaultDirmode>
                     <defineStatements>
@@ -86,7 +86,7 @@
                             <groupname>root</groupname>
                             <sources>
                                 <source>
-                                    <location>${project.basedir}/../src/main/resources/hbs03.service
+                                    <location>${project.basedir}/../src/main/resources/hbs_03.service
                                     </location>
                                 </source>
                             </sources>
@@ -100,7 +100,20 @@
                             <dirmode>755</dirmode>
                             <sources>
                                 <source>
-                                    <location>${project.basedir}/../src/main/resources/hbs03
+                                    <location>${project.basedir}/../src/main/resources/hbs_03
+                                    </location>
+                                </source>
+                            </sources>
+                        </mapping>
+                        <mapping>
+                            <directory>/var/lib/hbs_03/</directory>
+                            <configuration>noreplace</configuration>
+                            <directoryIncluded>false</directoryIncluded>
+                            <filemode>755</filemode>
+                            <dirmode>755</dirmode>
+                            <sources>
+                                <source>
+                                    <location>${project.basedir}/../src/main/resources/last_processed_id.txt
                                     </location>
                                 </source>
                             </sources>
@@ -111,8 +124,8 @@
                     </requires>
                     <preinstallScriptlet>
                         <script>
-                            getent group srv-hbs03 > /dev/null || groupadd -r srv-hbs03;
-                            getent passwd srv-hbs03 > /dev/null || useradd -r -g srv-hbs03 -d /opt/teragrep/${project.artifactId}/var -s /sbin/nologin -c "Service User" srv-hbs03;
+                            getent group srv-hbs_03 > /dev/null || groupadd -r srv-hbs_03;
+                            getent passwd srv-hbs_03 > /dev/null || useradd -r -g srv-hbs_03 -d /opt/teragrep/${project.artifactId}/var -s /sbin/nologin -c "Service User" srv-hbs_03;
                         </script>
                     </preinstallScriptlet>
                 </configuration>
