@@ -76,11 +76,21 @@ public final class DestinationTable implements HBaseTable {
     private final ConfiguredMutator mutator;
 
     public DestinationTable(final Connection connection) {
-        this(connection, TableName.valueOf("logfile"), new DestinationTableDescription("logfile"), new ConfiguredMutator(TableName.valueOf("logfile"), false));
+        this(
+                connection,
+                TableName.valueOf("logfile"),
+                new DestinationTableDescription("logfile"),
+                new ConfiguredMutator(TableName.valueOf("logfile"), false)
+        );
     }
 
     public DestinationTable(final Connection connection, final String name) {
-        this(connection, TableName.valueOf(name), new DestinationTableDescription(name), new ConfiguredMutator(TableName.valueOf(name), false));
+        this(
+                connection,
+                TableName.valueOf(name),
+                new DestinationTableDescription(name),
+                new ConfiguredMutator(TableName.valueOf(name), false)
+        );
     }
 
     public DestinationTable(final Connection connection, final TableName name) {
