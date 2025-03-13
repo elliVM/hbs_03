@@ -72,7 +72,7 @@ public final class LastIdReadFromFile {
         final long returnValue;
         try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
             returnValue = Long.parseLong(reader.readLine());
-            LOGGER.debug("Loaded last processed id from path=<{}>", path);
+            LOGGER.debug("Loaded last processed id <{}> from path=<{}>", returnValue, path);
         }
         catch (final FileNotFoundException e) {
             throw new HbsRuntimeException("Could not find file", e);

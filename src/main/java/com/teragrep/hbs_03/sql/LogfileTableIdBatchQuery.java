@@ -82,7 +82,8 @@ public final class LogfileTableIdBatchQuery {
     }
 
     private Table<Record> table() {
-        return DSL.table(DSL.name("logfile_id_batch_table"));
+        final String format = String.format("logfile_id_batch_%d_%d", startId.longValue(), endId.longValue());
+        return DSL.table(DSL.name(format));
     }
 
     /**

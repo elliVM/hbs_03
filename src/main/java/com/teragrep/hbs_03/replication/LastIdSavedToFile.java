@@ -81,7 +81,7 @@ public final class LastIdSavedToFile {
 
         try (final BufferedWriter writer = new BufferedWriter(new FileWriter(file, false))) {
             writer.write(Long.toString(value));
-            LOGGER.debug("Saved last processed id to path=<{}>", file);
+            LOGGER.debug("Saved last processed id <{}> to path=<{}>", value, file);
         }
         catch (final IOException e) {
             throw new HbsRuntimeException("Error writing to file", e);

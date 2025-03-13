@@ -81,10 +81,19 @@ public final class ReplicateFromId implements AutoCloseable {
         LOGGER.info("Starting replication using stream <{}>", logfileIdStream);
 
         while (logfileIdStream.hasNext()) {
+            final long blockStart = System.nanoTime();
             final Block block = logfileIdStream.next();
             final long lastId = databaseClient.replicateRangeAndReturnLastId(block, destinationTable);
             final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(lastId);
             lastIdSavedToFile.save();
+
+            // logging
+            final long blockEnd = System.nanoTime();
+            LOGGER.info("Replication took <{}>ms", (blockEnd - blockStart) / 1000000);
+            final long processedIdCount = logfileIdStream.startId() + lastId;
+            final long remainingIdCount = logfileIdStream.maxId() - lastId;
+            LOGGER.info("Processed rows <{}>", processedIdCount);
+            LOGGER.info("Remaining rows <{}>", remainingIdCount);
         }
 
         final long endTime = System.nanoTime(); // logging

@@ -111,13 +111,13 @@ public final class DatabaseClient implements AutoCloseable {
     }
 
     public long replicateRangeAndReturnLastId(final Block block, final HBaseTable destinationTable) {
-
         final LogfileTableFlatQuery logfileTableFlatQuery = new LogfileTableFlatQuery(ctx, block.start(), block.end());
 
         final List<Row> rowList = logfileTableFlatQuery.resultRowList();
 
         destinationTable.putAll(rowList);
 
+        LOGGER.debug("Processing id range <{}> to <{}>. Rows <{}>", block.start(), block.end(), rowList.size());
         long maxIdInList = 0;
         for (final Row row : rowList) {
             final long rowIdValue = row.id().longValue();

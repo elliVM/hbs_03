@@ -80,6 +80,10 @@ public final class LogfileIdStream implements Iterator<Block> {
         return startId;
     }
 
+    public long maxId() {
+        return maxId;
+    }
+
     @Override
     public boolean hasNext() {
         final boolean hasNext;

@@ -74,7 +74,7 @@ import java.util.Properties;
 
 /**
  * Can be used to test replication on a local machine, requires configuration for JDBC and HBase connection. Expects
- * /var/lib/hbs_03/last_processed_id.txt to be present
+ * /var/lib/hbs_03/last_processed_id.txt to be present, sets to 0 after all
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Disabled("Manual configurable test")
