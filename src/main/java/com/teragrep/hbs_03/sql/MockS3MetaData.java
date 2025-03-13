@@ -87,7 +87,7 @@ public final class MockS3MetaData implements MockDataProvider {
     }
 
     // generates always same results to the set range
-    private MockResult[] generateResult(int numOfResults) {
+    private MockResult[] generateResult(final int numOfResults) {
         final DSLContext ctx = DSL.using(SQLDialect.MYSQL);
         final Field<Long> logtimeFunction = DSL
                 .field(

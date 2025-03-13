@@ -73,7 +73,8 @@ import java.sql.DriverManager;
 import java.util.Properties;
 
 /**
- * Can be used to test replication on a local machine, requires configuration for JDBC and HBase connection
+ * Can be used to test replication on a local machine, requires configuration for JDBC and HBase connection.
+ * Expects /var/lib/hbs_03/last_processed_id.txt to be present
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Disabled("Manual configurable test")
