@@ -43,33 +43,46 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03;
+package com.teragrep.hbs_03.replication;
 
-import com.teragrep.hbs_03.replication.LastIdReadFromFile;
-import com.teragrep.hbs_03.replication.LastIdSavedToFile;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.teragrep.hbs_03.HbsRuntimeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class LastIdSavedToFileTest {
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 
-    @BeforeEach
-    public void setup() {
-        final String path = "src/test/resources/target_id_test.txt";
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(100, path);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
+public final class LastIdReadFromFile {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(LastIdReadFromFile.class);
+
+    private final String path;
+
+    public LastIdReadFromFile() {
+        this("/var/lib/hbs_03/last_processed_id.txt");
     }
 
-    @Test
-    public void testSave() {
-        final String stringPath = "src/test/resources/target_id_test.txt";
-        final LastIdReadFromFile lastIdReadFromFile = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(100, lastIdReadFromFile.read());
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(1000, stringPath);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
-        final LastIdReadFromFile newIdFromPath = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(1000, newIdFromPath.read());
+    public LastIdReadFromFile(final String path) {
+        this.path = path;
+    }
+
+    public long read() {
+        final long returnValue;
+        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+            returnValue = Long.parseLong(reader.readLine());
+            LOGGER.debug("Loaded last processed id from path=<{}>", path);
+        }
+        catch (final FileNotFoundException e) {
+            throw new HbsRuntimeException("Could not find file", e);
+        }
+        catch (final IOException e) {
+            throw new HbsRuntimeException("Error reading file", e);
+        }
+        catch (final NumberFormatException e) {
+            throw new HbsRuntimeException("Error parsing file value to long", e);
+        }
+        return returnValue;
     }
 }

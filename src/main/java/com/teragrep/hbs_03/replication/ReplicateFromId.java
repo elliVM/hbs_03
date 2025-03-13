@@ -43,33 +43,58 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03;
+package com.teragrep.hbs_03.replication;
 
-import com.teragrep.hbs_03.replication.LastIdReadFromFile;
-import com.teragrep.hbs_03.replication.LastIdSavedToFile;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.teragrep.hbs_03.hbase.HBaseClient;
+import com.teragrep.hbs_03.hbase.HBaseTable;
+import com.teragrep.hbs_03.sql.DatabaseClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class LastIdSavedToFileTest {
+/**
+ * Replicate SQL rows to HBase between the range for the LogfileIdStream
+ */
+public final class ReplicateFromId implements AutoCloseable {
 
-    @BeforeEach
-    public void setup() {
-        final String path = "src/test/resources/target_id_test.txt";
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(100, path);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReplicateFromId.class);
+
+    private final DatabaseClient databaseClient;
+    private final HBaseClient hbaseClient;
+    private final LogfileIdStream logfileIdStream;
+
+    public ReplicateFromId(
+            final DatabaseClient databaseClient,
+            final HBaseClient hbaseClient,
+            final LogfileIdStream logfileIdStream
+    ) {
+        this.databaseClient = databaseClient;
+        this.hbaseClient = hbaseClient;
+        this.logfileIdStream = logfileIdStream;
     }
 
-    @Test
-    public void testSave() {
-        final String stringPath = "src/test/resources/target_id_test.txt";
-        final LastIdReadFromFile lastIdReadFromFile = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(100, lastIdReadFromFile.read());
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(1000, stringPath);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
-        final LastIdReadFromFile newIdFromPath = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(1000, newIdFromPath.read());
+    public void replicate() {
+        final long startTime = System.nanoTime(); // logging
+
+        final HBaseTable destinationTable = hbaseClient.destinationTable();
+        destinationTable.create();
+
+        LOGGER.info("Starting replication using stream <{}>", logfileIdStream);
+
+        while (logfileIdStream.hasNext()) {
+            final Block block = logfileIdStream.next();
+            final long lastId = databaseClient.replicateRangeAndReturnLastId(block, destinationTable);
+            final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(lastId);
+            lastIdSavedToFile.save();
+        }
+
+        final long endTime = System.nanoTime(); // logging
+        LOGGER.info("Replication took <{}>ms", (endTime - startTime) / 1000000);
+    }
+
+    @Override
+    public void close() {
+        LOGGER.info("Closing clients");
+        databaseClient.close();
+        hbaseClient.close();
     }
 }

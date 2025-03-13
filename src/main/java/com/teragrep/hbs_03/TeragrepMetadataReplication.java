@@ -47,6 +47,8 @@ package com.teragrep.hbs_03;
 
 import com.teragrep.cnf_01.ArgsConfiguration;
 import com.teragrep.cnf_01.Configuration;
+import com.teragrep.hbs_03.replication.ReplicateFromId;
+import com.teragrep.hbs_03.replication.ReplicateFromIdFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

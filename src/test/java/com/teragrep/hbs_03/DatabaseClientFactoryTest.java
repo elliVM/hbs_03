@@ -47,6 +47,7 @@ package com.teragrep.hbs_03;
 
 import com.teragrep.cnf_01.Configuration;
 import com.teragrep.cnf_01.PropertiesConfiguration;
+import com.teragrep.hbs_03.sql.DatabaseClientFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;

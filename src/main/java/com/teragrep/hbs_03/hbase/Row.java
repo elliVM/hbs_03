@@ -43,33 +43,18 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03;
+package com.teragrep.hbs_03.hbase;
 
-import com.teragrep.hbs_03.replication.LastIdReadFromFile;
-import com.teragrep.hbs_03.replication.LastIdSavedToFile;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.apache.hadoop.hbase.client.Put;
+import org.jooq.types.ULong;
 
-public class LastIdSavedToFileTest {
+public interface Row {
 
-    @BeforeEach
-    public void setup() {
-        final String path = "src/test/resources/target_id_test.txt";
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(100, path);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
-    }
+    /** Row values as a Put object that can be inserted into the logfile table */
+    public abstract Put put();
 
-    @Test
-    public void testSave() {
-        final String stringPath = "src/test/resources/target_id_test.txt";
-        final LastIdReadFromFile lastIdReadFromFile = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(100, lastIdReadFromFile.read());
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(1000, stringPath);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
-        final LastIdReadFromFile newIdFromPath = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(1000, newIdFromPath.read());
-    }
+    public abstract Binary rowKey();
+
+    /** unique identifier for the row (row key, SQL id) */
+    public abstract ULong id();
 }

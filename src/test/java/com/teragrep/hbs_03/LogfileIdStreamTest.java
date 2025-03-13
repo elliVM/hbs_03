@@ -45,6 +45,8 @@
  */
 package com.teragrep.hbs_03;
 
+import com.teragrep.hbs_03.replication.Block;
+import com.teragrep.hbs_03.replication.LogfileIdStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

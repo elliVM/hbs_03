@@ -43,33 +43,47 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03;
+package com.teragrep.hbs_03.replication;
 
-import com.teragrep.hbs_03.replication.LastIdReadFromFile;
-import com.teragrep.hbs_03.replication.LastIdSavedToFile;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.teragrep.hbs_03.HbsRuntimeException;
 
-public class LastIdSavedToFileTest {
+public final class BlockPositiveValues implements Block {
 
-    @BeforeEach
-    public void setup() {
-        final String path = "src/test/resources/target_id_test.txt";
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(100, path);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
+    private final Block origin;
+
+    public BlockPositiveValues(final Block origin) {
+        this.origin = origin;
     }
 
-    @Test
-    public void testSave() {
-        final String stringPath = "src/test/resources/target_id_test.txt";
-        final LastIdReadFromFile lastIdReadFromFile = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(100, lastIdReadFromFile.read());
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(1000, stringPath);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
-        final LastIdReadFromFile newIdFromPath = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(1000, newIdFromPath.read());
+    @Override
+    public long start() {
+        checkValues();
+        return origin.start();
+    }
+
+    @Override
+    public long end() {
+        checkValues();
+        return origin.end();
+    }
+
+    @Override
+    public boolean isStub() {
+        return false;
+    }
+
+    public void checkValues() {
+        if (origin.start() < 0) {
+            throw new HbsRuntimeException(
+                    "Negative value",
+                    new IllegalStateException("start value was negative: " + origin.start())
+            );
+        }
+        if (origin.end() < 0) {
+            throw new HbsRuntimeException(
+                    "Negative value",
+                    new IllegalStateException("end value was negative: " + origin.end())
+            );
+        }
     }
 }

@@ -47,6 +47,7 @@ package com.teragrep.hbs_03;
 
 import com.teragrep.cnf_01.Configuration;
 import com.teragrep.cnf_01.PropertiesConfiguration;
+import com.teragrep.hbs_03.hbase.HBaseConfiguration;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

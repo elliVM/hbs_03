@@ -43,33 +43,55 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03;
+package com.teragrep.hbs_03.replication;
 
-import com.teragrep.hbs_03.replication.LastIdReadFromFile;
-import com.teragrep.hbs_03.replication.LastIdSavedToFile;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.teragrep.cnf_01.Configuration;
+import com.teragrep.hbs_03.Factory;
+import com.teragrep.hbs_03.hbase.HBaseClient;
+import com.teragrep.hbs_03.hbase.HBaseClientFactory;
+import com.teragrep.hbs_03.sql.DatabaseClient;
+import com.teragrep.hbs_03.sql.DatabaseClientFactory;
+import org.jooq.types.ULong;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class LastIdSavedToFileTest {
+public final class ReplicateFromIdFactory implements Factory<ReplicateFromId> {
 
-    @BeforeEach
-    public void setup() {
-        final String path = "src/test/resources/target_id_test.txt";
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(100, path);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReplicateFromIdFactory.class);
+
+    private final Configuration config;
+    private final String prefix;
+
+    public ReplicateFromIdFactory(final Configuration config) {
+        this(config, "hbs.");
     }
 
-    @Test
-    public void testSave() {
-        final String stringPath = "src/test/resources/target_id_test.txt";
-        final LastIdReadFromFile lastIdReadFromFile = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(100, lastIdReadFromFile.read());
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(1000, stringPath);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
-        final LastIdReadFromFile newIdFromPath = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(1000, newIdFromPath.read());
+    public ReplicateFromIdFactory(final Configuration config, final String prefix) {
+        this.config = config;
+        this.prefix = prefix;
+    }
+
+    @Override
+    public ReplicateFromId object() {
+
+        final DatabaseClient databaseClient = new DatabaseClientFactory(config, prefix + "db.").object();
+        final HBaseClient hbaseClient = new HBaseClientFactory(config, prefix + "hadoop.").object();
+
+        final long lastIdFromFile = new LastIdReadFromFile().read();
+        final long minIdInDatabase = databaseClient.firstAvailableId().longValue();
+
+        final long startId;
+        if (minIdInDatabase > lastIdFromFile) {
+            LOGGER.info("First available id value was larger than given start id");
+            startId = minIdInDatabase;
+        }
+        else {
+            startId = lastIdFromFile;
+        }
+
+        final ULong endId = databaseClient.lastId();
+
+        final LogfileIdStream logfileIdStream = new LogfileIdStream(startId, endId.longValue(), 10000);
+        return new ReplicateFromId(databaseClient, hbaseClient, logfileIdStream);
     }
 }

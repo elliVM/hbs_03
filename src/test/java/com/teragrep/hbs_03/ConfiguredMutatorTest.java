@@ -45,6 +45,10 @@
  */
 package com.teragrep.hbs_03;
 
+import com.teragrep.hbs_03.hbase.ConfiguredMutator;
+import com.teragrep.hbs_03.hbase.MetaRow;
+import com.teragrep.hbs_03.hbase.Row;
+import com.teragrep.hbs_03.sql.MockS3MetaData;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.BufferedMutatorParams;
 import org.jooq.DSLContext;

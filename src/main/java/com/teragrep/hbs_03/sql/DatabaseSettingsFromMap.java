@@ -43,33 +43,36 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03;
+package com.teragrep.hbs_03.sql;
 
-import com.teragrep.hbs_03.replication.LastIdReadFromFile;
-import com.teragrep.hbs_03.replication.LastIdSavedToFile;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.jooq.conf.MappedSchema;
+import org.jooq.conf.RenderMapping;
+import org.jooq.conf.Settings;
 
-public class LastIdSavedToFileTest {
+import java.util.Map;
 
-    @BeforeEach
-    public void setup() {
-        final String path = "src/test/resources/target_id_test.txt";
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(100, path);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
+public class DatabaseSettingsFromMap implements OptionValue<Settings> {
+
+    private final Map<String, String> map;
+    private final String prefix;
+
+    public DatabaseSettingsFromMap(final Map<String, String> map, final String prefix) {
+        this.map = map;
+        this.prefix = prefix;
     }
 
-    @Test
-    public void testSave() {
-        final String stringPath = "src/test/resources/target_id_test.txt";
-        final LastIdReadFromFile lastIdReadFromFile = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(100, lastIdReadFromFile.read());
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(1000, stringPath);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
-        final LastIdReadFromFile newIdFromPath = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(1000, newIdFromPath.read());
+    @Override
+    public Settings value() {
+        final String executeLoggingValue = map.getOrDefault(prefix + "executeLogging", "false");
+        return new Settings().withRenderMapping(renderMapping()).withExecuteLogging("true".equals(executeLoggingValue));
+    }
+
+    private RenderMapping renderMapping() {
+        final String journaldbName = map.getOrDefault(prefix + "journaldb.name", "journaldb");
+        final String streamdbName = map.getOrDefault(prefix + "streamdb.name", "streamdb");
+        final String bloomdbName = map.getOrDefault(prefix + "bloomdb.name", "bloomdb");
+
+        return new RenderMapping()
+                .withSchemata(new MappedSchema().withInput("streamdb").withOutput(streamdbName), new MappedSchema().withInput("journaldb").withOutput(journaldbName), new MappedSchema().withInput("bloomdb").withOutput(bloomdbName));
     }
 }

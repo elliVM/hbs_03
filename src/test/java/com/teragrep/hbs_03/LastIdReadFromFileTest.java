@@ -45,6 +45,7 @@
  */
 package com.teragrep.hbs_03;
 
+import com.teragrep.hbs_03.replication.LastIdReadFromFile;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

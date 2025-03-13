@@ -45,6 +45,7 @@
  */
 package com.teragrep.hbs_03;
 
+import com.teragrep.hbs_03.sql.DatabaseClient;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.conf.MappedSchema;

@@ -45,6 +45,7 @@
  */
 package com.teragrep.hbs_03;
 
+import com.teragrep.hbs_03.hbase.MetaRowKey;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

@@ -43,51 +43,58 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03;
+package com.teragrep.hbs_03.hbase;
 
-import com.teragrep.hbs_03.replication.Block;
-import com.teragrep.hbs_03.replication.BlockImpl;
-import com.teragrep.hbs_03.replication.BlockPositiveValues;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import com.teragrep.cnf_01.Configuration;
+import com.teragrep.cnf_01.ConfigurationException;
+import com.teragrep.hbs_03.Factory;
+import com.teragrep.hbs_03.HbsRuntimeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.Map;
 
-public final class BlockPositiveValuesTest {
+public final class HBaseClientFactory implements Factory<HBaseClient> {
 
-    @Test
-    public void testPositiveValues() {
-        final Block block = new BlockPositiveValues(new BlockImpl(3, 9));
-        Assertions.assertEquals(3, block.start());
-        Assertions.assertEquals(9, block.end());
+    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseClientFactory.class);
+
+    private final Configuration config;
+    private final HBaseConfiguration hbaseConfigFromConfig;
+    private final String prefix;
+
+    public HBaseClientFactory(final Configuration config) {
+        this(config, new HBaseConfiguration(config), "hbs.");
     }
 
-    @Test
-    public void testNotStub() {
-        final Block block = new BlockPositiveValues(new BlockImpl(3, 9));
-        Assertions.assertFalse(block.isStub());
+    public HBaseClientFactory(final Configuration config, final String prefix) {
+        this(config, new HBaseConfiguration(config), prefix);
     }
 
-    @Test
-    public void testNegativeStart() {
-        final Block block = new BlockPositiveValues(new BlockImpl(-1, 9));
-        final HbsRuntimeException exception = assertThrows(HbsRuntimeException.class, block::start);
-        final String expectedMessage = "Negative value (caused by: IllegalStateException: start value was negative: -1)";
-        Assertions.assertEquals(expectedMessage, exception.getMessage());
+    public HBaseClientFactory(
+            final Configuration config,
+            final HBaseConfiguration hbaseConfigFromConfig,
+            final String prefix
+    ) {
+        this.config = config;
+        this.hbaseConfigFromConfig = hbaseConfigFromConfig;
+        this.prefix = prefix;
     }
 
-    @Test
-    public void testNegativeEnd() {
-        final Block block = new BlockPositiveValues(new BlockImpl(1, -1));
-        final HbsRuntimeException exception = assertThrows(HbsRuntimeException.class, block::start);
-        final String expectedMessage = "Negative value (caused by: IllegalStateException: end value was negative: -1)";
-        Assertions.assertEquals(expectedMessage, exception.getMessage());
+    public HBaseClient object() {
+        final String logfileTableName;
+        final boolean useDynamicBufferSize;
+        try {
+            final Map<String, String> map = config.asMap();
+            LOGGER.info("config map <{}>", map);
+            logfileTableName = map.getOrDefault(prefix + "hadoop.logfile.table.name", "logfile");
+            LOGGER.debug("Set HBase logfile table name <{}>", logfileTableName);
+            useDynamicBufferSize = Boolean
+                    .parseBoolean(map.getOrDefault(prefix + "dynamicBufferSize.enabled", "false"));
+        }
+        catch (final ConfigurationException e) {
+            throw new HbsRuntimeException("Error getting configuration", e);
+        }
+        return new HBaseClient(hbaseConfigFromConfig.config(), logfileTableName, useDynamicBufferSize);
     }
 
-    @Test
-    public void testZero() {
-        final Block block = new BlockPositiveValues(new BlockImpl(0, 0));
-        Assertions.assertEquals(0, block.start());
-        Assertions.assertEquals(0, block.end());
-    }
 }

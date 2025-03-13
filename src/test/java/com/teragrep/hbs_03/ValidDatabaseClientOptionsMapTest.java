@@ -47,6 +47,7 @@ package com.teragrep.hbs_03;
 
 import com.teragrep.cnf_01.Configuration;
 import com.teragrep.cnf_01.PropertiesConfiguration;
+import com.teragrep.hbs_03.sql.ValidDatabaseClientOptionsMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -67,11 +68,13 @@ public class ValidDatabaseClientOptionsMapTest {
         final Configuration propertiesConfiguration = new PropertiesConfiguration(props);
         final Map<String, String> map = Assertions.assertDoesNotThrow(propertiesConfiguration::asMap);
         final ValidDatabaseClientOptionsMap valid = new ValidDatabaseClientOptionsMap(map, prefix);
-        Map<String, String> value = Assertions.assertDoesNotThrow(valid::value);
+
         Map<String, String> expectedMap = new HashMap<>();
         expectedMap.put(prefix + "url", "url");
         expectedMap.put(prefix + "password", "password");
         expectedMap.put(prefix + "username", "username");
+
+        final Map<String, String> value = Assertions.assertDoesNotThrow(valid::value);
         Assertions.assertEquals(expectedMap, value);
     }
 
@@ -120,11 +123,40 @@ public class ValidDatabaseClientOptionsMapTest {
         props.setProperty(prefix + "password", "password");
         props.setProperty(prefix + "url", "url");
         props.setProperty(prefix + "username", "username");
-        props.setProperty(prefix + "journaldb.name", "jornl");
+        props.setProperty(prefix + "journaldb.name", "test_journaldb");
         final Configuration propertiesConfiguration = new PropertiesConfiguration(props);
         final Map<String, String> map = Assertions.assertDoesNotThrow(propertiesConfiguration::asMap);
         final ValidDatabaseClientOptionsMap valid = new ValidDatabaseClientOptionsMap(map, prefix);
         Assertions.assertDoesNotThrow(valid::value);
+        Assertions.assertEquals("test_journaldb", valid.value().get("journaldb.name"));
+    }
+
+    @Test
+    public void testStreamDBName() {
+        final Properties props = new Properties();
+        props.setProperty(prefix + "password", "password");
+        props.setProperty(prefix + "url", "url");
+        props.setProperty(prefix + "username", "username");
+        props.setProperty(prefix + "streamdb.name", "test_streamdb");
+        final Configuration propertiesConfiguration = new PropertiesConfiguration(props);
+        final Map<String, String> map = Assertions.assertDoesNotThrow(propertiesConfiguration::asMap);
+        final ValidDatabaseClientOptionsMap valid = new ValidDatabaseClientOptionsMap(map, prefix);
+        Assertions.assertDoesNotThrow(valid::value);
+        Assertions.assertEquals("test_streamdb", valid.value().get("streamdb.name"));
+    }
+
+    @Test
+    public void testBloomDBName() {
+        final Properties props = new Properties();
+        props.setProperty(prefix + "password", "password");
+        props.setProperty(prefix + "url", "url");
+        props.setProperty(prefix + "username", "username");
+        props.setProperty(prefix + "journaldb.name", "test_bloomdb");
+        final Configuration propertiesConfiguration = new PropertiesConfiguration(props);
+        final Map<String, String> map = Assertions.assertDoesNotThrow(propertiesConfiguration::asMap);
+        final ValidDatabaseClientOptionsMap valid = new ValidDatabaseClientOptionsMap(map, prefix);
+        Assertions.assertDoesNotThrow(valid::value);
+        Assertions.assertEquals("test_bloomdb", valid.value().get("bloomdb.name"));
     }
 
     @Test

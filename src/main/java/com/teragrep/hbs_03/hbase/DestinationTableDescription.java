@@ -43,33 +43,53 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03;
+package com.teragrep.hbs_03.hbase;
 
-import com.teragrep.hbs_03.replication.LastIdReadFromFile;
-import com.teragrep.hbs_03.replication.LastIdSavedToFile;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.ColumnFamilyDescriptor;
+import org.apache.hadoop.hbase.client.ColumnFamilyDescriptorBuilder;
+import org.apache.hadoop.hbase.client.TableDescriptor;
+import org.apache.hadoop.hbase.client.TableDescriptorBuilder;
+import org.apache.hadoop.hbase.regionserver.BloomType;
+import org.apache.hadoop.hbase.util.Bytes;
 
-public class LastIdSavedToFileTest {
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-    @BeforeEach
-    public void setup() {
-        final String path = "src/test/resources/target_id_test.txt";
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(100, path);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
+public final class DestinationTableDescription {
+
+    private final TableName name;
+
+    public DestinationTableDescription(final String tableName) {
+        this(TableName.valueOf(tableName));
     }
 
-    @Test
-    public void testSave() {
-        final String stringPath = "src/test/resources/target_id_test.txt";
-        final LastIdReadFromFile lastIdReadFromFile = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(100, lastIdReadFromFile.read());
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(1000, stringPath);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
-        final LastIdReadFromFile newIdFromPath = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(1000, newIdFromPath.read());
+    public DestinationTableDescription(final TableName name) {
+        this.name = name;
+    }
+
+    public TableDescriptor description() {
+        return TableDescriptorBuilder
+                .newBuilder(name)
+                .setColumnFamilies(columnFamilyDescriptions())
+                .setReadOnly(false)
+                .build();
+    }
+
+    private List<ColumnFamilyDescriptor> columnFamilyDescriptions() {
+        final ColumnFamilyDescriptor metaFamilyBuilder = ColumnFamilyDescriptorBuilder
+                .newBuilder(Bytes.toBytes("meta"))
+                .setMaxVersions(1) // number of allowed copies per column e.g. with the same row key
+                .setBloomFilterType(BloomType.ROW)
+                .build();
+
+        final ColumnFamilyDescriptor bloomFamilyBuilder = ColumnFamilyDescriptorBuilder
+                .newBuilder(Bytes.toBytes("bloom"))
+                .setMaxVersions(1) // number of allowed copies per column e.g. with the same row key
+                .setBloomFilterType(BloomType.ROW)
+                .build();
+
+        return Collections.unmodifiableList(Arrays.asList(metaFamilyBuilder, bloomFamilyBuilder));
     }
 }

@@ -46,6 +46,12 @@
 package com.teragrep.hbs_03;
 
 import com.teragrep.cnf_01.PropertiesConfiguration;
+import com.teragrep.hbs_03.hbase.HBaseClient;
+import com.teragrep.hbs_03.replication.LastIdSavedToFile;
+import com.teragrep.hbs_03.replication.LogfileIdStream;
+import com.teragrep.hbs_03.replication.ReplicateFromId;
+import com.teragrep.hbs_03.replication.ReplicateFromIdFactory;
+import com.teragrep.hbs_03.sql.DatabaseClient;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.jooq.DSLContext;

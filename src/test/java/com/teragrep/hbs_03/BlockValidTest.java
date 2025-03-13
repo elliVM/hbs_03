@@ -45,6 +45,9 @@
  */
 package com.teragrep.hbs_03;
 
+import com.teragrep.hbs_03.replication.Block;
+import com.teragrep.hbs_03.replication.BlockImpl;
+import com.teragrep.hbs_03.replication.BlockValid;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

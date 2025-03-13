@@ -45,6 +45,7 @@
  */
 package com.teragrep.hbs_03;
 
+import com.teragrep.hbs_03.hbase.HBaseClient;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
