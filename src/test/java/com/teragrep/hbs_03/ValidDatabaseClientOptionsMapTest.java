@@ -125,10 +125,12 @@ public class ValidDatabaseClientOptionsMapTest {
         props.setProperty(prefix + "username", "username");
         props.setProperty(prefix + "journaldb.name", "test_journaldb");
         final Configuration propertiesConfiguration = new PropertiesConfiguration(props);
-        final Map<String, String> map = Assertions.assertDoesNotThrow(propertiesConfiguration::asMap);
-        final ValidDatabaseClientOptionsMap valid = new ValidDatabaseClientOptionsMap(map, prefix);
+        final Map<String, String> configMap = Assertions.assertDoesNotThrow(propertiesConfiguration::asMap);
+        final ValidDatabaseClientOptionsMap valid = new ValidDatabaseClientOptionsMap(configMap, prefix);
         Assertions.assertDoesNotThrow(valid::value);
-        Assertions.assertEquals("test_journaldb", valid.value().get("journaldb.name"));
+        final Map<String, String> validMap = valid.value();
+        final String journalDBname = validMap.get(prefix + "journaldb.name");
+        Assertions.assertEquals("test_journaldb", journalDBname);
     }
 
     @Test
@@ -139,10 +141,12 @@ public class ValidDatabaseClientOptionsMapTest {
         props.setProperty(prefix + "username", "username");
         props.setProperty(prefix + "streamdb.name", "test_streamdb");
         final Configuration propertiesConfiguration = new PropertiesConfiguration(props);
-        final Map<String, String> map = Assertions.assertDoesNotThrow(propertiesConfiguration::asMap);
-        final ValidDatabaseClientOptionsMap valid = new ValidDatabaseClientOptionsMap(map, prefix);
+        final Map<String, String> configMap = Assertions.assertDoesNotThrow(propertiesConfiguration::asMap);
+        final ValidDatabaseClientOptionsMap valid = new ValidDatabaseClientOptionsMap(configMap, prefix);
         Assertions.assertDoesNotThrow(valid::value);
-        Assertions.assertEquals("test_streamdb", valid.value().get("streamdb.name"));
+        final Map<String, String> validMap = valid.value();
+        final String streamDBName = validMap.get(prefix + "streamdb.name");
+        Assertions.assertEquals("test_streamdb", streamDBName);
     }
 
     @Test
@@ -151,12 +155,14 @@ public class ValidDatabaseClientOptionsMapTest {
         props.setProperty(prefix + "password", "password");
         props.setProperty(prefix + "url", "url");
         props.setProperty(prefix + "username", "username");
-        props.setProperty(prefix + "journaldb.name", "test_bloomdb");
+        props.setProperty(prefix + "bloomdb.name", "test_bloomdb");
         final Configuration propertiesConfiguration = new PropertiesConfiguration(props);
-        final Map<String, String> map = Assertions.assertDoesNotThrow(propertiesConfiguration::asMap);
-        final ValidDatabaseClientOptionsMap valid = new ValidDatabaseClientOptionsMap(map, prefix);
+        final Map<String, String> configMap = Assertions.assertDoesNotThrow(propertiesConfiguration::asMap);
+        final ValidDatabaseClientOptionsMap valid = new ValidDatabaseClientOptionsMap(configMap, prefix);
         Assertions.assertDoesNotThrow(valid::value);
-        Assertions.assertEquals("test_bloomdb", valid.value().get("bloomdb.name"));
+        final Map<String, String> validMap = valid.value();
+        final String bloomDBName = validMap.get(prefix + "bloomdb.name");
+        Assertions.assertEquals("test_bloomdb", bloomDBName);
     }
 
     @Test
