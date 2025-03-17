@@ -127,6 +127,7 @@ public final class ManualReplicateFromIdTest {
         properties.put("hbs.db.url", url);
         properties.put("hbs.db.username", username);
         properties.put("hbs.db.password", password);
+        properties.put("hbs.db.batchSize", "1000");
         properties.put("hbs.db.journaldb.name", "archiver_journal_tyrael");
         properties.put("hbs.db.streamdb.name", "archiver_streamdb_tyrael");
         properties.put("hbs.db.executeLogging", "true");

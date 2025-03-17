@@ -45,6 +45,8 @@
  */
 package com.teragrep.hbs_03.hbase;
 
+import com.teragrep.hbs_03.hbase.binary.Binary;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Objects;

@@ -45,7 +45,7 @@
  */
 package com.teragrep.hbs_03;
 
-import com.teragrep.hbs_03.hbase.Binary;
+import com.teragrep.hbs_03.hbase.binary.Binary;
 import com.teragrep.hbs_03.hbase.MetaRow;
 import com.teragrep.hbs_03.sql.MockS3MetaData;
 import org.apache.hadoop.hbase.client.Put;

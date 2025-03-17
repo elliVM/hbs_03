@@ -45,32 +45,50 @@
  */
 package com.teragrep.hbs_03;
 
-import com.teragrep.cnf_01.ArgsConfiguration;
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.hbs_03.replication.ReplicateFromId;
-import com.teragrep.hbs_03.replication.ReplicateFromIdFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.teragrep.hbs_03.sql.HostMappingTable;
+import org.jooq.DSLContext;
+import org.jooq.Record;
+import org.jooq.Result;
+import org.jooq.SQLDialect;
+import org.jooq.conf.MappedSchema;
+import org.jooq.conf.RenderMapping;
+import org.jooq.conf.Settings;
+import org.jooq.impl.DSL;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
-/** Executable class to for replication */
-public final class TeragrepMetadataReplication {
+import java.sql.Connection;
+import java.sql.DriverManager;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TeragrepMetadataReplication.class);
+@Testcontainers
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@EnabledIfSystemProperty(
+        named = "runContainerTests",
+        matches = "true"
+)
+public class HostMappingTableTest {
 
-    public static void main(final String[] args) {
-        try {
-            final Configuration config = new ArgsConfiguration(args);
-            final Factory<ReplicateFromId> replicateFromIdFactory = new ReplicateFromIdFactory(config);
+    final String username = "streamdb";
+    final String password = "streamdb_pass";
+    final String url = "jdbc:mariadb://192.168.49.2:30601/archiver_journal_tyrael";
+    final Settings settings = new Settings()
+            .withRenderMapping(new RenderMapping().withSchemata(new MappedSchema().withInput("streamdb").withOutput("archiver_streamdb_tyrael"), new MappedSchema().withInput("journaldb").withOutput("archiver_journal_tyrael"), new MappedSchema().withInput("bloomdb").withOutput("bloomdb")));
+    final Connection connection = Assertions
+            .assertDoesNotThrow(() -> DriverManager.getConnection(url, username, password));
+    final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
 
-            try (final ReplicateFromId replicateFromId = replicateFromIdFactory.object()) {
-                replicateFromId.replicate();
-            }
+    @Test
+    public void testCreation() {
+        final HostMappingTable tempTable = new HostMappingTable(ctx);
+        Assertions.assertDoesNotThrow(tempTable::createIfNotExists);
 
-            System.exit(0); // success
-        }
-        catch (final HbsRuntimeException e) {
-            LOGGER.error("Exception executing migration <{}>", e.getMessage(), e);
-            System.exit(1); // failure
+        final Result<Record> fetch = ctx.fetch("DESCRIBE host_mapping_temp_table");
+        for (final Record record : fetch) {
+            System.out.println(record);
         }
     }
+
 }

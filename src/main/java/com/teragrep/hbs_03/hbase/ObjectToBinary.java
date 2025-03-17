@@ -46,6 +46,7 @@
 package com.teragrep.hbs_03.hbase;
 
 import com.teragrep.hbs_03.HbsRuntimeException;
+import com.teragrep.hbs_03.hbase.binary.Binary;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.jooq.JSON;
 import org.jooq.types.UInteger;

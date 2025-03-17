@@ -51,7 +51,7 @@ import org.jooq.conf.Settings;
 
 import java.util.Map;
 
-public class DatabaseSettingsFromMap implements OptionValue<Settings> {
+public final class DatabaseSettingsFromMap implements OptionValue<Settings> {
 
     private final Map<String, String> map;
     private final String prefix;

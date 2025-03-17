@@ -74,26 +74,25 @@ public final class DatabaseClientFactory implements Factory<DatabaseClient> {
 
         final Map<String, String> map;
         try {
-            map = new ValidDatabaseClientOptionsMap(config.asMap(), prefix).value();
+            map = config.asMap();
         }
         catch (final ConfigurationException e) {
             throw new HbsRuntimeException("Error getting configuration as map", e);
         }
 
-        final String url = map.get(prefix + "url");
-        final String username = map.get(prefix + "username");
-        final String password = map.get(prefix + "password");
-        final int batchSize = Integer.parseInt(map.getOrDefault(prefix + "batch.size", "5000"));
-        final Settings databaseSettings = new DatabaseSettingsFromMap(map, prefix).value();
+        final OptionValue<String> urlOption = new MapContainsNonEmpty(map, prefix + "url");
+        final OptionValue<String> usernameOption = new MapContainsNonEmpty(map, prefix + "username");
+        final OptionValue<String> passwordOption = new MapContainsNonEmpty(map, prefix + "password");
+        final OptionValue<Settings> settingsOption = new DatabaseSettingsFromMap(map, prefix);
 
         final Connection conn;
         try {
-            conn = DriverManager.getConnection(url, username, password);
+            conn = DriverManager.getConnection(urlOption.value(), usernameOption.value(), passwordOption.value());
         }
         catch (final SQLException e) {
             throw new HbsRuntimeException("Error creating database client", e);
         }
 
-        return new DatabaseClient(conn, databaseSettings);
+        return new DatabaseClient(conn, settingsOption.value());
     }
 }

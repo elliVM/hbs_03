@@ -45,32 +45,47 @@
  */
 package com.teragrep.hbs_03;
 
-import com.teragrep.cnf_01.ArgsConfiguration;
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.hbs_03.replication.ReplicateFromId;
-import com.teragrep.hbs_03.replication.ReplicateFromIdFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.teragrep.hbs_03.sql.MapContainsNonEmpty;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-/** Executable class to for replication */
-public final class TeragrepMetadataReplication {
+import java.util.HashMap;
+import java.util.Map;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TeragrepMetadataReplication.class);
+public class MapContainsNonEmptyTest {
 
-    public static void main(final String[] args) {
-        try {
-            final Configuration config = new ArgsConfiguration(args);
-            final Factory<ReplicateFromId> replicateFromIdFactory = new ReplicateFromIdFactory(config);
+    @Test
+    public void testValid() {
+        final String key = "key";
+        final String value = "value";
+        final Map<String, String> map = new HashMap<>();
+        map.put(key, value);
+        final MapContainsNonEmpty mapContainsNonEmpty = new MapContainsNonEmpty(map, key);
+        final String validValue = mapContainsNonEmpty.value();
+        Assertions.assertEquals(value, validValue);
+    }
 
-            try (final ReplicateFromId replicateFromId = replicateFromIdFactory.object()) {
-                replicateFromId.replicate();
-            }
+    @Test
+    public void testMissingValue() {
+        final String key = "key";
+        final Map<String, String> map = new HashMap<>();
+        final MapContainsNonEmpty mapContainsNonEmpty = new MapContainsNonEmpty(map, key);
+        final HbsRuntimeException exception = Assertions
+                .assertThrows(HbsRuntimeException.class, mapContainsNonEmpty::value);
+        final String expected = "Option not in map (caused by: IllegalArgumentException: <[key]> option missing)";
+        Assertions.assertEquals(expected, exception.getMessage());
+    }
 
-            System.exit(0); // success
-        }
-        catch (final HbsRuntimeException e) {
-            LOGGER.error("Exception executing migration <{}>", e.getMessage(), e);
-            System.exit(1); // failure
-        }
+    @Test
+    public void testEmptyValue() {
+        final String key = "key";
+        final String value = "";
+        final Map<String, String> map = new HashMap<>();
+        map.put(key, value);
+        final MapContainsNonEmpty mapContainsNonEmpty = new MapContainsNonEmpty(map, key);
+        final HbsRuntimeException exception = Assertions
+                .assertThrows(HbsRuntimeException.class, mapContainsNonEmpty::value);
+        final String expected = "Option empty (caused by: IllegalArgumentException: Key <[key]> had empty value)";
+        Assertions.assertEquals(expected, exception.getMessage());
     }
 }

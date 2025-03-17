@@ -1,12 +1,10 @@
 DB_URL_OPT="hbs.db.url="
 DB_USER_OPT="hbs.db.username="
 DB_PASSWORD_OPT="hbs.db.password="
-START_OPT=""
-END_OPT=""
 JOURNALDB_NAME_OPT=""
 STREAMDB_NAME_OPT=""
 BLOOMDB_NAME_OPT=""
 HBASE_OPT="hbs.hadoop.hbase.zookeeper.quorum=localhost hbs.hadoop.hbase.zookeeper.property.clientPort=2181"
-EXTRA_OPT=""
+EXTRA_OPT="hbs.db.executeLogging=false"
 JAVA_OPT=""
 

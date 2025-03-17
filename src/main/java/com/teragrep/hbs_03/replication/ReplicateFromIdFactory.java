@@ -46,7 +46,9 @@
 package com.teragrep.hbs_03.replication;
 
 import com.teragrep.cnf_01.Configuration;
+import com.teragrep.cnf_01.ConfigurationException;
 import com.teragrep.hbs_03.Factory;
+import com.teragrep.hbs_03.HbsRuntimeException;
 import com.teragrep.hbs_03.hbase.HBaseClient;
 import com.teragrep.hbs_03.hbase.HBaseClientFactory;
 import com.teragrep.hbs_03.sql.DatabaseClient;
@@ -54,6 +56,8 @@ import com.teragrep.hbs_03.sql.DatabaseClientFactory;
 import org.jooq.types.ULong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 public final class ReplicateFromIdFactory implements Factory<ReplicateFromId> {
 
@@ -89,9 +93,21 @@ public final class ReplicateFromIdFactory implements Factory<ReplicateFromId> {
             startId = lastIdFromFile;
         }
 
-        final ULong endId = databaseClient.lastId();
+        final long maxBatch;
+        try {
+            final Map<String, String> map = config.asMap();
+            final String maxBatchSizeKey = prefix + "db.batchSize";
+            final String maxBatchSizeOption = map.getOrDefault(maxBatchSizeKey, "10000");
+            maxBatch = Long.parseLong(maxBatchSizeOption);
+            LOGGER.debug("Set batch size <{}>", maxBatch);
+        }
+        catch (final ConfigurationException | NumberFormatException e) {
+            throw new HbsRuntimeException("Error getting max batch size option", e);
+        }
 
-        final LogfileIdStream logfileIdStream = new LogfileIdStream(startId, endId.longValue(), 10000);
+        final ULong endId = databaseClient.lastId();
+        final LogfileIdStream logfileIdStream = new LogfileIdStream(startId, endId.longValue(), maxBatch);
+
         return new ReplicateFromId(databaseClient, hbaseClient, logfileIdStream);
     }
 }

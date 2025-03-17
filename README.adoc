@@ -44,19 +44,25 @@ Exit code 0 for success and exit code 1 for exception.
 
 == How to
 
-Package the main project
+Example of a step-by-step guide to install and run the HBS_03 project as a systemd service.
+
+=== Package Project to RPM
+
+Start by generating the JAR file from the project
 [source]
 ----
 $ mvn clean package
 ----
 
-Package the RPM
+Next we package the systemd service and jar into an RPM file
 [source]
 ----
 $ mvn package --file rpm/rpm.pom.xml
 ----
 
-Install the generated RPM package found in `rpm/target/rpm/com.teragrep-hbs_03/RPMS`
+=== Install RPM to Your System
+
+Next we install the generated RPM package created by maven found in `rpm/target/rpm/com.teragrep-hbs_03/RPMS`.
 
 [source]
 ----
@@ -81,45 +87,60 @@ EXTRA_OPT=""
 JAVA_OPT=""
 ----
 
-Reload and start the service, `daemon-reload` is necessary only if you edit the sysconfig or other files for the service
+Next we reload the service, this step is needed only once or if you change the configuration.
+
 [source]
 ----
 $ sudo systemctl daemon-reload
+----
+
+==== Running the Service
+
+We can now run the replication as a systemd service. Start a replication with the command:
+
+[source]
+----
 $ sudo systemctl start hbs_03
 ----
 
-Check service status
+Process should now be running, we can check the status with the following command:
 [source]
 ----
-$ sudo systemctl daemon-reload
+$ sudo systemctl status hbs_03
 ----
 
+
 Value in file `/var/lib/hbs_03/last_processed_id.txt` will be used as the starting point for the next time the service is started.
+
+This file is created during the installation process, on the first run the value is set to 0.
 
 You can edit it if you want to customize the start point or set to 0 if you want to replicate everything.
 
 End point is the largest `JOURNALDB.LOGFILE.ID` in your database when the process is launched.
+New inserts after the process is started are therefore ignored,
+but you can add them by starting the process again later.
 
-=== HBase options
+== About HBase Options
 
 You can set multiple different options for `HBASE_OPT` by placing the key value pair inside the string quotes.
 In the example we give two options `hbs.hadoop.hbase.zookeeper.quorum=localhost` and  `hbs.hadoop.hbase.zookeeper.property.clientPort=2181`.
 
-==== Other options you might consider
+=== Options You Might Consider
 
-HBase Destination table name that is created if missing, default name is `logfile`.
+Set the HBase destination table name table that will be created if missing.
+Default table name is `logfile`.
 [source]
 ----
 hbs.hadoop.logfile.table.name=<logfile_tablename>
 ----
 
-Give options from xml file:
+Giving options from a XML file
 [source]
 ----
 hbs.hadoop.config.path=<path_to_xml_file>
 ----
 
-Other HBase options, set any option supported by `hadoop.config.Configuration` by placing the key value after prefix
+You can set any option supported by `hadoop.config.Configuration` by placing the key value after prefix
 
 [source]
 ----

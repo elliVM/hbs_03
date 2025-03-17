@@ -13,8 +13,6 @@ ExecStart=/usr/lib/jvm/jre-11-openjdk/bin/java $JAVA_OPT -jar /opt/teragrep/hbs_
 $DB_URL_OPT \
 $DB_USER_OPT \
 $DB_PASSWORD_OPT \
-$START_OPT \
-$END_OPT \
 $JOURNALDB_NAME_OPT \
 $STREAMDB_NAME_OPT \
 $BLOOMDB_NAME_OPT \

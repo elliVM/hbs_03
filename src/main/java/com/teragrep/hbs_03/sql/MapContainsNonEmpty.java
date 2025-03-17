@@ -43,34 +43,36 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03;
+package com.teragrep.hbs_03.sql;
 
-import com.teragrep.cnf_01.ArgsConfiguration;
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.hbs_03.replication.ReplicateFromId;
-import com.teragrep.hbs_03.replication.ReplicateFromIdFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.teragrep.hbs_03.HbsRuntimeException;
 
-/** Executable class to for replication */
-public final class TeragrepMetadataReplication {
+import java.util.Map;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TeragrepMetadataReplication.class);
+public class MapContainsNonEmpty implements OptionValue<String> {
 
-    public static void main(final String[] args) {
-        try {
-            final Configuration config = new ArgsConfiguration(args);
-            final Factory<ReplicateFromId> replicateFromIdFactory = new ReplicateFromIdFactory(config);
+    private final Map<String, String> map;
+    private final String key;
 
-            try (final ReplicateFromId replicateFromId = replicateFromIdFactory.object()) {
-                replicateFromId.replicate();
-            }
+    public MapContainsNonEmpty(final Map<String, String> map, final String key) {
+        this.map = map;
+        this.key = key;
+    }
 
-            System.exit(0); // success
+    @Override
+    public String value() {
+        if (!map.containsKey(key)) {
+            throw new HbsRuntimeException(
+                    "Option not in map",
+                    new IllegalArgumentException("<[" + key + "]> option missing")
+            );
         }
-        catch (final HbsRuntimeException e) {
-            LOGGER.error("Exception executing migration <{}>", e.getMessage(), e);
-            System.exit(1); // failure
+        if (map.get(key).isEmpty()) {
+            throw new HbsRuntimeException(
+                    "Option empty",
+                    new IllegalArgumentException("Key <[" + key + "]> had empty value")
+            );
         }
+        return map.get(key);
     }
 }

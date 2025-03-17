@@ -45,32 +45,6 @@
  */
 package com.teragrep.hbs_03;
 
-import com.teragrep.cnf_01.ArgsConfiguration;
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.hbs_03.replication.ReplicateFromId;
-import com.teragrep.hbs_03.replication.ReplicateFromIdFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+public class LogfileTableIdBatchQuery {
 
-/** Executable class to for replication */
-public final class TeragrepMetadataReplication {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(TeragrepMetadataReplication.class);
-
-    public static void main(final String[] args) {
-        try {
-            final Configuration config = new ArgsConfiguration(args);
-            final Factory<ReplicateFromId> replicateFromIdFactory = new ReplicateFromIdFactory(config);
-
-            try (final ReplicateFromId replicateFromId = replicateFromIdFactory.object()) {
-                replicateFromId.replicate();
-            }
-
-            System.exit(0); // success
-        }
-        catch (final HbsRuntimeException e) {
-            LOGGER.error("Exception executing migration <{}>", e.getMessage(), e);
-            System.exit(1); // failure
-        }
-    }
 }

@@ -45,7 +45,7 @@
  */
 package com.teragrep.hbs_03;
 
-import com.teragrep.hbs_03.hbase.Binary;
+import com.teragrep.hbs_03.hbase.binary.Binary;
 import com.teragrep.hbs_03.hbase.ObjectToBinary;
 import org.jooq.JSON;
 import org.jooq.types.UInteger;

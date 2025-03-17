@@ -43,9 +43,28 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.hbase.binary;
 
-public interface Binary {
+import java.nio.ByteBuffer;
+import java.sql.Timestamp;
 
-    public abstract byte[] bytes();
+public class BinaryOfTimestamp implements Binary {
+
+    private final Timestamp value;
+
+    public BinaryOfTimestamp(final Timestamp value) {
+        this.value = value;
+    }
+
+    @Override
+    public byte[] bytes() {
+        final byte[] bytes;
+        if (value == null) { // empty bytes represents a null value in hbase
+            bytes = new byte[0];
+        }
+        else {
+            bytes = ByteBuffer.allocate(Long.BYTES).putLong(value.getTime()).array();
+        }
+        return bytes;
+    }
 }

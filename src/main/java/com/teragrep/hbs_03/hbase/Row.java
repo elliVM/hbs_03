@@ -45,6 +45,7 @@
  */
 package com.teragrep.hbs_03.hbase;
 
+import com.teragrep.hbs_03.hbase.binary.Binary;
 import org.apache.hadoop.hbase.client.Put;
 import org.jooq.types.ULong;
 

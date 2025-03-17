@@ -43,34 +43,28 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03;
+package com.teragrep.hbs_03.hbase.binary;
 
-import com.teragrep.cnf_01.ArgsConfiguration;
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.hbs_03.replication.ReplicateFromId;
-import com.teragrep.hbs_03.replication.ReplicateFromIdFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.jooq.types.UInteger;
 
-/** Executable class to for replication */
-public final class TeragrepMetadataReplication {
+public class BinaryOfUInteger implements Binary {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TeragrepMetadataReplication.class);
+    private final UInteger value;
 
-    public static void main(final String[] args) {
-        try {
-            final Configuration config = new ArgsConfiguration(args);
-            final Factory<ReplicateFromId> replicateFromIdFactory = new ReplicateFromIdFactory(config);
+    public BinaryOfUInteger(final UInteger value) {
+        this.value = value;
+    }
 
-            try (final ReplicateFromId replicateFromId = replicateFromIdFactory.object()) {
-                replicateFromId.replicate();
-            }
-
-            System.exit(0); // success
+    @Override
+    public byte[] bytes() {
+        final byte[] bytes;
+        if (value == null) { // empty bytes represents a null value in hbase
+            bytes = new byte[0];
         }
-        catch (final HbsRuntimeException e) {
-            LOGGER.error("Exception executing migration <{}>", e.getMessage(), e);
-            System.exit(1); // failure
+        else {
+            bytes = Bytes.toBytes(value.intValue());
         }
+        return bytes;
     }
 }

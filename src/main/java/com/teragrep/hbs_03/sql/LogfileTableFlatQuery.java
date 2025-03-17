@@ -77,23 +77,30 @@ public final class LogfileTableFlatQuery {
     private static final Logger LOGGER = LoggerFactory.getLogger(LogfileTableFlatQuery.class);
     private final DSLContext ctx;
     private final Table<Record1<ULong>> rangeIdTable;
+    private final HostMappingTable hostMappingTable;
 
     public LogfileTableFlatQuery(final DSLContext ctx, final long startId, final long endId) {
-        this(ctx, new LogfileTableIdBatchQuery(ctx, startId, endId).asTable());
+        this(ctx, new LogfileTableIdBatchQuery(ctx, startId, endId).asTable(), new HostMappingTable(ctx));
     }
 
-    public LogfileTableFlatQuery(final DSLContext ctx, final Table<Record1<ULong>> rangeIdTable) {
+    public LogfileTableFlatQuery(
+            final DSLContext ctx,
+            final Table<Record1<ULong>> rangeIdTable,
+            final HostMappingTable hostMappingTable
+    ) {
         this.ctx = ctx;
         this.rangeIdTable = rangeIdTable;
+        this.hostMappingTable = hostMappingTable;
     }
 
-    public Field<Long> logTimeFunctionField() {
+    private Field<Long> logTimeFunctionField() {
         final String dateFromPathRegex = "UNIX_TIMESTAMP(STR_TO_DATE(SUBSTRING(REGEXP_SUBSTR({0},'^\\\\d{4}\\\\/\\\\d{2}-\\\\d{2}\\\\/[\\\\w\\\\.-]+\\\\/([^\\\\p{Z}\\\\p{C}]+?)\\\\/([^\\\\p{Z}\\\\p{C}]+)(-@)?(\\\\d+|)-(\\\\d{4}\\\\d{2}\\\\d{2}\\\\d{2})'), -10, 10), '%Y%m%d%H'))";
         final Field<Long> logtimeField = DSL.field("logtime", Long.class);
         return DSL.field(dateFromPathRegex, Long.class, JOURNALDB.LOGFILE.PATH).as(logtimeField);
     }
 
     public List<Row> resultRowList() {
+        hostMappingTable.createIfNotExists();
 
         if (LOGGER.isDebugEnabled()) {
             final Explain explain = ctx.explain(selectFlatQueryStep());
@@ -131,10 +138,13 @@ public final class LogfileTableFlatQuery {
                         STREAMDB.STREAM.STREAM_, STREAMDB.STREAM.DIRECTORY, logTimeFunctionField()
                 )
                 .from(rangeIdTable.asTable())
-                .join(JOURNALDB.LOGFILE)
+                .straightJoin(JOURNALDB.LOGFILE)
                 .on(JOURNALDB.LOGFILE.ID.eq(dayQueryIdField))
                 .join(JOURNALDB.HOST)
                 .on(JOURNALDB.LOGFILE.HOST_ID.eq(JOURNALDB.HOST.ID))
+                // join host mapping temp table
+                .join(hostMappingTable.table())
+                .on(JOURNALDB.HOST.ID.eq(hostMappingTable.hostIdField()))
                 .join(JOURNALDB.BUCKET)
                 .on(JOURNALDB.LOGFILE.BUCKET_ID.eq(JOURNALDB.BUCKET.ID))
                 .join(JOURNALDB.SOURCE_SYSTEM)
@@ -143,10 +153,8 @@ public final class LogfileTableFlatQuery {
                 .on(JOURNALDB.LOGFILE.CATEGORY_ID.eq(JOURNALDB.CATEGORY.ID))
                 .join(JOURNALDB.METADATA_VALUE)
                 .on(JOURNALDB.LOGFILE.ID.eq(JOURNALDB.METADATA_VALUE.LOGFILE_ID))
-                .join(STREAMDB.HOST)
-                .on(JOURNALDB.HOST.NAME.eq(STREAMDB.HOST.NAME))
                 .join(STREAMDB.LOG_GROUP)
-                .on(STREAMDB.HOST.GID.eq(STREAMDB.LOG_GROUP.ID))
+                .on(hostMappingTable.groupIdField().eq(STREAMDB.LOG_GROUP.ID))
                 .join(STREAMDB.STREAM)
                 .on(STREAMDB.LOG_GROUP.ID.eq(STREAMDB.STREAM.GID).and(JOURNALDB.LOGFILE.LOGTAG.eq(STREAMDB.STREAM.TAG)));
     }
