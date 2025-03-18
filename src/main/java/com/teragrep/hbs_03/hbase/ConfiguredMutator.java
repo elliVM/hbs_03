@@ -45,18 +45,12 @@
  */
 package com.teragrep.hbs_03.hbase;
 
-import com.teragrep.hbs_03.HbsRuntimeException;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.BufferedMutator;
-import org.apache.hadoop.hbase.client.BufferedMutatorParams;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+/** Provides a mutator for HBase writes with set configuration values */
 public final class ConfiguredMutator {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConfiguredMutator.class);
 
     private final TableName name;
     private final double overheadMultiplier;
@@ -80,56 +74,22 @@ public final class ConfiguredMutator {
         this.userDynamicBuffer = userDynamicBuffer;
     }
 
-    public BufferedMutatorParams paramsForRows(final List<Row> rows) {
-        final BufferedMutatorParams params;
+    public MutatorParamsSource paramsForRows(final List<Row> rows) {
+        final MutatorParamsSource paramsSource;
+
+        final BufferedMutatorParamsSourceFromRowList dynamicBuffer = new BufferedMutatorParamsSourceFromRowList(
+                name,
+                rows,
+                overheadMultiplier
+        );
+        final DefaultBufferedMutatorParamsSource defaultBuffer = new DefaultBufferedMutatorParamsSource(name);
+
         if (userDynamicBuffer) {
-            final long dynamicBufferSize = calculatedBufferSize(rows);
-            LOGGER.debug("Using dynamic buffer size <{}>MB", (dynamicBufferSize / (1024 * 1024)));
-            params = new BufferedMutatorParams(name).listener(exceptionListener()).writeBufferSize(dynamicBufferSize);
+            paramsSource = dynamicBuffer;
         }
         else {
-            params = defaultBuffer();
+            paramsSource = defaultBuffer;
         }
-        return params;
-    }
-
-    public long calculatedBufferSize(final List<Row> rows) {
-        final int multiplierUpperLimit = 5;
-        if (overheadMultiplier < 1 || overheadMultiplier > multiplierUpperLimit) {
-            throw new HbsRuntimeException(
-                    "Overhead multiplier was not between 1-5",
-                    new IllegalAccessError("Illegal overhead multiplier <" + overheadMultiplier + ">")
-            );
-        }
-        final long numberOfRows = rows.size();
-        final long averageSize = rows.get(0).put().heapSize();
-        final long estimatedBatchSize = Math.round(numberOfRows * (averageSize * overheadMultiplier));
-        final long maxBufferSize = 64L * 1024 * 1024; // 64MB max size
-
-        if (estimatedBatchSize > maxBufferSize) {
-            LOGGER.warn("Estimate exceeded maximum size of 64MB, estimate was <{}>", estimatedBatchSize);
-        }
-
-        final long estimateOrMinimumSize;
-        final long twoMegaBytes = 2 * 1024 * 1024;
-        if (estimatedBatchSize < twoMegaBytes) {
-            LOGGER.debug("Estimate <{}> smaller than minimum size, using minimum 2MB buffer", estimatedBatchSize);
-            estimateOrMinimumSize = twoMegaBytes;
-        }
-        else {
-            estimateOrMinimumSize = estimatedBatchSize;
-        }
-
-        return Math.min(estimateOrMinimumSize, maxBufferSize);
-    }
-
-    private BufferedMutatorParams defaultBuffer() {
-        return new BufferedMutatorParams(name).listener(exceptionListener());
-    }
-
-    private BufferedMutator.ExceptionListener exceptionListener() {
-        return (e, mutator) -> {
-            LOGGER.error("Failed mutation <{}>, number of exceptions <{}>", e.getMessage(), e.getNumExceptions(), e);
-        };
+        return paramsSource;
     }
 }

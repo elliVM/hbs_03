@@ -77,20 +77,20 @@ public final class LogfileTableFlatQuery {
     private static final Logger LOGGER = LoggerFactory.getLogger(LogfileTableFlatQuery.class);
     private final DSLContext ctx;
     private final Table<Record1<ULong>> rangeIdTable;
-    private final HostMappingTable hostMappingTable;
+    private final HostMappingTempTable hostMappingTempTable;
 
     public LogfileTableFlatQuery(final DSLContext ctx, final long startId, final long endId) {
-        this(ctx, new LogfileTableIdBatchQuery(ctx, startId, endId).asTable(), new HostMappingTable(ctx));
+        this(ctx, new LogfileTableIdRangeQuery(ctx, startId, endId).asTable(), new HostMappingTempTable(ctx));
     }
 
     public LogfileTableFlatQuery(
             final DSLContext ctx,
             final Table<Record1<ULong>> rangeIdTable,
-            final HostMappingTable hostMappingTable
+            final HostMappingTempTable hostMappingTempTable
     ) {
         this.ctx = ctx;
         this.rangeIdTable = rangeIdTable;
-        this.hostMappingTable = hostMappingTable;
+        this.hostMappingTempTable = hostMappingTempTable;
     }
 
     private Field<Long> logTimeFunctionField() {
@@ -100,7 +100,7 @@ public final class LogfileTableFlatQuery {
     }
 
     public List<Row> resultRowList() {
-        hostMappingTable.createIfNotExists();
+        hostMappingTempTable.createIfNotExists();
 
         if (LOGGER.isDebugEnabled()) {
             final Explain explain = ctx.explain(selectFlatQueryStep());
@@ -143,8 +143,8 @@ public final class LogfileTableFlatQuery {
                 .join(JOURNALDB.HOST)
                 .on(JOURNALDB.LOGFILE.HOST_ID.eq(JOURNALDB.HOST.ID))
                 // join host mapping temp table
-                .join(hostMappingTable.table())
-                .on(JOURNALDB.HOST.ID.eq(hostMappingTable.hostIdField()))
+                .join(hostMappingTempTable.table())
+                .on(JOURNALDB.HOST.ID.eq(hostMappingTempTable.hostIdField()))
                 .join(JOURNALDB.BUCKET)
                 .on(JOURNALDB.LOGFILE.BUCKET_ID.eq(JOURNALDB.BUCKET.ID))
                 .join(JOURNALDB.SOURCE_SYSTEM)
@@ -154,7 +154,7 @@ public final class LogfileTableFlatQuery {
                 .join(JOURNALDB.METADATA_VALUE)
                 .on(JOURNALDB.LOGFILE.ID.eq(JOURNALDB.METADATA_VALUE.LOGFILE_ID))
                 .join(STREAMDB.LOG_GROUP)
-                .on(hostMappingTable.groupIdField().eq(STREAMDB.LOG_GROUP.ID))
+                .on(hostMappingTempTable.groupIdField().eq(STREAMDB.LOG_GROUP.ID))
                 .join(STREAMDB.STREAM)
                 .on(STREAMDB.LOG_GROUP.ID.eq(STREAMDB.STREAM.GID).and(JOURNALDB.LOGFILE.LOGTAG.eq(STREAMDB.STREAM.TAG)));
     }

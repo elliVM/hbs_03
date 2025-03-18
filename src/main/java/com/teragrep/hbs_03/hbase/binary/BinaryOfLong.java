@@ -47,7 +47,9 @@ package com.teragrep.hbs_03.hbase.binary;
 
 import org.apache.hadoop.hbase.util.Bytes;
 
-public class BinaryOfLong implements Binary {
+import java.util.Objects;
+
+public final class BinaryOfLong implements Binary {
 
     private final Long value;
 
@@ -65,5 +67,26 @@ public class BinaryOfLong implements Binary {
             bytes = Bytes.toBytes(value);
         }
         return bytes;
+    }
+
+    @Override
+    public boolean equals(final Object object) {
+        final boolean isEqual;
+        if (object == null) {
+            isEqual = false;
+        }
+        else if (getClass() != object.getClass()) {
+            isEqual = false;
+        }
+        else {
+            final BinaryOfLong binaryOfLong = (BinaryOfLong) object;
+            isEqual = Objects.equals(value, binaryOfLong.value);
+        }
+        return isEqual;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(value);
     }
 }

@@ -54,6 +54,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
+/** Factory to create a configured HBaseClient object */
 public final class HBaseClientFactory implements Factory<HBaseClient> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HBaseClientFactory.class);

@@ -48,8 +48,9 @@ package com.teragrep.hbs_03.hbase.binary;
 import org.jooq.types.ULong;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
-public class BinaryOfULong implements Binary {
+public final class BinaryOfULong implements Binary {
 
     private final ULong value;
 
@@ -67,5 +68,26 @@ public class BinaryOfULong implements Binary {
             bytes = ByteBuffer.allocate(Long.BYTES).putLong(value.longValue()).array();
         }
         return bytes;
+    }
+
+    @Override
+    public boolean equals(final Object object) {
+        final boolean isEqual;
+        if (object == null) {
+            isEqual = false;
+        }
+        else if (getClass() != object.getClass()) {
+            isEqual = false;
+        }
+        else {
+            final BinaryOfULong binaryOfULong = (BinaryOfULong) object;
+            isEqual = Objects.equals(value, binaryOfULong.value);
+        }
+        return isEqual;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(value);
     }
 }

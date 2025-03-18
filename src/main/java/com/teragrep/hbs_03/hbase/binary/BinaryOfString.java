@@ -47,7 +47,10 @@ package com.teragrep.hbs_03.hbase.binary;
 
 import org.apache.hadoop.hbase.util.Bytes;
 
-public class BinaryOfString implements Binary {
+import java.util.Objects;
+
+/** Uses UTF_8 encoding */
+public final class BinaryOfString implements Binary {
 
     private final String value;
 
@@ -65,5 +68,26 @@ public class BinaryOfString implements Binary {
             bytes = Bytes.toBytes(value);
         }
         return bytes;
+    }
+
+    @Override
+    public boolean equals(final Object object) {
+        final boolean isEqual;
+        if (object == null) {
+            isEqual = false;
+        }
+        else if (getClass() != object.getClass()) {
+            isEqual = false;
+        }
+        else {
+            final BinaryOfString binaryOfString = (BinaryOfString) object;
+            isEqual = Objects.equals(value, binaryOfString.value);
+        }
+        return isEqual;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(value);
     }
 }

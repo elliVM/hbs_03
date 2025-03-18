@@ -48,7 +48,9 @@ package com.teragrep.hbs_03.hbase.binary;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.jooq.JSON;
 
-public class BinaryOfJSON implements Binary {
+import java.util.Objects;
+
+public final class BinaryOfJSON implements Binary {
 
     private final JSON value;
 
@@ -66,5 +68,26 @@ public class BinaryOfJSON implements Binary {
             bytes = Bytes.toBytes(value.toString());
         }
         return bytes;
+    }
+
+    @Override
+    public boolean equals(final Object object) {
+        final boolean isEqual;
+        if (object == null) {
+            isEqual = false;
+        }
+        else if (getClass() != object.getClass()) {
+            isEqual = false;
+        }
+        else {
+            final BinaryOfJSON binaryOfJSON = (BinaryOfJSON) object;
+            isEqual = Objects.equals(value, binaryOfJSON.value);
+        }
+        return isEqual;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(value);
     }
 }

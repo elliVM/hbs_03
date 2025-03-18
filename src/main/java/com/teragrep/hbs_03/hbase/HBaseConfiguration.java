@@ -57,6 +57,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
+/** Immutable HBase configuration HBase from arguments */
 public final class HBaseConfiguration {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HBaseConfiguration.class);

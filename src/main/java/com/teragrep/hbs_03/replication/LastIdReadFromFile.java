@@ -70,7 +70,7 @@ public final class LastIdReadFromFile {
 
     public long read() {
         final long returnValue;
-        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+        try (final BufferedReader reader = new BufferedReader(new FileReader(path))) {
             returnValue = Long.parseLong(reader.readLine());
             LOGGER.debug("Loaded last processed id <{}> from path=<{}>", returnValue, path);
         }

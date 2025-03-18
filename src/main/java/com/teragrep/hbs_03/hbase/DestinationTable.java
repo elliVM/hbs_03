@@ -50,7 +50,6 @@ import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.BufferedMutator;
-import org.apache.hadoop.hbase.client.BufferedMutatorParams;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.Table;
@@ -194,9 +193,9 @@ public final class DestinationTable implements HBaseTable {
             put(rows.get(0).put());
         }
 
-        final BufferedMutatorParams params = mutator.paramsForRows(rows);
+        final MutatorParamsSource paramsSource = mutator.paramsForRows(rows);
 
-        try (final BufferedMutator mutator = connection.getBufferedMutator(params)) {
+        try (final BufferedMutator mutator = connection.getBufferedMutator(paramsSource.params())) {
 
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Putting <{}> objects", rows.size());

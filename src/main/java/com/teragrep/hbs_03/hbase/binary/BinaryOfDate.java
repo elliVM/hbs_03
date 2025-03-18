@@ -47,8 +47,9 @@ package com.teragrep.hbs_03.hbase.binary;
 
 import java.nio.ByteBuffer;
 import java.sql.Date;
+import java.util.Objects;
 
-public class BinaryOfDate implements Binary {
+public final class BinaryOfDate implements Binary {
 
     private final Date value;
 
@@ -66,5 +67,26 @@ public class BinaryOfDate implements Binary {
             bytes = ByteBuffer.allocate(Long.BYTES).putLong(value.getTime()).array();
         }
         return bytes;
+    }
+
+    @Override
+    public boolean equals(final Object object) {
+        final boolean isEqual;
+        if (object == null) {
+            isEqual = false;
+        }
+        else if (getClass() != object.getClass()) {
+            isEqual = false;
+        }
+        else {
+            final BinaryOfDate binaryOfDate = (BinaryOfDate) object;
+            isEqual = Objects.equals(value, binaryOfDate.value);
+        }
+        return isEqual;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(value);
     }
 }

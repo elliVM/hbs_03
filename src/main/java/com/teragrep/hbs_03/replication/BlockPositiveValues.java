@@ -72,7 +72,7 @@ public final class BlockPositiveValues implements Block {
         return false;
     }
 
-    public void checkValues() {
+    private void checkValues() {
         if (origin.start() < 0) {
             throw new HbsRuntimeException(
                     "Negative value",

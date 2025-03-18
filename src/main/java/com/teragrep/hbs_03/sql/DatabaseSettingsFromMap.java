@@ -45,6 +45,7 @@
  */
 package com.teragrep.hbs_03.sql;
 
+import com.teragrep.hbs_03.OptionValue;
 import org.jooq.conf.MappedSchema;
 import org.jooq.conf.RenderMapping;
 import org.jooq.conf.Settings;
@@ -63,16 +64,24 @@ public final class DatabaseSettingsFromMap implements OptionValue<Settings> {
 
     @Override
     public Settings value() {
-        final String executeLoggingValue = map.getOrDefault(prefix + "executeLogging", "false");
-        return new Settings().withRenderMapping(renderMapping()).withExecuteLogging("true".equals(executeLoggingValue));
+        final OptionValue<String> executeLoggingValue = new ValidOption(
+                map.getOrDefault(prefix + "executeLogging", "false")
+        );
+        return new Settings()
+                .withRenderMapping(renderMapping())
+                .withExecuteLogging("true".equals(executeLoggingValue.value()));
     }
 
     private RenderMapping renderMapping() {
-        final String journaldbName = map.getOrDefault(prefix + "journaldb.name", "journaldb");
-        final String streamdbName = map.getOrDefault(prefix + "streamdb.name", "streamdb");
-        final String bloomdbName = map.getOrDefault(prefix + "bloomdb.name", "bloomdb");
+        final OptionValue<String> journaldbName = new ValidOption(
+                map.getOrDefault(prefix + "journaldb.name", "journaldb")
+        );
+        final OptionValue<String> streamdbName = new ValidOption(
+                map.getOrDefault(prefix + "streamdb.name", "streamdb")
+        );
+        final OptionValue<String> bloomdbName = new ValidOption(map.getOrDefault(prefix + "bloomdb.name", "bloomdb"));
 
         return new RenderMapping()
-                .withSchemata(new MappedSchema().withInput("streamdb").withOutput(streamdbName), new MappedSchema().withInput("journaldb").withOutput(journaldbName), new MappedSchema().withInput("bloomdb").withOutput(bloomdbName));
+                .withSchemata(new MappedSchema().withInput("streamdb").withOutput(streamdbName.value()), new MappedSchema().withInput("journaldb").withOutput(journaldbName.value()), new MappedSchema().withInput("bloomdb").withOutput(bloomdbName.value()));
     }
 }

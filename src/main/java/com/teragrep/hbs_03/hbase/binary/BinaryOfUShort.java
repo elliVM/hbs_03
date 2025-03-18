@@ -48,7 +48,9 @@ package com.teragrep.hbs_03.hbase.binary;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.jooq.types.UShort;
 
-public class BinaryOfUShort implements Binary {
+import java.util.Objects;
+
+public final class BinaryOfUShort implements Binary {
 
     private final UShort value;
 
@@ -67,4 +69,26 @@ public class BinaryOfUShort implements Binary {
         }
         return bytes;
     }
+
+    @Override
+    public boolean equals(final Object object) {
+        final boolean isEqual;
+        if (object == null) {
+            isEqual = false;
+        }
+        else if (getClass() != object.getClass()) {
+            isEqual = false;
+        }
+        else {
+            final BinaryOfUShort binaryOfUShort = (BinaryOfUShort) object;
+            isEqual = Objects.equals(value, binaryOfUShort.value);
+        }
+        return isEqual;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(value);
+    }
+
 }

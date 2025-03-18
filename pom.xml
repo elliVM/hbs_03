@@ -75,6 +75,12 @@
       <artifactId>cnf_01</artifactId>
       <version>${cnf_01.version}</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/org.cactoos/cactoos -->
+    <dependency>
+      <groupId>org.cactoos</groupId>
+      <artifactId>cactoos</artifactId>
+      <version>0.56.1</version>
+    </dependency>
     <!-- HBase -->
     <dependency>
       <groupId>org.apache.hbase</groupId>
@@ -447,7 +453,6 @@
                       <property name="ignoreConstructorParameter" value="true"></property>
                       <property name="ignoreSetter" value="true"></property>
                     </module>
-                    <module name="IllegalCatch"></module>
                     <module name="IllegalImport"></module>
                     <module name="IllegalThrows"></module>
                     <module name="IllegalToken"></module>

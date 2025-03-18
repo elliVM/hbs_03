@@ -45,6 +45,8 @@
  */
 package com.teragrep.hbs_03.replication;
 
+import java.util.Objects;
+
 public final class BlockImpl implements Block {
 
     private final long start;
@@ -68,5 +70,26 @@ public final class BlockImpl implements Block {
     @Override
     public boolean isStub() {
         return false;
+    }
+
+    @Override
+    public boolean equals(final Object object) {
+        final boolean isEqual;
+        if (object == null) {
+            isEqual = false;
+        }
+        else if (getClass() != object.getClass()) {
+            isEqual = false;
+        }
+        else {
+            final BlockImpl blockImplCast = (BlockImpl) object;
+            isEqual = (start == blockImplCast.start && end == blockImplCast.end);
+        }
+        return isEqual;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(start, end);
     }
 }

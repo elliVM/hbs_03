@@ -45,9 +45,10 @@
  */
 package com.teragrep.hbs_03.replication;
 
-public interface Block extends Stubable {
+public interface Block extends Stubbable {
 
     public abstract long start();
 
     public abstract long end();
+
 }

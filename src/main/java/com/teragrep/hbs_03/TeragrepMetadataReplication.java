@@ -47,8 +47,8 @@ package com.teragrep.hbs_03;
 
 import com.teragrep.cnf_01.ArgsConfiguration;
 import com.teragrep.cnf_01.Configuration;
-import com.teragrep.hbs_03.replication.ReplicateFromId;
-import com.teragrep.hbs_03.replication.ReplicateFromIdFactory;
+import com.teragrep.hbs_03.replication.ReplicationProcess;
+import com.teragrep.hbs_03.replication.ReplicationProcessFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,10 +60,10 @@ public final class TeragrepMetadataReplication {
     public static void main(final String[] args) {
         try {
             final Configuration config = new ArgsConfiguration(args);
-            final Factory<ReplicateFromId> replicateFromIdFactory = new ReplicateFromIdFactory(config);
+            final Factory<ReplicationProcess> replicationProcessFactory = new ReplicationProcessFactory(config);
 
-            try (final ReplicateFromId replicateFromId = replicateFromIdFactory.object()) {
-                replicateFromId.replicate();
+            try (final ReplicationProcess replicationProcess = replicationProcessFactory.object()) {
+                replicationProcess.replicate();
             }
 
             System.exit(0); // success

@@ -47,8 +47,9 @@ package com.teragrep.hbs_03.hbase.binary;
 
 import java.nio.ByteBuffer;
 import java.sql.Timestamp;
+import java.util.Objects;
 
-public class BinaryOfTimestamp implements Binary {
+public final class BinaryOfTimestamp implements Binary {
 
     private final Timestamp value;
 
@@ -66,5 +67,26 @@ public class BinaryOfTimestamp implements Binary {
             bytes = ByteBuffer.allocate(Long.BYTES).putLong(value.getTime()).array();
         }
         return bytes;
+    }
+
+    @Override
+    public boolean equals(final Object object) {
+        final boolean isEqual;
+        if (object == null) {
+            isEqual = false;
+        }
+        else if (getClass() != object.getClass()) {
+            isEqual = false;
+        }
+        else {
+            final BinaryOfTimestamp binaryOfTimestamp = (BinaryOfTimestamp) object;
+            isEqual = Objects.equals(value, binaryOfTimestamp.value);
+        }
+        return isEqual;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(value);
     }
 }

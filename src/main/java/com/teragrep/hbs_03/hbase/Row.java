@@ -54,6 +54,7 @@ public interface Row {
     /** Row values as a Put object that can be inserted into the logfile table */
     public abstract Put put();
 
+    /** Row key that the row will have in HBase */
     public abstract Binary rowKey();
 
     /** unique identifier for the row (row key, SQL id) */

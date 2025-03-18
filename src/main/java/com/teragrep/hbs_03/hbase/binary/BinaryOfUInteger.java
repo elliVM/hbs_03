@@ -48,7 +48,9 @@ package com.teragrep.hbs_03.hbase.binary;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.jooq.types.UInteger;
 
-public class BinaryOfUInteger implements Binary {
+import java.util.Objects;
+
+public final class BinaryOfUInteger implements Binary {
 
     private final UInteger value;
 
@@ -67,4 +69,26 @@ public class BinaryOfUInteger implements Binary {
         }
         return bytes;
     }
+
+    @Override
+    public boolean equals(final Object object) {
+        final boolean isEqual;
+        if (object == null) {
+            isEqual = false;
+        }
+        else if (getClass() != object.getClass()) {
+            isEqual = false;
+        }
+        else {
+            final BinaryOfUInteger binaryOfUInteger = (BinaryOfUInteger) object;
+            isEqual = Objects.equals(value, binaryOfUInteger.value);
+        }
+        return isEqual;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(value);
+    }
+
 }

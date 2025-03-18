@@ -57,6 +57,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+/** Description of the HBase replication destination table */
 public final class DestinationTableDescription {
 
     private final TableName name;

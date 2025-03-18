@@ -49,6 +49,7 @@ import com.teragrep.cnf_01.Configuration;
 import com.teragrep.cnf_01.ConfigurationException;
 import com.teragrep.hbs_03.Factory;
 import com.teragrep.hbs_03.HbsRuntimeException;
+import com.teragrep.hbs_03.OptionValue;
 import org.jooq.conf.Settings;
 
 import java.sql.Connection;
@@ -80,9 +81,9 @@ public final class DatabaseClientFactory implements Factory<DatabaseClient> {
             throw new HbsRuntimeException("Error getting configuration as map", e);
         }
 
-        final OptionValue<String> urlOption = new MapContainsNonEmpty(map, prefix + "url");
-        final OptionValue<String> usernameOption = new MapContainsNonEmpty(map, prefix + "username");
-        final OptionValue<String> passwordOption = new MapContainsNonEmpty(map, prefix + "password");
+        final OptionValue<String> urlOption = new ValidOption(map, prefix + "url");
+        final OptionValue<String> usernameOption = new ValidOption(map, prefix + "username");
+        final OptionValue<String> passwordOption = new ValidOption(map, prefix + "password");
         final OptionValue<Settings> settingsOption = new DatabaseSettingsFromMap(map, prefix);
 
         final Connection conn;
