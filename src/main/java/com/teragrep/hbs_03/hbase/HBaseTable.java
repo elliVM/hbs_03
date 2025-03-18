@@ -55,7 +55,7 @@ public interface HBaseTable {
 
     public abstract void drop();
 
-    public abstract long put(Put put);
+    public abstract void put(Put put);
 
     public abstract void putAll(List<Row> rows);
 }

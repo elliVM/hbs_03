@@ -174,7 +174,7 @@ public final class DestinationTable implements HBaseTable {
         }
     }
 
-    public long put(final Put put) {
+    public void put(final Put put) {
         try (final Table table = connection.getTable(name)) {
             table.put(put);
             if (LOGGER.isDebugEnabled()) {
@@ -184,7 +184,6 @@ public final class DestinationTable implements HBaseTable {
         catch (final IOException e) {
             throw new HbsRuntimeException("Error writing files to table", e);
         }
-        return 1L;
     }
 
     public void putAll(final List<Row> rows) {
