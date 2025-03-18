@@ -109,7 +109,7 @@ public final class HBaseConfiguration {
                     );
                 }
                 else {
-                    LOGGER.info("Loading options from file in path=<[{}}>", value);
+                    LOGGER.info("Loading options from file in path=<[{}]>", value);
                     try {
                         // checks the file system, not the class path
                         hbaseConfig.addResource(path.toAbsolutePath().toUri().toURL());
