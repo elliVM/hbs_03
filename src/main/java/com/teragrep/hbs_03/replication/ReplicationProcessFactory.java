@@ -51,6 +51,7 @@ import com.teragrep.hbs_03.Factory;
 import com.teragrep.hbs_03.HbsRuntimeException;
 import com.teragrep.hbs_03.hbase.HBaseClient;
 import com.teragrep.hbs_03.hbase.HBaseClientFactory;
+import com.teragrep.hbs_03.hbase.mutator.MutatorConfiguration;
 import com.teragrep.hbs_03.sql.DatabaseClient;
 import com.teragrep.hbs_03.sql.DatabaseClientFactory;
 import org.jooq.types.ULong;
@@ -81,12 +82,16 @@ public final class ReplicationProcessFactory implements Factory<ReplicationProce
         final DatabaseClient databaseClient = new DatabaseClientFactory(config, prefix + "db.").object();
         final HBaseClient hbaseClient = new HBaseClientFactory(config, prefix + "hadoop.").object();
 
-        final long lastIdFromFile = new LastIdReadFromFile().read();
+        final long lastIdFromFile = new LastIdReadFromFile().value();
         final long minIdInDatabase = databaseClient.firstAvailableId().longValue();
 
         final long startId;
         if (minIdInDatabase > lastIdFromFile) {
-            LOGGER.info("First available id value was larger than given start id");
+            LOGGER
+                    .info(
+                            "First available ID <{}> was larger than given start ID <{}> from file", minIdInDatabase,
+                            lastIdFromFile
+                    );
             startId = minIdInDatabase;
         }
         else {
@@ -94,11 +99,17 @@ public final class ReplicationProcessFactory implements Factory<ReplicationProce
         }
 
         final long maxBatch;
+        final boolean dynamicMutator;
         try {
             final Map<String, String> map = config.asMap();
             final String maxBatchSizeKey = prefix + "db.batchSize";
             final String maxBatchSizeOption = map.getOrDefault(maxBatchSizeKey, "10000");
             maxBatch = Long.parseLong(maxBatchSizeOption);
+
+            final String dynamicMutatorKey = prefix + "hadoop.dynamicMutator";
+            final String dynamicMutatorOption = map.getOrDefault(dynamicMutatorKey, "true");
+            dynamicMutator = Boolean.parseBoolean(dynamicMutatorOption);
+
             LOGGER.debug("Set batch size <{}>", maxBatch);
         }
         catch (final ConfigurationException | NumberFormatException e) {
@@ -107,7 +118,8 @@ public final class ReplicationProcessFactory implements Factory<ReplicationProce
 
         final ULong endId = databaseClient.lastId();
         final BlockRangeStream blockRangeStream = new BlockRangeStream(startId, endId.longValue(), maxBatch);
+        final MutatorConfiguration mutatorConfiguration = new MutatorConfiguration(dynamicMutator);
 
-        return new ReplicationProcess(databaseClient, hbaseClient, blockRangeStream);
+        return new ReplicationProcess(databaseClient, hbaseClient, blockRangeStream, mutatorConfiguration);
     }
 }

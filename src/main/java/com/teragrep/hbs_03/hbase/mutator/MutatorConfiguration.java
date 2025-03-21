@@ -43,13 +43,36 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.hbase.mutator;
 
-public interface HBaseClient extends AutoCloseable {
+/** Holds settings set up incoming configuration */
+public final class MutatorConfiguration {
 
-    public abstract HBaseTable destinationTable();
+    private final boolean useDynamicBuffer;
+    private final ValidMultiplier multiplier;
 
-    @Override
-    public abstract void close();
+    public MutatorConfiguration(final boolean useDynamicBuffer) {
+        this(useDynamicBuffer, 1.0);
+    }
 
+    public MutatorConfiguration(final double multiplier) {
+        this(true, multiplier);
+    }
+
+    public MutatorConfiguration(final boolean useDynamicBuffer, final double multiplier) {
+        this(useDynamicBuffer, new ValidMultiplier(multiplier));
+    }
+
+    public MutatorConfiguration(final boolean useDynamicBuffer, final ValidMultiplier multiplier) {
+        this.useDynamicBuffer = useDynamicBuffer;
+        this.multiplier = multiplier;
+    }
+
+    public boolean useDynamicBuffer() {
+        return useDynamicBuffer;
+    }
+
+    public double multiplier() {
+        return multiplier.value();
+    }
 }

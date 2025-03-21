@@ -48,6 +48,7 @@ package com.teragrep.hbs_03.hbase;
 import com.teragrep.cnf_01.Configuration;
 import com.teragrep.cnf_01.ConfigurationException;
 import com.teragrep.hbs_03.HbsRuntimeException;
+import com.teragrep.hbs_03.Source;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +59,7 @@ import java.nio.file.Paths;
 import java.util.Map;
 
 /** Immutable HBase configuration HBase from arguments */
-public final class HBaseConfiguration {
+public final class HBaseConfiguration implements Source<org.apache.hadoop.conf.Configuration> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HBaseConfiguration.class);
 
@@ -74,7 +75,8 @@ public final class HBaseConfiguration {
         this.prefix = prefix;
     }
 
-    public org.apache.hadoop.conf.Configuration config() {
+    @Override
+    public org.apache.hadoop.conf.Configuration value() {
         final Map<String, String> map;
         try {
             map = config.asMap();

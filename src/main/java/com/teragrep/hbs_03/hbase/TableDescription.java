@@ -45,11 +45,13 @@
  */
 package com.teragrep.hbs_03.hbase;
 
-public interface HBaseClient extends AutoCloseable {
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.TableDescriptor;
 
-    public abstract HBaseTable destinationTable();
+public interface TableDescription {
 
-    @Override
-    public abstract void close();
+    public abstract TableName name();
+
+    public abstract TableDescriptor describe();
 
 }

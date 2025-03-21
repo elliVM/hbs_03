@@ -46,7 +46,7 @@
 package com.teragrep.hbs_03.replication;
 
 import com.teragrep.cnf_01.PropertiesConfiguration;
-import com.teragrep.hbs_03.hbase.HBaseClient;
+import com.teragrep.hbs_03.hbase.HBaseClientImpl;
 import com.teragrep.hbs_03.sql.DatabaseClient;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -95,7 +95,7 @@ public final class ManualReplicationProcessTest {
 
     @AfterAll
     public void tearDown() {
-        Assertions.assertDoesNotThrow(() -> new HBaseClient(config, testTableName).close());
+        Assertions.assertDoesNotThrow(() -> new HBaseClientImpl(config, testTableName).close());
     }
 
     @BeforeEach
@@ -105,7 +105,7 @@ public final class ManualReplicationProcessTest {
 
     @Test
     public void testRange() {
-        final HBaseClient client = new HBaseClient(config, "replication_range_test");
+        final HBaseClientImpl client = new HBaseClientImpl(config, "replication_range_test");
         final DatabaseClient sqlClient = new DatabaseClient(ctx, connection);
         final BlockRangeStream blockRangeStream = new BlockRangeStream(
                 sqlClient.firstAvailableId(),

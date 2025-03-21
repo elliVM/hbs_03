@@ -56,31 +56,31 @@ import java.util.Properties;
 public final class HBaseConfigurationTest {
 
     @Test
-    public void testDefaultConfig() {
+    public void testDefaultValue() {
         final Properties props = new Properties();
         final Configuration configuration = new PropertiesConfiguration(props);
         final org.apache.hadoop.conf.Configuration hbaseConfig = new HBaseConfiguration(configuration, "prefix.")
-                .config();
+                .value();
         Assertions.assertEquals("host_from_file", hbaseConfig.get("hbase.zookeeper.quorum"));
     }
 
     @Test
-    public void testConfig() {
+    public void testValue() {
         final Properties props = new Properties();
         props.put("prefix.zookeeper.quorum", "testhost");
         final Configuration configuration = new PropertiesConfiguration(props);
         final org.apache.hadoop.conf.Configuration hbaseConfig = new HBaseConfiguration(configuration, "prefix.")
-                .config();
+                .value();
         Assertions.assertEquals("testhost", hbaseConfig.get("zookeeper.quorum"));
     }
 
     @Test
-    public void testConfigFromFile() {
+    public void testValueFromFile() {
         final Properties props = new Properties();
         props.put("prefix.config.path", "src/test/resources/hbase-site.xml");
         final Configuration configuration = new PropertiesConfiguration(props);
         final org.apache.hadoop.conf.Configuration hbaseConfig = new HBaseConfiguration(configuration, "prefix.")
-                .config();
+                .value();
         Assertions.assertEquals("host_from_file", hbaseConfig.get("hbase.zookeeper.quorum"));
     }
 
@@ -90,7 +90,7 @@ public final class HBaseConfigurationTest {
         props.put("prefix.config.path", "broken/path/");
         final Configuration configuration = new PropertiesConfiguration(props);
         final HbsRuntimeException ex = Assertions
-                .assertThrows(HbsRuntimeException.class, () -> new HBaseConfiguration(configuration, "prefix.").config());
+                .assertThrows(HbsRuntimeException.class, () -> new HBaseConfiguration(configuration, "prefix.").value());
         final String expectedMessage = "Could not find a file in given file path (caused by: MalformedURLException: No file in path)";
         Assertions.assertEquals(expectedMessage, ex.getMessage());
     }

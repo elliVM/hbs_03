@@ -48,6 +48,7 @@ package com.teragrep.hbs_03.sql;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.conf.MappedSchema;
+import org.jooq.conf.MappedTable;
 import org.jooq.conf.RenderMapping;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
@@ -58,7 +59,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.testcontainers.containers.MariaDBContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
@@ -74,17 +74,16 @@ import java.util.List;
 )
 public final class DatabaseClientTest {
 
-    @Container
-    private MariaDBContainer<?> mariadb;
+    private final MariaDBContainer<?> mariadb = Assertions
+            .assertDoesNotThrow(() -> new MariaDBContainer<>(DockerImageName.parse("mariadb:10.5")).withPrivilegedMode(true).withUsername("user").withPassword("password").withDatabaseName("journaldb").withInitScript("setup_database.sql"));
+
     private Connection connection;
     final Settings settings = new Settings()
-            .withRenderMapping(new RenderMapping().withSchemata(new MappedSchema().withInput("streamdb").withOutput("journaldb"), new MappedSchema().withInput("journaldb").withOutput("journaldb"), new MappedSchema().withInput("bloomdb").withOutput("journaldb")));
+            .withRenderMapping(new RenderMapping().withSchemata(new MappedSchema().withInput("streamdb").withOutput("journaldb").withTables(new MappedTable().withInput("host").withOutput("stream_host")), new MappedSchema().withInput("journaldb").withOutput("journaldb"), new MappedSchema().withInput("bloomdb").withOutput("journaldb")));
 
     @BeforeAll
 
     public void setup() {
-        mariadb = Assertions
-                .assertDoesNotThrow(() -> new MariaDBContainer<>(DockerImageName.parse("mariadb:10.5")).withPrivilegedMode(false).withUsername("user").withPassword("password").withDatabaseName("journaldb"));
         mariadb.start();
         connection = Assertions
                 .assertDoesNotThrow(

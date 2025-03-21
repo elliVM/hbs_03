@@ -94,12 +94,6 @@
       <version>${hbase.version}</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.apache.hbase</groupId>
-      <artifactId>hbase-server</artifactId>
-      <version>${hbase.version}</version>
-      <scope>test</scope>
-    </dependency>
     <!-- avoid dynamic versioning by hbase-server -->
     <dependency>
       <groupId>org.glassfish.web</groupId>

@@ -48,14 +48,18 @@ package com.teragrep.hbs_03.hbase;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 public final class BytesInMBTest {
 
     @Test
     public void testWithExactDivision() {
         double doubleValue = new BytesInMB(10487765).asDouble();
         Assertions.assertEquals(10.0, doubleValue);
+    }
+
+    @Test
+    public void testBytesToLong() {
+        long megaByteValue = new BytesInMB(2 * 1024 * 1024).asLong();
+        Assertions.assertEquals(2L, megaByteValue);
     }
 
 }

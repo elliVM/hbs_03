@@ -46,6 +46,7 @@
 package com.teragrep.hbs_03.replication;
 
 import com.teragrep.hbs_03.HbsRuntimeException;
+import com.teragrep.hbs_03.Source;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +55,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
-public final class LastIdReadFromFile {
+public final class LastIdReadFromFile implements Source<Long> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LastIdReadFromFile.class);
 
@@ -68,7 +69,7 @@ public final class LastIdReadFromFile {
         this.path = path;
     }
 
-    public long read() {
+    public Long value() {
         final long returnValue;
         try (final BufferedReader reader = new BufferedReader(new FileReader(path))) {
             returnValue = Long.parseLong(reader.readLine());

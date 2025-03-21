@@ -43,57 +43,55 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.hbase.mutator;
 
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.cnf_01.ConfigurationException;
-import com.teragrep.hbs_03.Factory;
-import com.teragrep.hbs_03.HbsRuntimeException;
+import com.teragrep.hbs_03.Source;
+import com.teragrep.hbs_03.hbase.BytesInMB;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.BufferedMutator;
+import org.apache.hadoop.hbase.client.BufferedMutatorParams;
+import org.apache.hadoop.hbase.client.Put;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
+import java.util.List;
 
-/** Factory to create a configured HBaseClient */
-public final class HBaseClientFactory implements Factory<HBaseClient> {
+public final class MutatorParamsSourceFromList implements Source<BufferedMutatorParams> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseClientFactory.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MutatorParamsSourceFromList.class);
+    private final TableName name;
+    private final BufferSizeFromRowList bufferSizeFromRowList;
 
-    private final Configuration config;
-    private final HBaseConfiguration hbaseConfigFromConfig;
-    private final String prefix;
-
-    public HBaseClientFactory(final Configuration config) {
-        this(config, new HBaseConfiguration(config), "hbs.");
+    public MutatorParamsSourceFromList(final TableName name, final List<Put> puts) {
+        this(name, new BufferSizeFromRowList(puts, 2.0));
     }
 
-    public HBaseClientFactory(final Configuration config, final String prefix) {
-        this(config, new HBaseConfiguration(config), prefix);
+    public MutatorParamsSourceFromList(final TableName name, final List<Put> puts, final double overheadMultiplier) {
+        this(name, new BufferSizeFromRowList(puts, overheadMultiplier));
     }
 
-    public HBaseClientFactory(
-            final Configuration config,
-            final HBaseConfiguration hbaseConfigFromConfig,
-            final String prefix
-    ) {
-        this.config = config;
-        this.hbaseConfigFromConfig = hbaseConfigFromConfig;
-        this.prefix = prefix;
+    public MutatorParamsSourceFromList(final TableName name, final BufferSizeFromRowList bufferSizeFromRowList) {
+        this.name = name;
+        this.bufferSizeFromRowList = bufferSizeFromRowList;
     }
 
     @Override
-    public HBaseClient object() {
-        final String logfileTableName;
-        try {
-            final Map<String, String> map = config.asMap();
-            LOGGER.info("config map <{}>", map);
-            logfileTableName = map.getOrDefault(prefix + "hadoop.logfile.table.name", "logfile");
-            LOGGER.debug("Set HBase logfile table name <{}>", logfileTableName);
+    public BufferedMutatorParams value() {
+        final BufferedMutatorParams params;
+        final long dynamicBufferSize = bufferSizeFromRowList.value();
+        final BytesInMB sizeInMB = new BytesInMB(dynamicBufferSize);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Using dynamic buffer size <{}>MB", sizeInMB.asLong());
         }
-        catch (final ConfigurationException e) {
-            throw new HbsRuntimeException("Error getting configuration", e);
-        }
-        return new HBaseClientImpl(hbaseConfigFromConfig.value(), logfileTableName);
+        params = new BufferedMutatorParams(name).listener(exceptionListener()).writeBufferSize(dynamicBufferSize);
+
+        return params;
+    }
+
+    private BufferedMutator.ExceptionListener exceptionListener() {
+        return (e, mutator) -> {
+            LOGGER.error("Failed mutation <{}>, number of exceptions <{}>", e.getMessage(), e.getNumExceptions(), e);
+        };
     }
 
 }

@@ -50,19 +50,11 @@ import com.teragrep.hbs_03.sql.MockS3MetaData;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.Record21;
-import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.jooq.tools.jdbc.MockConnection;
-import org.jooq.types.UInteger;
-import org.jooq.types.ULong;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.sql.Date;
-import java.sql.Timestamp;
 
 public final class MetaRowTest {
 
@@ -73,25 +65,17 @@ public final class MetaRowTest {
 
     @Test
     public void testRowKey() {
-        final Result<Record> result = ctx.fetch("ONE_ROW");
-        final MetaRow row = new MetaRow(
-                (Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) result
-                        .get(0)
-        );
-        final String expected = "RowKey(streamId=<1001>, logtime=1285880400000, logfileId=1)\n"
-                + " bytes=<[00 00 00 00 00 00 03 e9 23 00 00 01 2b 64 71 c8 80 23 00 00 00 00 00 00 00 01]>";
-        Binary rowKey = row.rowKey();
+        final Row row = new Row.FakeRow();
+        final String expected = "RowKey(streamId=<123>, logtime=1285880400000, logfileId=123456789)\n"
+                + " bytes=<[00 00 00 00 00 00 00 7b 23 7f ff fe d4 9b 8e 37 7f 23 00 00 00 00 07 5b cd 15]>";
+        final Binary rowKey = row.rowKey();
         Assertions.assertEquals(expected, rowKey.toString());
     }
 
     @Test
     public void testPutQualifiers() {
-        final Result<Record> result = ctx.fetch("ONE_ROW");
-        final MetaRow row = new MetaRow(
-                (Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) result
-                        .get(0)
-        );
 
+        final Row row = new Row.FakeRow();
         final Put put = row.put();
         final byte[] columnFamily = Bytes.toBytes("meta");
         // test qualifiers
@@ -120,12 +104,7 @@ public final class MetaRowTest {
 
     @Test
     public void testCorrectSize() {
-        final Result<Record> result = ctx.fetch("ONE_ROW");
-        final MetaRow row = new MetaRow(
-                (Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) result
-                        .get(0)
-        );
-
+        final Row row = new Row.FakeRow();
         final Put put = row.put();
         Assertions.assertTrue(put.getFamilyCellMap().containsKey(Bytes.toBytes("meta")));
         Assertions.assertEquals(21, put.getFamilyCellMap().get(Bytes.toBytes("meta")).size());
@@ -133,12 +112,7 @@ public final class MetaRowTest {
 
     @Test
     public void testNullValue() {
-        final Result<Record> result = ctx.fetch("ONE_ROW");
-        Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record = (Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) result
-                .get(0);
-        record.set(record.field11(), null);
-        final MetaRow row = new MetaRow(record);
-
+        final Row row = new Row.FakeRow(null);
         final Put put = row.put();
         Assertions.assertTrue(put.getFamilyCellMap().containsKey(Bytes.toBytes("meta")));
         Assertions.assertEquals(21, put.getFamilyCellMap().get(Bytes.toBytes("meta")).size());

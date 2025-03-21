@@ -43,53 +43,52 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.hbase.mutator;
 
+import com.teragrep.hbs_03.Source;
 import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.BufferedMutatorParams;
+import org.apache.hadoop.hbase.client.Put;
 
 import java.util.List;
 
-/** Provides a mutator for HBase writes with set configuration values */
-public final class ConfiguredMutator {
+public final class MutatorParamsFromList implements Source<BufferedMutatorParams> {
 
     private final TableName name;
-    private final double overheadMultiplier;
-    private final boolean userDynamicBuffer;
+    private final MutatorConfiguration configuration;
+    private final List<Put> rows;
 
-    public ConfiguredMutator(final TableName name) {
-        this(name, false, 1);
+    public MutatorParamsFromList(final List<Put> rows, final TableName tableName) {
+        this(rows, tableName, new MutatorConfiguration(false, 1));
     }
 
-    public ConfiguredMutator(final TableName name, final double overheadMultiplier) {
-        this(name, true, overheadMultiplier);
+    public MutatorParamsFromList(final List<Put> rows, final TableName tableName, final boolean userDynamicBuffer) {
+        this(rows, tableName, new MutatorConfiguration(userDynamicBuffer, 2.0));
     }
 
-    public ConfiguredMutator(final TableName name, final boolean userDynamicBuffer) {
-        this(name, userDynamicBuffer, 2.0);
+    public MutatorParamsFromList(final List<Put> rows, final TableName tableName, final double overheadMultiplier) {
+        this(rows, tableName, new MutatorConfiguration(true, overheadMultiplier));
     }
 
-    public ConfiguredMutator(final TableName name, final boolean userDynamicBuffer, final double overheadMultiplier) {
-        this.name = name;
-        this.overheadMultiplier = overheadMultiplier;
-        this.userDynamicBuffer = userDynamicBuffer;
+    public MutatorParamsFromList(
+            final List<Put> rows,
+            final TableName tableName,
+            final MutatorConfiguration configuration
+    ) {
+        this.rows = rows;
+        this.name = tableName;
+        this.configuration = configuration;
     }
 
-    public MutatorParamsSource paramsForRows(final List<Row> rows) {
-        final MutatorParamsSource paramsSource;
+    public BufferedMutatorParams value() {
+        final BufferedMutatorParams params;
 
-        final BufferedMutatorParamsSourceFromRowList dynamicBuffer = new BufferedMutatorParamsSourceFromRowList(
-                name,
-                rows,
-                overheadMultiplier
-        );
-        final DefaultBufferedMutatorParamsSource defaultBuffer = new DefaultBufferedMutatorParamsSource(name);
-
-        if (userDynamicBuffer) {
-            paramsSource = dynamicBuffer;
+        if (configuration.useDynamicBuffer()) {
+            params = new MutatorParamsSourceFromList(name, rows, configuration.multiplier()).value();
         }
         else {
-            paramsSource = defaultBuffer;
+            params = new DefaultMutatorParamsSource(name).value();
         }
-        return paramsSource;
+        return params;
     }
 }

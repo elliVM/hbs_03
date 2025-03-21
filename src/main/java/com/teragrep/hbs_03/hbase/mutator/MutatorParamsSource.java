@@ -43,13 +43,12 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.hbase.mutator;
 
-public interface HBaseClient extends AutoCloseable {
+import org.apache.hadoop.hbase.client.BufferedMutatorParams;
 
-    public abstract HBaseTable destinationTable();
+public interface MutatorParamsSource {
 
-    @Override
-    public abstract void close();
+    public abstract BufferedMutatorParams value();
 
 }

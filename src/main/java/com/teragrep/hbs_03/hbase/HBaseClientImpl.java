@@ -45,9 +45,49 @@
  */
 package com.teragrep.hbs_03.hbase;
 
-import org.apache.hadoop.hbase.client.BufferedMutatorParams;
+import com.teragrep.hbs_03.HbsRuntimeException;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public interface MutatorParamsSource {
+import java.io.IOException;
 
-    public abstract BufferedMutatorParams params();
+/** Client to establish connection to HBase and provide the DestinationTable */
+public final class HBaseClientImpl implements HBaseClient, AutoCloseable {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseClientImpl.class);
+
+    private final LazyConnection lazyConnection;
+    private final TableName name;
+
+    public HBaseClientImpl(final Configuration configuration, final String name) {
+        this(new LazyConnection(configuration, 1), TableName.valueOf(name));
+    }
+
+    public HBaseClientImpl(final LazyConnection lazyConnection, final TableName name) {
+        this.lazyConnection = lazyConnection;
+        this.name = name;
+    }
+
+    private Connection connection() {
+        return lazyConnection.value();
+    }
+
+    @Override
+    public void close() {
+        LOGGER.debug("Closing connection");
+        try {
+            connection().close();
+        }
+        catch (final IOException e) {
+            throw new HbsRuntimeException("Error closing connection", e);
+        }
+    }
+
+    @Override
+    public HBaseTable destinationTable() {
+        return new DestinationTable(connection(), name);
+    }
 }

@@ -45,9 +45,7 @@
  */
 package com.teragrep.hbs_03.hbase;
 
-import org.apache.hadoop.hbase.client.Put;
-
-import java.util.List;
+import com.teragrep.hbs_03.hbase.task.TableTask;
 
 public interface HBaseTable {
 
@@ -55,7 +53,6 @@ public interface HBaseTable {
 
     public abstract void drop();
 
-    public abstract void put(Put put);
+    public abstract void workTask(final TableTask task);
 
-    public abstract void putAll(List<Row> rows);
 }

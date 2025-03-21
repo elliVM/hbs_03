@@ -43,25 +43,27 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.hbase.mutator;
 
+import com.teragrep.hbs_03.Source;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.BufferedMutator;
 import org.apache.hadoop.hbase.client.BufferedMutatorParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DefaultBufferedMutatorParamsSource implements MutatorParamsSource {
+public final class DefaultMutatorParamsSource implements Source<BufferedMutatorParams> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultBufferedMutatorParamsSource.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultMutatorParamsSource.class);
     private final TableName name;
 
-    public DefaultBufferedMutatorParamsSource(final TableName name) {
+    public DefaultMutatorParamsSource(final TableName name) {
         this.name = name;
     }
 
-    public BufferedMutatorParams params() {
-        return new BufferedMutatorParams(name).listener(exceptionListener());
+    public BufferedMutatorParams value() {
+        final long twoMegaBytes = 2 * 1024 * 1024;
+        return new BufferedMutatorParams(name).writeBufferSize(twoMegaBytes).listener(exceptionListener());
     }
 
     private BufferedMutator.ExceptionListener exceptionListener() {

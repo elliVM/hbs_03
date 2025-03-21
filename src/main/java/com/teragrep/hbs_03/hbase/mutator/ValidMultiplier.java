@@ -43,13 +43,29 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.hbase.mutator;
 
-public interface HBaseClient extends AutoCloseable {
+import com.teragrep.hbs_03.HbsRuntimeException;
+import com.teragrep.hbs_03.Source;
 
-    public abstract HBaseTable destinationTable();
+public final class ValidMultiplier implements Source<Double> {
+
+    private final Double multiplier;
+
+    public ValidMultiplier(final Double multiplier) {
+        this.multiplier = multiplier;
+    }
 
     @Override
-    public abstract void close();
-
+    public Double value() {
+        final int lowerLimit = 1;
+        final int upperLimit = 5;
+        if (multiplier < lowerLimit || multiplier > upperLimit) {
+            throw new HbsRuntimeException(
+                    "Overhead multiplier was not between 1-5",
+                    new IllegalAccessError("Illegal overhead multiplier <" + multiplier + ">")
+            );
+        }
+        return multiplier;
+    }
 }

@@ -43,13 +43,47 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.sql;
 
-public interface HBaseClient extends AutoCloseable {
+import com.teragrep.hbs_03.HbsRuntimeException;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-    public abstract HBaseTable destinationTable();
+import java.util.HashMap;
+import java.util.Map;
 
-    @Override
-    public abstract void close();
+public class ValidOptionTest {
 
+    @Test
+    public void testValid() {
+        final String key = "key";
+        final String value = "value";
+        final Map<String, String> map = new HashMap<>();
+        map.put(key, value);
+        final ValidOption validOption = new ValidOption(map, key);
+        final String validValue = validOption.value();
+        Assertions.assertEquals(value, validValue);
+    }
+
+    @Test
+    public void testMissingValue() {
+        final String key = "key";
+        final Map<String, String> map = new HashMap<>();
+        final ValidOption validOption = new ValidOption(map, key);
+        final HbsRuntimeException exception = Assertions.assertThrows(HbsRuntimeException.class, validOption::value);
+        final String expected = "Option not in map (caused by: IllegalArgumentException: <[key]> option missing)";
+        Assertions.assertEquals(expected, exception.getMessage());
+    }
+
+    @Test
+    public void testEmptyValue() {
+        final String key = "key";
+        final String value = "";
+        final Map<String, String> map = new HashMap<>();
+        map.put(key, value);
+        final ValidOption validOption = new ValidOption(map, key);
+        final HbsRuntimeException exception = Assertions.assertThrows(HbsRuntimeException.class, validOption::value);
+        final String expected = "Option empty (caused by: IllegalArgumentException: Key <[key]> had empty value)";
+        Assertions.assertEquals(expected, exception.getMessage());
+    }
 }

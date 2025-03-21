@@ -49,6 +49,9 @@ import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 public final class MetaRowKeyTest {
 
     @Test
@@ -58,9 +61,29 @@ public final class MetaRowKeyTest {
         final long logfileId = 54321L;
         final MetaRowKey metaRowKey = new MetaRowKey(streamId, logtime, logfileId);
         final byte[] bytes = metaRowKey.bytes();
-        Assertions.assertEquals(26, bytes.length, "byte array length should be 25");
+        Assertions.assertEquals(26, bytes.length, "byte array length should be 26");
         Assertions.assertEquals(0x23, bytes[8], "first separator should be #");
         Assertions.assertEquals(0x23, bytes[17], "second separator should be #");
+    }
+
+    @Test
+    public void testRowKeyValues() {
+        final long streamId = 12345L;
+        final long logtime = 9876543210L;
+        final long logfileId = 54321L;
+        final MetaRowKey metaRowKey = new MetaRowKey(streamId, logtime, logfileId);
+
+        final byte[] rowKeyBytes = metaRowKey.bytes();
+
+        final ByteBuffer buffer = ByteBuffer.wrap(rowKeyBytes).order(ByteOrder.BIG_ENDIAN);
+
+        final long expectedReversedEpoch = Long.MAX_VALUE - logtime;
+
+        Assertions.assertEquals(streamId, buffer.getLong());
+        Assertions.assertEquals((byte) '#', buffer.get());
+        Assertions.assertEquals(expectedReversedEpoch, buffer.getLong());
+        Assertions.assertEquals((byte) '#', buffer.get());
+        Assertions.assertEquals(logfileId, buffer.getLong());
     }
 
     @Test
@@ -70,7 +93,7 @@ public final class MetaRowKeyTest {
         final long logfileId = Long.MAX_VALUE;
         final MetaRowKey metaRowKey = new MetaRowKey(streamId, logtime, logfileId);
         final byte[] bytes = metaRowKey.bytes();
-        Assertions.assertEquals(26, bytes.length, "byte array length should be 25");
+        Assertions.assertEquals(26, bytes.length, "byte array length should be 26");
         Assertions.assertEquals(0x23, bytes[8], "first separator should be #");
         Assertions.assertEquals(0x23, bytes[17], "second separator should be #");
     }
@@ -82,7 +105,7 @@ public final class MetaRowKeyTest {
         final long logfileId = Long.MIN_VALUE;
         final MetaRowKey metaRowKey = new MetaRowKey(streamId, logtime, logfileId);
         final byte[] bytes = metaRowKey.bytes();
-        Assertions.assertEquals(26, bytes.length, "byte array length should be 25");
+        Assertions.assertEquals(26, bytes.length, "byte array length should be 26");
         Assertions.assertEquals(0x23, bytes[8], "first separator should be #");
         Assertions.assertEquals(0x23, bytes[17], "second separator should be #");
     }
@@ -94,7 +117,7 @@ public final class MetaRowKeyTest {
         final long logfileId = 54321L;
         final MetaRowKey metaRowKey = new MetaRowKey(streamId, logtime, logfileId);
         final String expected = "RowKey(streamId=<12345>, logtime=9876543210, logfileId=54321)\n"
-                + " bytes=<[00 00 00 00 00 00 30 39 23 00 00 00 02 4c b0 16 ea 23 00 00 00 00 00 00 d4 31]>";
+                + " bytes=<[00 00 00 00 00 00 30 39 23 7f ff ff fd b3 4f e9 15 23 00 00 00 00 00 00 d4 31]>";
         Assertions.assertEquals(expected, metaRowKey.toString());
     }
 

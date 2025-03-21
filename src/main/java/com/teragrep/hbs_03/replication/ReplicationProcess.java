@@ -47,9 +47,16 @@ package com.teragrep.hbs_03.replication;
 
 import com.teragrep.hbs_03.hbase.HBaseClient;
 import com.teragrep.hbs_03.hbase.HBaseTable;
+import com.teragrep.hbs_03.hbase.Row;
+import com.teragrep.hbs_03.hbase.mutator.MutatorConfiguration;
+import com.teragrep.hbs_03.hbase.task.PutManyTask;
 import com.teragrep.hbs_03.sql.DatabaseClient;
+import org.apache.hadoop.hbase.client.Put;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Replicate SQL rows to HBase between the range for the BlockRangeStream
@@ -61,15 +68,26 @@ public final class ReplicationProcess implements AutoCloseable {
     private final DatabaseClient databaseClient;
     private final HBaseClient hbaseClient;
     private final BlockRangeStream blockRangeStream;
+    private final MutatorConfiguration mutatorConfiguration;
 
     public ReplicationProcess(
             final DatabaseClient databaseClient,
             final HBaseClient hbaseClient,
             final BlockRangeStream blockRangeStream
     ) {
+        this(databaseClient, hbaseClient, blockRangeStream, new MutatorConfiguration(false));
+    }
+
+    public ReplicationProcess(
+            final DatabaseClient databaseClient,
+            final HBaseClient hbaseClient,
+            final BlockRangeStream blockRangeStream,
+            final MutatorConfiguration mutatorConfiguration
+    ) {
         this.databaseClient = databaseClient;
         this.hbaseClient = hbaseClient;
         this.blockRangeStream = blockRangeStream;
+        this.mutatorConfiguration = mutatorConfiguration;
     }
 
     public void replicate() {
@@ -84,15 +102,20 @@ public final class ReplicationProcess implements AutoCloseable {
             final long blockStartTime = System.nanoTime();
 
             final Block block = blockRangeStream.next();
-            final long lastId = databaseClient.replicateRangeAndReturnLastId(block, destinationTable);
-            final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(lastId);
+
+            final List<Row> rowList = databaseClient.rangeResults(block);
+            final List<Put> rowsToPuts = rowList.stream().map(Row::put).collect(Collectors.toList());
+            destinationTable.workTask(new PutManyTask(rowsToPuts, mutatorConfiguration));
+
+            final long maxIdInList = new RowListMaxId(rowList).value();
+            final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(maxIdInList);
             lastIdSavedToFile.save();
 
             // logging
             final long blockEndTime = System.nanoTime();
             LOGGER.info("Batch replication took <{}>ms", (blockEndTime - blockStartTime) / 1000000);
-            final long processedIdCount = blockRangeStream.startId() + lastId;
-            final long remainingIdCount = blockRangeStream.maxId() - lastId;
+            final long processedIdCount = blockRangeStream.startId() + maxIdInList;
+            final long remainingIdCount = blockRangeStream.maxId() - maxIdInList;
             LOGGER.info("Total processed rows <{}>", processedIdCount);
             LOGGER.info("Total remaining rows <{}>", remainingIdCount);
         }
@@ -106,5 +129,6 @@ public final class ReplicationProcess implements AutoCloseable {
         LOGGER.info("Closing clients");
         databaseClient.close();
         hbaseClient.close();
+
     }
 }

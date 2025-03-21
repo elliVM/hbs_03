@@ -43,13 +43,10 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.hbase.mutator;
 
-public interface HBaseClient extends AutoCloseable {
+import static org.junit.jupiter.api.Assertions.*;
 
-    public abstract HBaseTable destinationTable();
-
-    @Override
-    public abstract void close();
+class MutatorConfigurationTest {
 
 }

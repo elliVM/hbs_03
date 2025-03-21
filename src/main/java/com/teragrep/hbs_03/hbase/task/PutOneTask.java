@@ -43,13 +43,39 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.hbase.task;
 
-public interface HBaseClient extends AutoCloseable {
+import com.teragrep.hbs_03.HbsRuntimeException;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Table;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-    public abstract HBaseTable destinationTable();
+import java.io.IOException;
+
+public final class PutOneTask implements TableTask {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PutOneTask.class);
+    private final Put put;
+
+    public PutOneTask(final Put put) {
+        this.put = put;
+    }
 
     @Override
-    public abstract void close();
+    public boolean work(final TableName tableName, final Connection tableConnection) {
+        try (final Table table = tableConnection.getTable(tableName)) {
+            table.put(put);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Put <{}> into database", put);
+            }
+        }
+        catch (final IOException e) {
+            throw new HbsRuntimeException("Error writing files to table", e);
+        }
 
+        return true;
+    }
 }

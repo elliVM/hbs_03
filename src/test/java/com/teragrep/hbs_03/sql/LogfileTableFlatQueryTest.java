@@ -45,22 +45,18 @@
  */
 package com.teragrep.hbs_03.sql;
 
+import com.teragrep.hbs_03.hbase.Row;
 import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.Record1;
-import org.jooq.Result;
 import org.jooq.SQLDialect;
-import org.jooq.SelectJoinStep;
-import org.jooq.Table;
 import org.jooq.conf.MappedSchema;
 import org.jooq.conf.MappedTable;
 import org.jooq.conf.RenderMapping;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
-import org.jooq.types.ULong;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -70,6 +66,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.util.List;
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -77,7 +74,7 @@ import java.sql.DriverManager;
         named = "runContainerTests",
         matches = "true"
 )
-public final class LogfileTableIdRangeQueryTest {
+public class LogfileTableFlatQueryTest {
 
     final MariaDBContainer<?> mariadb = Assertions
             .assertDoesNotThrow(() -> new MariaDBContainer<>(DockerImageName.parse("mariadb:10.5")).withPrivilegedMode(false).withUsername("user").withPassword("password").withDatabaseName("journaldb").withInitScript("setup_database.sql"));
@@ -104,51 +101,20 @@ public final class LogfileTableIdRangeQueryTest {
     }
 
     @Test
-    public void testRangeFullResults() {
+    @Disabled("Testcontainers inserts do not have correct relations yet")
+    public void testFlatQuery() {
         final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
-        final LogfileTableIdRangeQuery logfileTableIdRangeQuery = new LogfileTableIdRangeQuery(ctx, 1000L, 3000L);
-        final Table<Record1<ULong>> idRangeTable = logfileTableIdRangeQuery.asTable();
-        final SelectJoinStep<Record> selectFromTable = ctx.select().from(idRangeTable);
-        final Result<Record> results = selectFromTable.fetch();
-        Assertions.assertEquals(2001, results.size());
-    }
-
-    @Test
-    public void testRangePartialResults() {
-        final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
-        final LogfileTableIdRangeQuery logfileTableIdRangeQuery = new LogfileTableIdRangeQuery(ctx, 9000, 19000);
-        final Table<Record1<ULong>> idRangeTable = logfileTableIdRangeQuery.asTable();
-        final SelectJoinStep<Record> selectFromTable = ctx.select().from(idRangeTable);
-        final Result<Record> results = selectFromTable.fetch();
-        Assertions.assertEquals(1001, results.size());
-    }
-
-    @Test
-    public void testNoResults() {
-        final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
-        final LogfileTableIdRangeQuery logfileTableIdRangeQuery = new LogfileTableIdRangeQuery(ctx, 100000, 110000);
-        final Table<Record1<ULong>> idRangeTable = logfileTableIdRangeQuery.asTable();
-        final SelectJoinStep<Record> selectFromTable = ctx.select().from(idRangeTable);
-        final Result<Record> results = selectFromTable.fetch();
-        Assertions.assertEquals(0, results.size());
-    }
-
-    @Test
-    public void testCorrectIDs() {
-        final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
-        final LogfileTableIdRangeQuery logfileTableIdRangeQuery = new LogfileTableIdRangeQuery(ctx, 100, 200);
-        final Table<Record1<ULong>> idRangeTable = logfileTableIdRangeQuery.asTable();
-        final SelectJoinStep<Record> selectFromTable = ctx.select().from(idRangeTable);
-        final Result<Record> results = selectFromTable.fetch();
-        Assertions.assertEquals(101, results.size());
+        final LogfileTableFlatQuery logfileTableFlatQuery = new LogfileTableFlatQuery(ctx, 100, 200);
+        final List<Row> results = logfileTableFlatQuery.resultRowList();
+        Assertions.assertEquals(100, results.size());
         int loops = 0;
-        int currentId = 100;
-        for (final Record record : results) {
-            final ULong id = record.get("id", ULong.class);
-            Assertions.assertEquals(currentId, id.longValue());
-            currentId++;
+        for (final Row row : results) {
+            Assertions.assertDoesNotThrow(row::put);
+            Assertions.assertDoesNotThrow(row::id);
+            Assertions.assertDoesNotThrow(row::rowKey);
             loops++;
         }
+
         Assertions.assertEquals(101, loops);
     }
 }

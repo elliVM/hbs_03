@@ -63,11 +63,11 @@ public class LastIdSavedToFileTest {
         final String stringPath = "src/test/resources/target_id_test.txt";
         final LastIdReadFromFile lastIdReadFromFile = Assertions
                 .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(100, lastIdReadFromFile.read());
+        Assertions.assertEquals(100, lastIdReadFromFile.value());
         final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(1000, stringPath);
         Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
         final LastIdReadFromFile newIdFromPath = Assertions
                 .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(1000, newIdFromPath.read());
+        Assertions.assertEquals(1000, newIdFromPath.value());
     }
 }

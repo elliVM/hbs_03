@@ -1,0 +1,152 @@
+/*
+ * Teragrep Metadata Using HBase (hbs_03)
+ * Copyright (C) 2024 Suomen Kanuuna Oy
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *
+ * Additional permission under GNU Affero General Public License version 3
+ * section 7
+ *
+ * If you modify this Program, or any covered work, by linking or combining it
+ * with other code, such other code is not for that reason alone subject to any
+ * of the requirements of the GNU Affero GPL version 3 as long as this Program
+ * is the same Program as licensed from Suomen Kanuuna Oy without any additional
+ * modifications.
+ *
+ * Supplemented terms under GNU Affero General Public License version 3
+ * section 7
+ *
+ * Origin of the software must be attributed to Suomen Kanuuna Oy. Any modified
+ * versions must be marked as "Modified version of" The Program.
+ *
+ * Names of the licensors and authors may not be used for publicity purposes.
+ *
+ * No rights are granted for use of trade names, trademarks, or service marks
+ * which are in The Program if any.
+ *
+ * Licensee must indemnify licensors and authors for any liability that these
+ * contractual assumptions impose on licensors and authors.
+ *
+ * To the extent this program is licensed as part of the Commercial versions of
+ * Teragrep, the applicable Commercial License may apply to this file if you as
+ * a licensee so wish it.
+ */
+package com.teragrep.hbs_03.hbase;
+
+import org.apache.hadoop.hbase.HBaseTestingUtility;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.client.ColumnFamilyDescriptor;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.client.TableDescriptor;
+import org.apache.hadoop.hbase.regionserver.BloomType;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public class DestinationTableTest {
+
+    private final HBaseTestingUtility hbase = new HBaseTestingUtility();
+    private Connection conn;
+
+    @BeforeAll
+    public void setup() {
+        Assertions.assertDoesNotThrow(() -> {
+            hbase.getConfiguration().set("hbase.master.hostname", "localhost");
+            hbase.getConfiguration().set("hbase.regionserver.hostname", "localhost");
+            hbase.getConfiguration().set("hbase.zookeeper.quorum", "localhost");
+            hbase.getConfiguration().set("hbase.zookeeper.property.clientPort", "2181");
+            hbase.startMiniCluster();
+            conn = ConnectionFactory.createConnection(hbase.getConfiguration());
+        });
+    }
+
+    @AfterAll
+    public void tearDown() {
+        Assertions.assertDoesNotThrow(conn::close);
+        Assertions.assertDoesNotThrow(hbase::shutdownMiniCluster);
+    }
+
+    @Test
+    public void testCreation() {
+        final TableName tableName = TableName.valueOf("destination_table_test");
+        final DestinationTable destinationTable = new DestinationTable(conn, tableName);
+        destinationTable.create();
+        final Admin admin = Assertions.assertDoesNotThrow(() -> conn.getAdmin());
+        final boolean tableExists = Assertions.assertDoesNotThrow(() -> admin.tableExists(tableName));
+        Assertions.assertTrue(tableExists);
+        Assertions.assertDoesNotThrow(admin::close);
+    }
+
+    @Test
+    public void testColumnFamilies() {
+        final TableName tableName = TableName.valueOf("destination_table_test");
+        new DestinationTable(conn, tableName).create();
+        final Admin admin = Assertions.assertDoesNotThrow(() -> conn.getAdmin());
+        final boolean tableExists = Assertions.assertDoesNotThrow(() -> admin.tableExists(tableName));
+        Assertions.assertTrue(tableExists);
+        final TableDescriptor destinationTableDescriptor = Assertions
+                .assertDoesNotThrow(() -> admin.getDescriptor(tableName));
+        Assertions.assertEquals(tableName, destinationTableDescriptor.getTableName());
+        final List<String> columnFamilies = Arrays
+                .stream(destinationTableDescriptor.getColumnFamilies())
+                .map(ColumnFamilyDescriptor::getNameAsString)
+                .collect(Collectors.toList());
+        final List<String> expectedFamilies = List.of("bloom", "meta");
+        Assertions.assertEquals(expectedFamilies, columnFamilies);
+        final ColumnFamilyDescriptor metaDescriptor = destinationTableDescriptor.getColumnFamily(Bytes.toBytes("meta"));
+        final ColumnFamilyDescriptor bloomDescriptor = destinationTableDescriptor
+                .getColumnFamily(Bytes.toBytes("bloom"));
+        // number of copies kept for a single row key
+        final int metaCFMaxVersions = metaDescriptor.getMaxVersions();
+        final int bloomCFMaxVersions = bloomDescriptor.getMaxVersions();
+        Assertions.assertEquals(1, metaCFMaxVersions);
+        Assertions.assertEquals(1, bloomCFMaxVersions);
+        // bloom created filter only row key
+        final BloomType metaCFbloomType = metaDescriptor.getBloomFilterType();
+        final BloomType bloomCFbloomType = bloomDescriptor.getBloomFilterType();
+        Assertions.assertEquals(BloomType.ROW, metaCFbloomType);
+        Assertions.assertEquals(BloomType.ROW, bloomCFbloomType);
+        Assertions.assertDoesNotThrow(admin::close);
+    }
+
+    @Test
+    public void testDrop() {
+        final TableName tableName = TableName.valueOf("table_drop_test");
+        final DestinationTable destinationTable = new DestinationTable(conn, tableName);
+        destinationTable.create();
+        final Admin admin = Assertions.assertDoesNotThrow(() -> conn.getAdmin());
+        final boolean tableExists = Assertions.assertDoesNotThrow(() -> admin.tableExists(tableName));
+        Assertions.assertTrue(tableExists);
+        destinationTable.drop();
+        final boolean tableExistsAfterDrop = Assertions.assertDoesNotThrow(() -> admin.tableExists(tableName));
+        Assertions.assertFalse(tableExistsAfterDrop);
+        Assertions.assertDoesNotThrow(admin::close);
+    }
+
+    @Test
+    public void testPutTask() {
+
+    }
+}

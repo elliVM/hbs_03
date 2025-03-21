@@ -80,7 +80,6 @@ public final class LazyConnection implements Scalar<Connection> {
      * 
      * @see org.apache.hadoop.hbase.client.Connection
      */
-    @SuppressWarnings("IllegalCatch")
     public Connection value() {
         final Connection returnValue;
         try {

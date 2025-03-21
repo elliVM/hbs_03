@@ -64,27 +64,23 @@ import java.sql.Timestamp;
 /** Represents a row for meta-column family */
 public final class MetaRow implements Row {
 
-    private final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record;
-    private final Binary rowKey;
+    private final ValidRecord21 validRecord21;
 
     public MetaRow(
             final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record
     ) {
-        this(record, new MetaRowKey(record.value18().longValue(), record.value21(), record.value1().longValue()));
+        this(new ValidRecord21(record));
     }
 
-    public MetaRow(
-            final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record,
-            final Binary rowKey
-    ) {
-        this.record = record;
-        this.rowKey = rowKey;
+    public MetaRow(final ValidRecord21 validRecord21) {
+        this.validRecord21 = validRecord21;
     }
 
     public Put put() {
 
-        final Put put = new Put(rowKey.bytes(), true);
+        final Put put = new Put(validRecord21.rowKey().bytes(), true);
         final byte[] familyBytes = Bytes.toBytes("meta");
+        final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record = validRecord21.record21;
 
         // add values from the record and shorter column names for qualifier
         put.addColumn(familyBytes, Bytes.toBytes("i"), new BinaryOfULong(record.field1().get(record)).bytes()); // log file ID
@@ -113,12 +109,12 @@ public final class MetaRow implements Row {
     }
 
     public Binary rowKey() {
-        return rowKey;
+        return validRecord21.rowKey();
     }
 
     @Override
     public ULong id() {
-        return record.field1().get(record);
+        return validRecord21.id();
     }
 
 }

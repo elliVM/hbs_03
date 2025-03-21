@@ -43,57 +43,69 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.hbase.task;
 
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.cnf_01.ConfigurationException;
-import com.teragrep.hbs_03.Factory;
 import com.teragrep.hbs_03.HbsRuntimeException;
+import com.teragrep.hbs_03.hbase.mutator.MutatorConfiguration;
+import com.teragrep.hbs_03.hbase.mutator.MutatorParamsFromList;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.BufferedMutator;
+import org.apache.hadoop.hbase.client.BufferedMutatorParams;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.Put;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
+import java.io.IOException;
+import java.util.List;
 
-/** Factory to create a configured HBaseClient */
-public final class HBaseClientFactory implements Factory<HBaseClient> {
+public final class PutManyTask implements TableTask {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseClientFactory.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PutManyTask.class);
 
-    private final Configuration config;
-    private final HBaseConfiguration hbaseConfigFromConfig;
-    private final String prefix;
+    private final List<Put> puts;
+    private final MutatorConfiguration configuration;
 
-    public HBaseClientFactory(final Configuration config) {
-        this(config, new HBaseConfiguration(config), "hbs.");
+    public PutManyTask(final List<Put> puts) {
+        this(puts, 1, false);
     }
 
-    public HBaseClientFactory(final Configuration config, final String prefix) {
-        this(config, new HBaseConfiguration(config), prefix);
+    public PutManyTask(final List<Put> puts, final double overheadSize) {
+        this(puts, overheadSize, true);
     }
 
-    public HBaseClientFactory(
-            final Configuration config,
-            final HBaseConfiguration hbaseConfigFromConfig,
-            final String prefix
-    ) {
-        this.config = config;
-        this.hbaseConfigFromConfig = hbaseConfigFromConfig;
-        this.prefix = prefix;
+    public PutManyTask(final List<Put> puts, final double overheadSize, final boolean useDynamicBuffer) {
+        this(puts, new MutatorConfiguration(useDynamicBuffer, overheadSize));
+    }
+
+    public PutManyTask(final List<Put> puts, final MutatorConfiguration configuration) {
+        this.puts = puts;
+        this.configuration = configuration;
     }
 
     @Override
-    public HBaseClient object() {
-        final String logfileTableName;
-        try {
-            final Map<String, String> map = config.asMap();
-            LOGGER.info("config map <{}>", map);
-            logfileTableName = map.getOrDefault(prefix + "hadoop.logfile.table.name", "logfile");
-            LOGGER.debug("Set HBase logfile table name <{}>", logfileTableName);
-        }
-        catch (final ConfigurationException e) {
-            throw new HbsRuntimeException("Error getting configuration", e);
-        }
-        return new HBaseClientImpl(hbaseConfigFromConfig.value(), logfileTableName);
-    }
+    public boolean work(final TableName tableName, final Connection tableConnection) {
+        final BufferedMutatorParams params = new MutatorParamsFromList(puts, tableName, configuration).value();
 
+        try (final BufferedMutator mutator = tableConnection.getBufferedMutator(params)) {
+
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Putting <{}> objects", puts.size());
+            }
+
+            try {
+                mutator.mutate(puts);
+                mutator.flush();
+            }
+            catch (final IOException e) {
+                LOGGER.error("Error executing mutator <{}>", mutator);
+                throw new HbsRuntimeException("Error executing mutator", e);
+            }
+        }
+        catch (final IOException e) {
+            throw new HbsRuntimeException("Error creating BufferedMutator", e);
+        }
+
+        return true;
+    }
 }

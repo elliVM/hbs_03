@@ -46,7 +46,6 @@
 package com.teragrep.hbs_03.sql;
 
 import com.teragrep.hbs_03.HbsRuntimeException;
-import com.teragrep.hbs_03.hbase.HBaseTable;
 import com.teragrep.hbs_03.hbase.Row;
 import com.teragrep.hbs_03.replication.Block;
 import org.jooq.DSLContext;
@@ -110,23 +109,9 @@ public final class DatabaseClient implements AutoCloseable {
         return minIdLongValue;
     }
 
-    public long replicateRangeAndReturnLastId(final Block block, final HBaseTable destinationTable) {
+    public List<Row> rangeResults(final Block block) {
         final LogfileTableFlatQuery logfileTableFlatQuery = new LogfileTableFlatQuery(ctx, block.start(), block.end());
-
-        final List<Row> rowList = logfileTableFlatQuery.resultRowList();
-
-        destinationTable.putAll(rowList);
-
-        LOGGER.debug("Processing id range <{}> to <{}>. Rows <{}>", block.start(), block.end(), rowList.size());
-        long maxIdInList = 0;
-        for (final Row row : rowList) {
-            final long rowIdValue = row.id().longValue();
-            if (rowIdValue > maxIdInList) {
-                maxIdInList = rowIdValue;
-            }
-        }
-
-        return maxIdInList;
+        return logfileTableFlatQuery.resultRowList();
     }
 
     @Override

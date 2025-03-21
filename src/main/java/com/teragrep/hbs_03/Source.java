@@ -43,54 +43,10 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03;
 
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.BufferedMutator;
-import org.apache.hadoop.hbase.client.BufferedMutatorParams;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+public interface Source<T> {
 
-import java.util.List;
-
-public final class BufferedMutatorParamsSourceFromRowList implements MutatorParamsSource {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(BufferedMutatorParamsSourceFromRowList.class);
-    private final TableName name;
-    private final BufferSizeFromRowList bufferSizeFromRowList;
-
-    public BufferedMutatorParamsSourceFromRowList(
-            final TableName name,
-            final List<Row> rows,
-            final double overheadMultiplier
-    ) {
-        this(name, new BufferSizeFromRowList(rows, overheadMultiplier));
-    }
-
-    public BufferedMutatorParamsSourceFromRowList(
-            final TableName name,
-            final BufferSizeFromRowList bufferSizeFromRowList
-    ) {
-        this.name = name;
-        this.bufferSizeFromRowList = bufferSizeFromRowList;
-    }
-
-    public BufferedMutatorParams params() {
-        final BufferedMutatorParams params;
-        final long dynamicBufferSize = bufferSizeFromRowList.bufferSize();
-        final BytesInMB sizeInMB = new BytesInMB(dynamicBufferSize);
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Using dynamic buffer size <{}>MB", sizeInMB.asLong());
-        }
-        params = new BufferedMutatorParams(name).listener(exceptionListener()).writeBufferSize(dynamicBufferSize);
-
-        return params;
-    }
-
-    private BufferedMutator.ExceptionListener exceptionListener() {
-        return (e, mutator) -> {
-            LOGGER.error("Failed mutation <{}>, number of exceptions <{}>", e.getMessage(), e.getNumExceptions(), e);
-        };
-    }
+    public abstract T value();
 
 }

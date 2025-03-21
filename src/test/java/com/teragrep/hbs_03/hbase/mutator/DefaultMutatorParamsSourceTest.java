@@ -43,13 +43,28 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.hbase.mutator;
 
-public interface HBaseClient extends AutoCloseable {
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.BufferedMutatorParams;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-    public abstract HBaseTable destinationTable();
+public final class DefaultMutatorParamsSourceTest {
 
-    @Override
-    public abstract void close();
+    @Test
+    public void testTableName() {
+        final TableName name = TableName.valueOf("test");
+        final BufferedMutatorParams params = new DefaultMutatorParamsSource(name).value();
+        Assertions.assertEquals(name, params.getTableName());
+    }
 
+    @Test
+    public void testValue() {
+        final TableName name = TableName.valueOf("test");
+        final BufferedMutatorParams params = new DefaultMutatorParamsSource(name).value();
+        final long writeBufferSize = params.getWriteBufferSize();
+        Assertions.assertEquals(name, params.getTableName());
+        Assertions.assertEquals((2 * 1024 * 1024), writeBufferSize);
+    }
 }

@@ -43,13 +43,28 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.hbase.task;
 
-public interface HBaseClient extends AutoCloseable {
+import com.teragrep.hbs_03.hbase.Row;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.Put;
 
-    public abstract HBaseTable destinationTable();
+import java.util.List;
+import java.util.stream.Collectors;
+
+public final class PutRowsTask implements TableTask {
+
+    private final List<Row> rows;
+
+    public PutRowsTask(final List<Row> rows) {
+        this.rows = rows;
+    }
 
     @Override
-    public abstract void close();
+    public boolean work(final TableName tableName, final Connection tableConnection) {
+        final List<Put> puts = rows.stream().map(Row::put).collect(Collectors.toList());
+        return new PutManyTask(puts).work(tableName, tableConnection);
 
+    }
 }

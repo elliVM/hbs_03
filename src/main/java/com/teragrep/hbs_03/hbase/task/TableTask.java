@@ -43,13 +43,12 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.hbase.task;
 
-public interface HBaseClient extends AutoCloseable {
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
 
-    public abstract HBaseTable destinationTable();
+public interface TableTask {
 
-    @Override
-    public abstract void close();
-
+    public abstract boolean work(final TableName tableName, final Connection tableConnection);
 }

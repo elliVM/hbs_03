@@ -45,8 +45,8 @@
  */
 package com.teragrep.hbs_03.hbase;
 
-/** Converts byte size into MB size */
-public class BytesInMB {
+/** Converts byte size into MB size for logging */
+public final class BytesInMB {
 
     private final long bytes;
     private final long divider;

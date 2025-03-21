@@ -52,7 +52,8 @@ import java.nio.ByteOrder;
 import java.util.Objects;
 
 /**
- * Represents a row key for an HBase meta-column family row
+ * Represents a row key for an HBase meta-column family row. Computes lexicographic order inversion for logtime epoch
+ * using {@link Long#MAX_VALUE} as a pivot
  */
 public final class MetaRowKey implements Binary {
 
@@ -67,15 +68,18 @@ public final class MetaRowKey implements Binary {
     }
 
     public byte[] bytes() {
-        // streamId + # + logtime + # + logfileId
-        final ByteBuffer rowKeyBuffer = ByteBuffer
-                .allocate(Long.BYTES + Byte.BYTES + Long.BYTES + Byte.BYTES + Long.BYTES);
-        rowKeyBuffer.order(ByteOrder.BIG_ENDIAN);
+        final long reversedEpoch = Long.MAX_VALUE - logtime; // Reverse epoch ordering in HBase
+        final byte delimiter = '#';
+        final int capacity = (3 * Long.BYTES) + (Byte.BYTES * 2);
+
+        final ByteBuffer rowKeyBuffer = ByteBuffer.allocate(capacity).order(ByteOrder.BIG_ENDIAN);
+
         rowKeyBuffer.putLong(streamId);
-        rowKeyBuffer.put((byte) '#');
-        rowKeyBuffer.putLong(logtime);
-        rowKeyBuffer.put((byte) '#');
+        rowKeyBuffer.put(delimiter);
+        rowKeyBuffer.putLong(reversedEpoch);
+        rowKeyBuffer.put(delimiter);
         rowKeyBuffer.putLong(logfileId);
+
         return rowKeyBuffer.array();
     }
 

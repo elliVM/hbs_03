@@ -43,47 +43,35 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03;
+package com.teragrep.hbs_03.hbase.mutator;
 
-import com.teragrep.hbs_03.sql.ValidOption;
+import com.teragrep.hbs_03.HbsRuntimeException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.Map;
-
-public class ValidOptionTest {
+public final class ValidMultiplierTest {
 
     @Test
     public void testValid() {
-        final String key = "key";
-        final String value = "value";
-        final Map<String, String> map = new HashMap<>();
-        map.put(key, value);
-        final ValidOption validOption = new ValidOption(map, key);
-        final String validValue = validOption.value();
-        Assertions.assertEquals(value, validValue);
+        final ValidMultiplier validMultiplier = new ValidMultiplier(3.0);
+        Assertions.assertEquals(3, validMultiplier.value());
     }
 
     @Test
-    public void testMissingValue() {
-        final String key = "key";
-        final Map<String, String> map = new HashMap<>();
-        final ValidOption validOption = new ValidOption(map, key);
-        final HbsRuntimeException exception = Assertions.assertThrows(HbsRuntimeException.class, validOption::value);
-        final String expected = "Option not in map (caused by: IllegalArgumentException: <[key]> option missing)";
-        Assertions.assertEquals(expected, exception.getMessage());
+    public void testOverMaxLimit() {
+        final ValidMultiplier validMultiplier = new ValidMultiplier(5.1);
+        final HbsRuntimeException hbsRuntimeException = Assertions
+                .assertThrows(HbsRuntimeException.class, validMultiplier::value);
+        final String expectedMessage = "Overhead multiplier was not between 1-5 (caused by: IllegalAccessError: Illegal overhead multiplier <5.1>)";
+        Assertions.assertEquals(expectedMessage, hbsRuntimeException.getMessage());
     }
 
     @Test
-    public void testEmptyValue() {
-        final String key = "key";
-        final String value = "";
-        final Map<String, String> map = new HashMap<>();
-        map.put(key, value);
-        final ValidOption validOption = new ValidOption(map, key);
-        final HbsRuntimeException exception = Assertions.assertThrows(HbsRuntimeException.class, validOption::value);
-        final String expected = "Option empty (caused by: IllegalArgumentException: Key <[key]> had empty value)";
-        Assertions.assertEquals(expected, exception.getMessage());
+    public void testOverMinLimit() {
+        final ValidMultiplier validMultiplier = new ValidMultiplier(0.9);
+        final HbsRuntimeException hbsRuntimeException = Assertions
+                .assertThrows(HbsRuntimeException.class, validMultiplier::value);
+        final String expectedMessage = "Overhead multiplier was not between 1-5 (caused by: IllegalAccessError: Illegal overhead multiplier <0.9>)";
+        Assertions.assertEquals(expectedMessage, hbsRuntimeException.getMessage());
     }
 }

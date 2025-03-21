@@ -43,13 +43,29 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.replication;
 
-public interface HBaseClient extends AutoCloseable {
+import com.teragrep.hbs_03.Source;
+import com.teragrep.hbs_03.hbase.Row;
 
-    public abstract HBaseTable destinationTable();
+import java.util.List;
 
-    @Override
-    public abstract void close();
+public class RowListMaxId implements Source<Long> {
 
+    private final List<Row> rows;
+
+    public RowListMaxId(final List<Row> rows) {
+        this.rows = rows;
+    }
+
+    public Long value() {
+        long maxIdInList = 0;
+        for (final Row row : rows) {
+            final long rowIdValue = row.id().longValue();
+            if (rowIdValue > maxIdInList) {
+                maxIdInList = rowIdValue;
+            }
+        }
+        return maxIdInList;
+    }
 }

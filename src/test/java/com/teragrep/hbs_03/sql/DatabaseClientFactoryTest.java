@@ -47,6 +47,7 @@ package com.teragrep.hbs_03.sql;
 
 import com.teragrep.cnf_01.Configuration;
 import com.teragrep.cnf_01.PropertiesConfiguration;
+import com.teragrep.hbs_03.HbsRuntimeException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -54,7 +55,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.testcontainers.containers.MariaDBContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
@@ -70,13 +70,11 @@ import static org.junit.jupiter.api.Assertions.*;
 )
 public final class DatabaseClientFactoryTest {
 
-    @Container
-    private MariaDBContainer<?> mariadb;
+    private final MariaDBContainer<?> mariadb = Assertions
+            .assertDoesNotThrow(() -> new MariaDBContainer<>(DockerImageName.parse("mariadb:10.5")).withPrivilegedMode(false).withUsername("user").withPassword("password").withDatabaseName("journaldb"));
 
     @BeforeAll
     public void setup() {
-        mariadb = Assertions
-                .assertDoesNotThrow(() -> new MariaDBContainer<>(DockerImageName.parse("mariadb:10.5")).withPrivilegedMode(false).withUsername("user").withPassword("password").withDatabaseName("journaldb"));
         mariadb.start();
     }
 
@@ -92,8 +90,8 @@ public final class DatabaseClientFactoryTest {
         props.setProperty("hbs.db.url", "url");
         Configuration config = new PropertiesConfiguration(props);
         DatabaseClientFactory factory = new DatabaseClientFactory(config);
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, factory::object);
-        String expected = "<hbs.db.username> option missing";
+        HbsRuntimeException exception = assertThrows(HbsRuntimeException.class, factory::object);
+        String expected = "Option not in map (caused by: IllegalArgumentException: <[hbs.db.username]> option missing)";
         Assertions.assertEquals(expected, exception.getMessage());
     }
 
@@ -104,8 +102,8 @@ public final class DatabaseClientFactoryTest {
         props.setProperty("hbs.db.url", "url");
         Configuration config = new PropertiesConfiguration(props);
         DatabaseClientFactory factory = new DatabaseClientFactory(config);
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, factory::object);
-        String expected = "<hbs.db.password> option missing";
+        HbsRuntimeException exception = assertThrows(HbsRuntimeException.class, factory::object);
+        String expected = "Option not in map (caused by: IllegalArgumentException: <[hbs.db.password]> option missing)";
         Assertions.assertEquals(expected, exception.getMessage());
     }
 
@@ -116,8 +114,8 @@ public final class DatabaseClientFactoryTest {
         props.setProperty("hbs.db.password", "password");
         Configuration config = new PropertiesConfiguration(props);
         DatabaseClientFactory factory = new DatabaseClientFactory(config);
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, factory::object);
-        String expected = "<hbs.db.url> option missing";
+        HbsRuntimeException exception = assertThrows(HbsRuntimeException.class, factory::object);
+        String expected = "Option not in map (caused by: IllegalArgumentException: <[hbs.db.url]> option missing)";
         Assertions.assertEquals(expected, exception.getMessage());
     }
 

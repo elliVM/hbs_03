@@ -58,7 +58,7 @@ import java.util.Collections;
 import java.util.List;
 
 /** Description of the HBase replication destination table */
-public final class DestinationTableDescription {
+public final class DestinationTableDescription implements TableDescription {
 
     private final TableName name;
 
@@ -70,7 +70,13 @@ public final class DestinationTableDescription {
         this.name = name;
     }
 
-    public TableDescriptor description() {
+    @Override
+    public TableName name() {
+        return name;
+    }
+
+    @Override
+    public TableDescriptor describe() {
         return TableDescriptorBuilder
                 .newBuilder(name)
                 .setColumnFamilies(columnFamilyDescriptions())
@@ -81,13 +87,13 @@ public final class DestinationTableDescription {
     private List<ColumnFamilyDescriptor> columnFamilyDescriptions() {
         final ColumnFamilyDescriptor metaFamilyBuilder = ColumnFamilyDescriptorBuilder
                 .newBuilder(Bytes.toBytes("meta"))
-                .setMaxVersions(1) // number of allowed copies per column e.g. with the same row key
+                .setMaxVersions(1) // number of allowed copies per column e.g., with the same row key
                 .setBloomFilterType(BloomType.ROW)
                 .build();
 
         final ColumnFamilyDescriptor bloomFamilyBuilder = ColumnFamilyDescriptorBuilder
                 .newBuilder(Bytes.toBytes("bloom"))
-                .setMaxVersions(1) // number of allowed copies per column e.g. with the same row key
+                .setMaxVersions(1) // number of allowed copies per column e.g., with the same row key
                 .setBloomFilterType(BloomType.ROW)
                 .build();
 

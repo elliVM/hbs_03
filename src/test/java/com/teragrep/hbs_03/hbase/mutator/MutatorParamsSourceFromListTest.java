@@ -43,10 +43,14 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.hbase.mutator;
+
+import com.teragrep.hbs_03.hbase.MetaRow;
 
 import com.teragrep.hbs_03.sql.MockS3MetaData;
 import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.BufferedMutatorParams;
+import org.apache.hadoop.hbase.client.Put;
 import org.jooq.DSLContext;
 import org.jooq.Record21;
 import org.jooq.SQLDialect;
@@ -55,6 +59,7 @@ import org.jooq.tools.jdbc.MockConnection;
 import org.jooq.types.UInteger;
 import org.jooq.types.ULong;
 import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Date;
@@ -63,9 +68,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-public class BufferedMutatorParamsSourceFromRowListTest {
+public final class MutatorParamsSourceFromListTest {
 
     // SQL Mock
     final MockS3MetaData provider = new MockS3MetaData();
@@ -73,44 +76,53 @@ public class BufferedMutatorParamsSourceFromRowListTest {
     final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL);
 
     @Test
-    public void testMinimumSize() {
-        final MetaRow row = new MetaRow(
+    public void testTableName() {
+        final Put row = new MetaRow(
                 (Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) ctx
                         .fetch("ONE_ROW")
                         .get(0)
-        );
-        final List<Row> rowList = Arrays.asList(row);
+        ).put();
+        final List<Put> puts = Arrays.asList(row);
+
+        final TableName name = TableName.valueOf("test");
+        final BufferedMutatorParams params = new MutatorParamsSourceFromList(name, puts).value();
+
+        Assertions.assertEquals(name, params.getTableName());
+    }
+
+    @Test
+    public void testMinimumSize() {
+        final Put row = new MetaRow(
+                (Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) ctx
+                        .fetch("ONE_ROW")
+                        .get(0)
+        ).put();
+        final List<Put> puts = Arrays.asList(row);
 
         final long minimumSize = 2 * 1024 * 1024; // 2MB
-        final MutatorParamsSource paramsSource = new BufferedMutatorParamsSourceFromRowList(
-                TableName.valueOf("test"),
-                rowList,
-                2.0
-        );
-        final long bufferSize = paramsSource.params().getWriteBufferSize();
+        final long bufferSize = new MutatorParamsSourceFromList(TableName.valueOf("test"), puts, 2.0)
+                .value()
+                .getWriteBufferSize();
         Assert.assertEquals(minimumSize, bufferSize);
     }
 
     @Test
     public void testDynamicSize() {
-        final MetaRow row = new MetaRow(
+        final Put row = new MetaRow(
                 (Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) ctx
                         .fetch("ONE_ROW")
                         .get(0)
-        );
+        ).put();
         final int rowListSize = 1000;
         final double overheadMultiplier = 3.0;
-        final List<Row> rowList = new ArrayList<>(rowListSize);
+        final List<Put> rowList = new ArrayList<>(rowListSize);
         for (int i = 0; i < rowListSize; i++) {
             rowList.add(row);
         }
-        final long estimatedBufferSize = Math.round(rowListSize * (row.put().heapSize() * overheadMultiplier));
-        final MutatorParamsSource paramsSource = new BufferedMutatorParamsSourceFromRowList(
-                TableName.valueOf("test"),
-                rowList,
-                overheadMultiplier
-        );
-        final long bufferSize = paramsSource.params().getWriteBufferSize();
+        final long estimatedBufferSize = Math.round(rowListSize * (row.heapSize() * overheadMultiplier));
+        long bufferSize = new MutatorParamsSourceFromList(TableName.valueOf("test"), rowList, overheadMultiplier)
+                .value()
+                .getWriteBufferSize();
         Assert.assertEquals(estimatedBufferSize, bufferSize);
     }
 

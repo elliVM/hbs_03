@@ -46,20 +46,16 @@
 package com.teragrep.hbs_03.hbase;
 
 import com.teragrep.hbs_03.HbsRuntimeException;
+import com.teragrep.hbs_03.hbase.task.TableTask;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
-import org.apache.hadoop.hbase.client.BufferedMutator;
-import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.client.TableDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * HBase table that is the destination of the migration data. Has two column families: META that contains teragrep
@@ -71,75 +67,26 @@ public final class DestinationTable implements HBaseTable {
 
     private final Connection connection;
     private final DestinationTableDescription tableDescriptor;
-    private final TableName name;
-    private final ConfiguredMutator mutator;
 
     public DestinationTable(final Connection connection) {
-        this(
-                connection,
-                TableName.valueOf("logfile"),
-                new DestinationTableDescription("logfile"),
-                new ConfiguredMutator(TableName.valueOf("logfile"), false)
-        );
-    }
-
-    public DestinationTable(final Connection connection, final String name) {
-        this(
-                connection,
-                TableName.valueOf(name),
-                new DestinationTableDescription(name),
-                new ConfiguredMutator(TableName.valueOf(name), false)
-        );
+        this(connection, TableName.valueOf("logfile"));
     }
 
     public DestinationTable(final Connection connection, final TableName name) {
-        this(connection, name, new DestinationTableDescription(name), new ConfiguredMutator(name, false));
+        this(connection, new DestinationTableDescription(name));
     }
 
-    public DestinationTable(final Connection connection, final TableName name, final boolean useDynamicBufferSize) {
-        this(
-                connection,
-                name,
-                new DestinationTableDescription(name),
-                new ConfiguredMutator(name, useDynamicBufferSize)
-        );
-    }
-
-    public DestinationTable(final Connection connection, final TableName name, final double overheadSize) {
-        this(connection, name, new DestinationTableDescription(name), new ConfiguredMutator(name, overheadSize));
-    }
-
-    public DestinationTable(
-            final Connection connection,
-            final TableName name,
-            final boolean useDynamicBuffer,
-            final double overheadSize
-    ) {
-        this(
-                connection,
-                name,
-                new DestinationTableDescription(name),
-                new ConfiguredMutator(name, useDynamicBuffer, overheadSize)
-        );
-    }
-
-    public DestinationTable(
-            final Connection connection,
-            final TableName name,
-            final DestinationTableDescription tableDescriptor,
-            final ConfiguredMutator mutator
-    ) {
-
+    public DestinationTable(final Connection connection, final DestinationTableDescription tableDescriptor) {
         this.connection = connection;
-        this.name = name;
         this.tableDescriptor = tableDescriptor;
-        this.mutator = mutator;
     }
 
+    @Override
     public void create() {
+        final TableName name = tableDescriptor.name();
         try (final Admin admin = connection.getAdmin()) {
             if (!admin.tableExists(name)) {
-                final TableDescriptor descriptor = tableDescriptor.description();
+                final TableDescriptor descriptor = tableDescriptor.describe();
                 admin.createTable(descriptor);
                 LOGGER.debug("Created <{}> table to HBase", name);
             }
@@ -158,7 +105,9 @@ public final class DestinationTable implements HBaseTable {
         }
     }
 
+    @Override
     public void drop() {
+        final TableName name = tableDescriptor.name();
         try (final Admin admin = connection.getAdmin()) {
             if (admin.tableExists(name)) {
                 if (!admin.isTableDisabled(name)) {
@@ -174,45 +123,11 @@ public final class DestinationTable implements HBaseTable {
         }
     }
 
-    public void put(final Put put) {
-        try (final Table table = connection.getTable(name)) {
-            table.put(put);
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Put <{}> into database", put);
-            }
-        }
-        catch (final IOException e) {
-            throw new HbsRuntimeException("Error writing files to table", e);
-        }
+    @Override
+    public void workTask(final TableTask task) {
+        final TableName name = tableDescriptor.name();
+        final boolean finished = task.work(name, connection);
+        LOGGER.info("Worked task <{}>, status: finished=<{}>", task, finished);
     }
 
-    public void putAll(final List<Row> rows) {
-
-        if (rows.size() == 1) {
-            put(rows.get(0).put());
-        }
-
-        final MutatorParamsSource paramsSource = mutator.paramsForRows(rows);
-
-        try (final BufferedMutator mutator = connection.getBufferedMutator(paramsSource.params())) {
-
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Putting <{}> objects", rows.size());
-            }
-
-            try {
-                final List<Put> putList = rows.stream().map(Row::put).collect(Collectors.toList());
-                mutator.mutate(putList);
-                mutator.flush();
-            }
-            catch (final IOException e) {
-                LOGGER.error("Error executing mutator <{}>", mutator);
-                throw new HbsRuntimeException("Error executing mutator", e);
-            }
-
-        }
-        catch (final IOException e) {
-            throw new HbsRuntimeException("Error creating BufferedMutator", e);
-        }
-    }
 }

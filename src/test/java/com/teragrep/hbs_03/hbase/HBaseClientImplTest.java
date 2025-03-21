@@ -45,50 +45,62 @@
  */
 package com.teragrep.hbs_03.hbase;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
+import com.teragrep.cnf_01.PropertiesConfiguration;
+import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@Disabled("Local hbase only")
-public final class HBaseClientTest {
+import java.util.Properties;
 
-    final Configuration config = HBaseConfiguration.create();
-    HBaseClient client;
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Disabled("Broken")
+public final class HBaseClientImplTest {
+
+    private final HBaseTestingUtility hbase = new HBaseTestingUtility();
+    private Connection conn;
+    Properties props;
 
     @BeforeAll
     public void setup() {
-        config.set("hbase.zookeeper.quorum", "localhost");
-        config.set("hbase.zookeeper.property.clientPort", "2181");
-        this.client = new HBaseClient(config, "logfile_test");
-    }
+        Assertions.assertDoesNotThrow(() -> {
+            hbase.getConfiguration().set("hbase.master.hostname", "localhost");
+            hbase.getConfiguration().set("hbase.regionserver.hostname", "localhost");
+            hbase.getConfiguration().set("hbase.zookeeper.quorum", "localhost");
+            hbase.getConfiguration().set("hbase.zookeeper.property.clientPort", "2181");
+            hbase.startMiniCluster();
+            conn = ConnectionFactory.createConnection(hbase.getConfiguration());
+        });
 
-    @AfterEach
-    public void afterEach() {
-        client.destinationTable().drop();
+        props = new Properties();
+        props.put("hbs.hadoop.hbase.zookeeper.quorum", "localhost");
+        props.put("hbs.hadoop.hbase.zookeeper.property.clientPort", "2181");
+        props.put("hbs.hadoop.logfile.table.name", "hbase_client_test");
     }
 
     @AfterAll
     public void tearDown() {
-        client.close();
+        Assertions.assertDoesNotThrow(conn::close);
+        Assertions.assertDoesNotThrow(hbase::shutdownMiniCluster);
     }
 
     @Test
-    public void testConfiguredConnection() {
+    public void testClientProperties() {
+        final TableName tableName = TableName.valueOf("hbase_client_test");
+        final PropertiesConfiguration propertiesConfiguration = new PropertiesConfiguration(props);
+        final HBaseClientFactory hBaseClientFactory = new HBaseClientFactory(propertiesConfiguration);
+        final HBaseClient client = hBaseClientFactory.object();
         client.destinationTable().create();
-        Assertions.assertDoesNotThrow(() -> {
-            final Admin admin = ConnectionFactory.createConnection(config).getAdmin();
-            final boolean exists = admin.tableExists(TableName.valueOf("logfile_test"));
-            Assertions.assertTrue(exists);
-        });
+        final Admin admin = Assertions.assertDoesNotThrow(() -> conn.getAdmin());
+        final boolean exists = Assertions.assertDoesNotThrow(() -> admin.tableExists(tableName));
+        Assertions.assertTrue(exists);
+        Assertions.assertDoesNotThrow(admin::close);
     }
 }

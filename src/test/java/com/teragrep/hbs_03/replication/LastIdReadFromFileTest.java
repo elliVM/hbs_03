@@ -55,7 +55,7 @@ public class LastIdReadFromFileTest {
     public void testLastId() {
         final String path = "src/test/resources/last_id_test.txt";
         final LastIdReadFromFile lastIdReadFromFile = new LastIdReadFromFile(path);
-        final long readLastId = Assertions.assertDoesNotThrow(lastIdReadFromFile::read);
+        final long readLastId = Assertions.assertDoesNotThrow(lastIdReadFromFile::value);
         Assertions.assertEquals(10L, readLastId);
     }
 
@@ -64,7 +64,7 @@ public class LastIdReadFromFileTest {
         final String path = "src/test/resources/not_exists";
         final LastIdReadFromFile lastIdReadFromFile = new LastIdReadFromFile(path);
         HbsRuntimeException hbsRuntimeException = Assertions
-                .assertThrows(HbsRuntimeException.class, lastIdReadFromFile::read);
+                .assertThrows(HbsRuntimeException.class, lastIdReadFromFile::value);
         final String expectedMessage = "Could not find file (caused by: FileNotFoundException: src/test/resources/not_exists (No such file or directory))";
         Assertions.assertEquals(expectedMessage, hbsRuntimeException.getMessage());
     }
@@ -74,7 +74,7 @@ public class LastIdReadFromFileTest {
         final String path = "src/test/resources/invalid_id_format.txt";
         final LastIdReadFromFile lastIdReadFromFile = new LastIdReadFromFile(path);
         final HbsRuntimeException hbsRuntimeException = Assertions
-                .assertThrows(HbsRuntimeException.class, lastIdReadFromFile::read);
+                .assertThrows(HbsRuntimeException.class, lastIdReadFromFile::value);
         final String expectedMessage = "Error parsing file value to long (caused by: NumberFormatException: For input string: \"invalid\")";
         Assertions.assertEquals(expectedMessage, hbsRuntimeException.getMessage());
     }

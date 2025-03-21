@@ -50,14 +50,19 @@ import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.conf.MappedSchema;
+import org.jooq.conf.MappedTable;
 import org.jooq.conf.RenderMapping;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.testcontainers.containers.MariaDBContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -70,24 +75,107 @@ import java.sql.DriverManager;
 )
 public class HostMappingTempTableTest {
 
-    final String username = "streamdb";
-    final String password = "streamdb_pass";
-    final String url = "jdbc:mariadb://192.168.49.2:30601/archiver_journal_tyrael";
+    final MariaDBContainer<?> mariadb = Assertions
+            .assertDoesNotThrow(() -> new MariaDBContainer<>(DockerImageName.parse("mariadb:10.5")).withPrivilegedMode(false).withUsername("user").withPassword("password").withDatabaseName("journaldb").withInitScript("setup_database.sql"));
+
     final Settings settings = new Settings()
-            .withRenderMapping(new RenderMapping().withSchemata(new MappedSchema().withInput("streamdb").withOutput("archiver_streamdb_tyrael"), new MappedSchema().withInput("journaldb").withOutput("archiver_journal_tyrael"), new MappedSchema().withInput("bloomdb").withOutput("bloomdb")));
-    final Connection connection = Assertions
-            .assertDoesNotThrow(() -> DriverManager.getConnection(url, username, password));
-    final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
+            .withRenderMapping(new RenderMapping().withSchemata(new MappedSchema().withInput("streamdb").withOutput("journaldb"), new MappedSchema().withInput("journaldb").withOutput("journaldb").withTables(new MappedTable().withInput("host").withOutput("journal_host")), new MappedSchema().withInput("bloomdb").withOutput("journaldb")));
+
+    Connection connection;
+
+    @BeforeAll
+    public void setup() {
+        Assertions.assertDoesNotThrow(mariadb::start);
+        connection = Assertions
+                .assertDoesNotThrow(
+                        () -> DriverManager
+                                .getConnection(mariadb.getJdbcUrl(), mariadb.getUsername(), mariadb.getPassword())
+                );
+    }
+
+    @AfterAll
+    public void tearDown() {
+        Assertions.assertDoesNotThrow(connection::close);
+        Assertions.assertDoesNotThrow(mariadb::stop);
+    }
 
     @Test
     public void testCreation() {
+        final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
         final HostMappingTempTable tempTable = new HostMappingTempTable(ctx);
         Assertions.assertDoesNotThrow(tempTable::createIfNotExists);
+        final Result<Record> fetchOne = ctx.fetch("SELECT 1 FROM host_mapping_temp_table LIMIT 1");
+        Assertions.assertEquals(1, fetchOne.size());
+    }
 
-        final Result<Record> fetch = ctx.fetch("DESCRIBE host_mapping_temp_table");
-        for (final Record record : fetch) {
-            System.out.println(record);
-        }
+    @Test
+    public void testCorrectSize() {
+        final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
+        final HostMappingTempTable tempTable = new HostMappingTempTable(ctx);
+        Assertions.assertDoesNotThrow(tempTable::createIfNotExists);
+        final Result<Record> result = ctx.fetch("SELECT host_id, gid FROM host_mapping_temp_table");
+        Assertions.assertFalse(result.isEmpty());
+        Assertions.assertEquals(1000, result.size());
+    }
+
+    @Test
+    public void testRows() {
+        final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
+        final HostMappingTempTable tempTable = new HostMappingTempTable(ctx);
+        Assertions.assertDoesNotThrow(tempTable::createIfNotExists);
+        final Result<Record> result = ctx.fetch("SELECT host_id, gid FROM host_mapping_temp_table LIMIT 1");
+        Assertions.assertFalse(result.isEmpty());
+        Assertions.assertEquals(1, result.size());
+        Record firstRow = result.get(0);
+        Assertions.assertNotNull(firstRow.get("host_id"));
+        Assertions.assertNotNull(firstRow.get("gid"));
+    }
+
+    @Test
+    public void testMappingUniqueness() {
+        final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
+        final HostMappingTempTable tempTable = new HostMappingTempTable(ctx);
+        Assertions.assertDoesNotThrow(tempTable::createIfNotExists);
+        final Result<Record> withDuplicatesResult = ctx
+                .fetch(
+                        "SELECT host_id, COUNT(*) AS count FROM host_mapping_temp_table GROUP BY host_id HAVING count > 1"
+                );
+        Assertions.assertTrue(withDuplicatesResult.isEmpty());
+    }
+
+    @Test
+    public void testIndexesCreated() {
+        final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
+        final HostMappingTempTable tempTable = new HostMappingTempTable(ctx);
+        Assertions.assertDoesNotThrow(tempTable::createIfNotExists);
+        final Result<Record> selectIndexes = ctx.fetch("SHOW INDEX FROM host_mapping_temp_table");
+        boolean hasHostIdIndex = selectIndexes
+                .stream()
+                .anyMatch(record -> "ix_host_mapping_temp_table_host_id".equals(record.get("Key_name")));
+        boolean hasHostIdGidCompositeIndex = selectIndexes
+                .stream()
+                .anyMatch(record -> "cix_host_mapping_temp_table_host_id_gid".equals(record.get("Key_name")));
+        boolean allIndexesUnique = selectIndexes
+                .stream()
+                .filter(record -> "ix_host_mapping_temp_table_host_id".equals(record.get("Key_name")) || "cix_host_mapping_temp_table_host_id_gid".equals(record.get("Key_name"))).allMatch(record -> record.get("Non_unique", Integer.class) == 0);
+        Assertions.assertTrue(hasHostIdIndex, "should have index on host_id");
+        Assertions.assertTrue(hasHostIdGidCompositeIndex, "should have composite index on host_id and gid");
+        Assertions.assertTrue(allIndexesUnique, "should have only unique indexes");
+
+    }
+
+    @Test
+    public void testHostIdIndexCorrectColumn() {
+        final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
+        final HostMappingTempTable tempTable = new HostMappingTempTable(ctx);
+        Assertions.assertDoesNotThrow(tempTable::createIfNotExists);
+        final Result<Record> indexes = ctx.fetch("SHOW INDEXES FROM host_mapping_temp_table;");
+        Assertions.assertFalse(indexes.isEmpty(), "Expected indexes to exist");
+        boolean existsForColumn = indexes
+                .stream()
+                .anyMatch(record -> "ix_host_mapping_temp_table_host_id".equals(record.get("Key_name", String.class)) && "host_id".equals(record.get("Column_name", String.class)));
+
+        Assertions.assertTrue(existsForColumn);
     }
 
 }
