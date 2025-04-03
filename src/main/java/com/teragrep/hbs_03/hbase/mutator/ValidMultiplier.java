@@ -63,7 +63,7 @@ public final class ValidMultiplier implements Source<Double> {
         if (multiplier < lowerLimit || multiplier > upperLimit) {
             throw new HbsRuntimeException(
                     "Overhead multiplier was not between 1-5",
-                    new IllegalAccessError("Illegal overhead multiplier <" + multiplier + ">")
+                    new IllegalArgumentException("Illegal overhead multiplier <" + multiplier + ">")
             );
         }
         return multiplier;

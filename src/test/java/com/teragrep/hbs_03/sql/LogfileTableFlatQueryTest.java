@@ -46,10 +46,7 @@
 package com.teragrep.hbs_03.sql;
 
 import com.teragrep.hbs_03.hbase.Row;
-import com.teragrep.hbs_03.jooq.generated.journaldb.tables.records.LogfileRecord;
 import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.conf.MappedSchema;
 import org.jooq.conf.MappedTable;
@@ -70,7 +67,6 @@ import org.testcontainers.utility.DockerImageName;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
-
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
