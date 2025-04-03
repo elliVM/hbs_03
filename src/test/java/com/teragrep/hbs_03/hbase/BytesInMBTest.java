@@ -51,9 +51,15 @@ import org.junit.jupiter.api.Test;
 public final class BytesInMBTest {
 
     @Test
-    public void testWithExactDivision() {
+    public void testDoubleWithExactDivision() {
         double doubleValue = new BytesInMB(10487765).asDouble();
         Assertions.assertEquals(10.0, doubleValue);
+    }
+
+    @Test
+    public void testWithDecimals() {
+        double doubleValue = new BytesInMB(10587765).asDouble();
+        Assertions.assertEquals(10.09, doubleValue);
     }
 
     @Test
@@ -61,5 +67,4 @@ public final class BytesInMBTest {
         long megaByteValue = new BytesInMB(2 * 1024 * 1024).asLong();
         Assertions.assertEquals(2L, megaByteValue);
     }
-
 }

@@ -45,44 +45,26 @@
  */
 package com.teragrep.hbs_03.hbase.mutator;
 
-import com.teragrep.hbs_03.hbase.MetaRow;
-import com.teragrep.hbs_03.sql.MockS3MetaData;
+import com.teragrep.hbs_03.hbase.Row;
 import org.apache.hadoop.hbase.client.Put;
-import org.jooq.DSLContext;
-import org.jooq.Record21;
-import org.jooq.SQLDialect;
-import org.jooq.impl.DSL;
-import org.jooq.tools.jdbc.MockConnection;
-import org.jooq.types.UInteger;
-import org.jooq.types.ULong;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Date;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
 public final class BufferSizeFromRowListTest {
 
-    // SQL Mock
-    final MockS3MetaData provider = new MockS3MetaData();
-    final MockConnection connection = new MockConnection(provider);
-    final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL);
     final long twoMB = 2 * 1024 * 1024;
     final long fourMB = 4 * 1024 * 1024;
 
     @Test
     public void testSize() {
-        final Put row = new MetaRow(
-                (Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) ctx
-                        .fetch("ONE_ROW")
-                        .get(0)
-        ).put();
+        final Row row = new Row.FakeRow();
         final int rowListSize = 1000;
         final List<Put> rowList = new ArrayList<>(rowListSize);
         for (int i = 0; i < rowListSize; i++) {
-            rowList.add(row);
+            rowList.add(row.put());
         }
         final double overheadMultiplier = 1.5;
         final long numberOfRows = rowList.size();
@@ -102,15 +84,11 @@ public final class BufferSizeFromRowListTest {
 
     @Test
     public void testMinSize() {
-        final Put row = new MetaRow(
-                (Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) ctx
-                        .fetch("ONE_ROW")
-                        .get(0)
-        ).put();
+        final Row row = new Row.FakeRow();
         final int rowListSize = 10;
         final List<Put> rowList = new ArrayList<>(rowListSize);
         for (int i = 0; i < rowListSize; i++) {
-            rowList.add(row);
+            rowList.add(row.put());
         }
         final BufferSizeFromRowList bufferSizeFromRowList = new BufferSizeFromRowList(rowList, 1.0, twoMB, fourMB);
         final long bufferSize = bufferSizeFromRowList.value();
@@ -119,15 +97,11 @@ public final class BufferSizeFromRowListTest {
 
     @Test
     public void testMaxSize() {
-        final Put row = new MetaRow(
-                (Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>) ctx
-                        .fetch("ONE_ROW")
-                        .get(0)
-        ).put();
+        final Row row = new Row.FakeRow();
         final int rowListSize = 10000;
         final List<Put> rowList = new ArrayList<>(rowListSize);
         for (int i = 0; i < rowListSize; i++) {
-            rowList.add(row);
+            rowList.add(row.put());
         }
         final double overheadMultiplier = 5.0;
         final long numberOfRows = rowList.size();

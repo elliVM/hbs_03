@@ -43,47 +43,38 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.replication;
+package com.teragrep.hbs_03.hbase;
 
-import com.teragrep.hbs_03.HbsRuntimeException;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.teragrep.hbs_03.Source;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+/**
+ * Reverses epoch to ensure that the latest epoch is first in lexicographical ordering.
+ * <p>
+ * Supports epochs with absolute values not greater than the pivot value of (Long.MAX_VALUE / 2)
+ */
+public final class ReversedEpoch implements Source<Long> {
 
-public final class LastIdSavedToFileTest {
+    private final Long epoch;
+    private final long pivot;
 
-    @BeforeEach
-    public void setup() {
-        final Path path = Paths.get("src", "test", "resources", "target_id_test.txt");
-        final String pathString = path.toString();
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(100, pathString);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
+    public ReversedEpoch(final long epoch) {
+        this(epoch, (Long.MAX_VALUE / 2));
     }
 
-    @Test
-    public void testSave() {
-        final Path path = Paths.get("src", "test", "resources", "target_id_test.txt");
-        final String stringPath = path.toString();
-        final LastIdReadFromFile lastIdReadFromFile = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(100, lastIdReadFromFile.value());
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(1000, stringPath);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
-        final LastIdReadFromFile newIdFromPath = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(1000, newIdFromPath.value());
+    private ReversedEpoch(final long epoch, final long pivot) {
+        this.epoch = epoch;
+        this.pivot = pivot;
     }
 
-    @Test
-    public void testInvalidPath() {
-        final Path path = Paths.get("src", "test", "resources", "does_not_exists.txt");
-        final String stringPath = path.toString();
-        final HbsRuntimeException exception = Assertions
-                .assertThrows(HbsRuntimeException.class, () -> new LastIdReadFromFile(stringPath).value());
-        final String expectedMessage = "Could not find file (caused by: FileNotFoundException: src/test/resources/does_not_exists.txt (No such file or directory))";
-        Assertions.assertEquals(expectedMessage, exception.getMessage());
+    @Override
+    public Long value() {
+        final long reversed;
+        if (epoch >= 0) {
+            reversed = pivot - epoch;
+        }
+        else {
+            reversed = pivot + Math.abs(epoch);
+        }
+        return reversed;
     }
 }

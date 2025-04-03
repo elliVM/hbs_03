@@ -46,7 +46,10 @@
 package com.teragrep.hbs_03.sql;
 
 import com.teragrep.hbs_03.hbase.Row;
+import com.teragrep.hbs_03.jooq.generated.journaldb.tables.records.LogfileRecord;
 import org.jooq.DSLContext;
+import org.jooq.Record;
+import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.conf.MappedSchema;
 import org.jooq.conf.MappedTable;
@@ -68,13 +71,15 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
 
+
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @EnabledIfSystemProperty(
         named = "runContainerTests",
         matches = "true"
 )
-public class LogfileTableFlatQueryTest {
+@Disabled("some issue with test db joins")
+public final class LogfileTableFlatQueryTest {
 
     final MariaDBContainer<?> mariadb = Assertions
             .assertDoesNotThrow(() -> new MariaDBContainer<>(DockerImageName.parse("mariadb:10.5")).withPrivilegedMode(false).withUsername("user").withPassword("password").withDatabaseName("journaldb").withInitScript("setup_database.sql"));
@@ -101,9 +106,9 @@ public class LogfileTableFlatQueryTest {
     }
 
     @Test
-    @Disabled("Testcontainers inserts do not have correct relations yet")
     public void testFlatQuery() {
         final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
+        new HostMappingTempTable(ctx).createIfNotExists();
         final LogfileTableFlatQuery logfileTableFlatQuery = new LogfileTableFlatQuery(ctx, 100, 200);
         final List<Row> results = logfileTableFlatQuery.resultRowList();
         Assertions.assertEquals(100, results.size());

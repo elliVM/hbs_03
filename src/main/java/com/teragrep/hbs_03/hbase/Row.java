@@ -81,18 +81,22 @@ public interface Row {
 
         private final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record;
 
-        FakeRow() {
+        public FakeRow() {
             this("Bucket name");
         }
 
         /**
          * Default values stream id=123, logtime=2010-10-01, logfile id = 123456789
          */
-        FakeRow(final String bucket) {
+        public FakeRow(final String bucket) {
             this(UInteger.valueOf(123), Date.valueOf(LocalDate.of(2010, 10, 1)), ULong.valueOf(123456789), bucket);
         }
 
-        FakeRow(final UInteger streamId, final Date logDate, final ULong logFileId, final String bucket) {
+        public FakeRow(final long customId) {
+            this(UInteger.valueOf(123), Date.valueOf(LocalDate.of(2010, 10, 1)), ULong.valueOf(customId), "bucket");
+        }
+
+        public FakeRow(final UInteger streamId, final Date logDate, final ULong logFileId, final String bucket) {
             this(
                     DSL.using(SQLDialect.MYSQL).newRecord(DSL.field("id", ULong.class), DSL.field("logdate", Date.class), DSL.field("expiration", Date.class), DSL.field("bucket", String.class), DSL.field("path", String.class), DSL.field("hash", String.class), DSL.field("host", String.class), DSL.field("file_name", String.class), DSL.field("archived", Timestamp.class), DSL.field("file_size", ULong.class), DSL.field("meta", String.class), DSL.field("checksum", String.class), DSL.field("etag", String.class), DSL.field("logtag", String.class), DSL.field("source_system", String.class), DSL.field("category", String.class), DSL.field("uncompressed_filesize", ULong.class), DSL.field("stream_id", UInteger.class), DSL.field("stream", String.class), DSL.field("directory", String.class), DSL.field("logtime", Long.class)).values(logFileId, logDate, Date.valueOf(LocalDate.of(2110, 10, 1)), bucket, String.format("%s/%s-%s/110000-sc-99-99-10-10/afe23b85-io/io-%s%s%s23.log.gz", logDate.toLocalDate().getYear(), logDate.toLocalDate().getMonthValue(), logDate.toLocalDate().getDayOfMonth(), logDate.toLocalDate().getYear(), logDate.toLocalDate().getMonthValue(), logDate.toLocalDate().getDayOfMonth()), "key_hash", "host", "original_name", Timestamp.valueOf("2010-10-01 10:00:00"), ULong.valueOf(1000L), "metadata_value", "check_sum", "ARCHIVE_ETAG", "LOGTAG", "source_system", "category", ULong.valueOf(100000L), streamId, "stream", "directory", logDate.getTime())
             );

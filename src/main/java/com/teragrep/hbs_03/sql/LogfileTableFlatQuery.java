@@ -137,7 +137,7 @@ public final class LogfileTableFlatQuery {
                         JOURNALDB.SOURCE_SYSTEM.NAME.as("source_system"), JOURNALDB.CATEGORY.NAME.as("category"), JOURNALDB.LOGFILE.UNCOMPRESSED_FILE_SIZE, STREAMDB.STREAM.ID.as("stream_id"), // row key id
                         STREAMDB.STREAM.STREAM_, STREAMDB.STREAM.DIRECTORY, logTimeFunctionField()
                 )
-                .from(rangeIdTable.asTable())
+                .from(rangeIdTable)
                 .straightJoin(JOURNALDB.LOGFILE)
                 .on(JOURNALDB.LOGFILE.ID.eq(dayQueryIdField))
                 .join(JOURNALDB.HOST)

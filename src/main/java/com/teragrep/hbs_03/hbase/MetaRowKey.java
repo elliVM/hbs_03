@@ -68,18 +68,12 @@ public final class MetaRowKey implements Binary {
     }
 
     public byte[] bytes() {
-        final long reversedEpoch = Long.MAX_VALUE - logtime; // Reverse epoch ordering in HBase
-        final byte delimiter = '#';
-        final int capacity = (3 * Long.BYTES) + (Byte.BYTES * 2);
-
+        final long reversedEpoch = new ReversedEpoch(logtime).value();
+        final int capacity = (3 * Long.BYTES);
         final ByteBuffer rowKeyBuffer = ByteBuffer.allocate(capacity).order(ByteOrder.BIG_ENDIAN);
-
         rowKeyBuffer.putLong(streamId);
-        rowKeyBuffer.put(delimiter);
         rowKeyBuffer.putLong(reversedEpoch);
-        rowKeyBuffer.put(delimiter);
         rowKeyBuffer.putLong(logfileId);
-
         return rowKeyBuffer.array();
     }
 

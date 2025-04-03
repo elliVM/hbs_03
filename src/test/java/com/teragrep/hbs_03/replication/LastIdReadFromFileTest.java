@@ -49,7 +49,7 @@ import com.teragrep.hbs_03.HbsRuntimeException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class LastIdReadFromFileTest {
+public final class LastIdReadFromFileTest {
 
     @Test
     public void testLastId() {

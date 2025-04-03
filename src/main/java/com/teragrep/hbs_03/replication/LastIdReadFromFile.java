@@ -71,6 +71,7 @@ public final class LastIdReadFromFile implements Source<Long> {
 
     public Long value() {
         final long returnValue;
+        LOGGER.debug("Trying to load last processed id from <{}>", path);
         try (final BufferedReader reader = new BufferedReader(new FileReader(path))) {
             returnValue = Long.parseLong(reader.readLine());
             LOGGER.debug("Loaded last processed id <{}> from path=<{}>", returnValue, path);

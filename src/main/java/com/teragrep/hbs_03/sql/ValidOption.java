@@ -51,7 +51,7 @@ import com.teragrep.hbs_03.OptionValue;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ValidOption implements OptionValue<String> {
+public final class ValidOption implements OptionValue<String> {
 
     private final Map<String, String> map;
     private final String key;

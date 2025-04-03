@@ -50,7 +50,7 @@ import com.teragrep.hbs_03.hbase.Row;
 
 import java.util.List;
 
-public class RowListMaxId implements Source<Long> {
+public final class RowListMaxId implements Source<Long> {
 
     private final List<Row> rows;
 

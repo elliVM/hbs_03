@@ -49,7 +49,7 @@ import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class BlockImplTest {
+public final class BlockImplTest {
 
     @Test
     public void testStart() {

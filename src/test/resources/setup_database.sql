@@ -2279,12 +2279,14 @@ values ((select id from log_group where name = 'group-14'), 'generated-data', 'l
 insert into bucket (name)
 values ('test-bucket')
 on duplicate key update id = id;
+
 insert into category (name)
 values ('test-category')
 on duplicate key update id = id;
 
 insert into journal_host (name)
-select host.name from host
+select host.name
+from host
 on duplicate key update name = journal_host.name;
 
 insert into source_system (name)
@@ -2298,19 +2300,31 @@ begin
     insert into logfile (logdate, expiration, bucket_id, path, host_id, original_filename, archived,
                          file_size, sha256_checksum, archive_etag, logtag, source_system_id, category_id,
                          uncompressed_file_size)
-    values (curdate(), date_add(curdate(), interval 1 year),
-            (select id from bucket where name = 'test-bucket' limit 1),
-            concat('/logs/generated-', i, '.log'),
-            (select id from journal_host order by rand() limit 1),
-            concat('test-', i, '.log'),
-            now(),
-            floor(rand() * 1000000),
-            lpad(conv(floor(rand() * pow(36, 10)), 10, 36), 44, '0'),
-            lpad(conv(floor(rand() * pow(36, 10)), 10, 36), 64, '0'),
-            '0ff11b44-cpu',
-            (select id from source_system where name = 'log:cpu:0' limit 1),
-            (select id from category where name = 'test-category' limit 1),
-            floor(rand() * 2000000));
+    values (
+               curdate(),
+               date_add(curdate(), interval 1 year),
+               (select id from bucket where name = 'test-bucket' limit 1),
+               concat(
+                       date_format(curdate(), '%Y/%m-%d'), '/',
+                       (select name from host where name = 'sc-99-99-10-10' limit 1), '/',
+                       '0ff11b44-cpu/',
+                       'cpu-',
+                       date_format(curdate(), '%Y%m%d%H'),
+                       '_', i,
+                       '.log.gz'
+               ),
+               (select id from journal_host where name = 'sc-99-99-10-10' limit 1),
+               concat('test-', i, '.log'),
+               now(),
+               floor(rand() * 1000000),
+               lpad(conv(floor(rand() * pow(36, 10)), 10, 36), 44, '0'),
+               lpad(conv(floor(rand() * pow(36, 10)), 10, 36), 64, '0'),
+               '0ff11b44-cpu',
+               (select id from source_system where name = 'log:cpu:0' limit 1),
+               (select id from category where name = 'test-category' limit 1),
+
+               floor(rand() * 2000000)
+           );
 end;
 
 create procedure insert_logs(in start_i int, in end_i int)

@@ -46,25 +46,27 @@
 package com.teragrep.hbs_03.hbase.task;
 
 import com.teragrep.hbs_03.hbase.Row;
+import com.teragrep.hbs_03.hbase.mutator.MutatorConfiguration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.Put;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-public final class PutRowsTask implements TableTask {
+public class PutRowsTask implements TableTask {
 
-    private final List<Row> rows;
+    private final PutManyTask putManyTask;
 
-    public PutRowsTask(final List<Row> rows) {
-        this.rows = rows;
+    public PutRowsTask(final List<Row> rows, final MutatorConfiguration configuration) {
+        this(new PutManyTask(rows.stream().map(Row::put).collect(Collectors.toList()), configuration));
+    }
+
+    private PutRowsTask(final PutManyTask putManyTask) {
+        this.putManyTask = putManyTask;
     }
 
     @Override
     public boolean work(final TableName tableName, final Connection tableConnection) {
-        final List<Put> puts = rows.stream().map(Row::put).collect(Collectors.toList());
-        return new PutManyTask(puts).work(tableName, tableConnection);
-
+        return putManyTask.work(tableName, tableConnection);
     }
 }

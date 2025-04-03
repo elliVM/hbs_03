@@ -54,7 +54,7 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DatabaseSettingsFromMapTest {
+public final class DatabaseSettingsFromMapTest {
 
     @Test
     public void testDefault() {

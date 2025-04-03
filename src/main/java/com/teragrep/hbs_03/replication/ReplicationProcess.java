@@ -49,14 +49,12 @@ import com.teragrep.hbs_03.hbase.HBaseClient;
 import com.teragrep.hbs_03.hbase.HBaseTable;
 import com.teragrep.hbs_03.hbase.Row;
 import com.teragrep.hbs_03.hbase.mutator.MutatorConfiguration;
-import com.teragrep.hbs_03.hbase.task.PutManyTask;
+import com.teragrep.hbs_03.hbase.task.PutRowsTask;
 import com.teragrep.hbs_03.sql.DatabaseClient;
-import org.apache.hadoop.hbase.client.Put;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Replicate SQL rows to HBase between the range for the BlockRangeStream
@@ -103,19 +101,18 @@ public final class ReplicationProcess implements AutoCloseable {
 
             final Block block = blockRangeStream.next();
 
-            final List<Row> rowList = databaseClient.rangeResults(block);
-            final List<Put> rowsToPuts = rowList.stream().map(Row::put).collect(Collectors.toList());
-            destinationTable.workTask(new PutManyTask(rowsToPuts, mutatorConfiguration));
+            final List<Row> rangeRowResults = databaseClient.rangeResults(block);
+            destinationTable.workTask(new PutRowsTask(rangeRowResults, mutatorConfiguration));
 
-            final long maxIdInList = new RowListMaxId(rowList).value();
-            final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(maxIdInList);
+            final long maxIdFromResults = new RowListMaxId(rangeRowResults).value();
+            final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(maxIdFromResults);
             lastIdSavedToFile.save();
 
             // logging
             final long blockEndTime = System.nanoTime();
             LOGGER.info("Batch replication took <{}>ms", (blockEndTime - blockStartTime) / 1000000);
-            final long processedIdCount = blockRangeStream.startId() + maxIdInList;
-            final long remainingIdCount = blockRangeStream.maxId() - maxIdInList;
+            final long processedIdCount = blockRangeStream.startId() + maxIdFromResults;
+            final long remainingIdCount = blockRangeStream.maxId() - maxIdFromResults;
             LOGGER.info("Total processed rows <{}>", processedIdCount);
             LOGGER.info("Total remaining rows <{}>", remainingIdCount);
         }

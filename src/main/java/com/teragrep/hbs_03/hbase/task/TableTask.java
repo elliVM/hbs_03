@@ -51,4 +51,5 @@ import org.apache.hadoop.hbase.client.Connection;
 public interface TableTask {
 
     public abstract boolean work(final TableName tableName, final Connection tableConnection);
+
 }

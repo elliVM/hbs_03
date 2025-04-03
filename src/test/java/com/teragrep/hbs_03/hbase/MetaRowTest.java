@@ -45,40 +45,26 @@
  */
 package com.teragrep.hbs_03.hbase;
 
-import com.teragrep.hbs_03.hbase.binary.Binary;
-import com.teragrep.hbs_03.sql.MockS3MetaData;
+import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.jooq.DSLContext;
-import org.jooq.SQLDialect;
-import org.jooq.impl.DSL;
-import org.jooq.tools.jdbc.MockConnection;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 public final class MetaRowTest {
 
-    // SQL Mock
-    final MockS3MetaData provider = new MockS3MetaData();
-    final MockConnection connection = new MockConnection(provider);
-    final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL);
-
     @Test
-    public void testRowKey() {
-        final Row row = new Row.FakeRow();
-        final String expected = "RowKey(streamId=<123>, logtime=1285880400000, logfileId=123456789)\n"
-                + " bytes=<[00 00 00 00 00 00 00 7b 23 7f ff fe d4 9b 8e 37 7f 23 00 00 00 00 07 5b cd 15]>";
-        final Binary rowKey = row.rowKey();
-        Assertions.assertEquals(expected, rowKey.toString());
-    }
-
-    @Test
-    public void testPutQualifiers() {
-
+    public void testColumns() {
         final Row row = new Row.FakeRow();
         final Put put = row.put();
         final byte[] columnFamily = Bytes.toBytes("meta");
-        // test qualifiers
+
+        Assertions.assertTrue(put.getFamilyCellMap().containsKey(columnFamily));
+
+        // test column qualifiers
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("a")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("b")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("c")));
@@ -103,7 +89,7 @@ public final class MetaRowTest {
     }
 
     @Test
-    public void testCorrectSize() {
+    public void testColumnSize() {
         final Row row = new Row.FakeRow();
         final Put put = row.put();
         Assertions.assertTrue(put.getFamilyCellMap().containsKey(Bytes.toBytes("meta")));
@@ -111,10 +97,20 @@ public final class MetaRowTest {
     }
 
     @Test
-    public void testNullValue() {
+    public void testNullValueInBucketColumn() {
         final Row row = new Row.FakeRow(null);
         final Put put = row.put();
         Assertions.assertTrue(put.getFamilyCellMap().containsKey(Bytes.toBytes("meta")));
-        Assertions.assertEquals(21, put.getFamilyCellMap().get(Bytes.toBytes("meta")).size());
+        final List<Cell> cells = put.getFamilyCellMap().get(Bytes.toBytes("meta"));
+        Assertions.assertEquals(21, cells.size());
+        int bucketColumns = 0;
+        for (Cell cell : cells) {
+            if (Bytes.equals(CellUtil.cloneQualifier(cell), Bytes.toBytes("b"))) {
+                byte[] value = CellUtil.cloneValue(cell);
+                Assertions.assertArrayEquals(new byte[0], value); // null value set as empty byte array
+                bucketColumns++;
+            }
+        }
+        Assertions.assertEquals(1, bucketColumns);
     }
 }

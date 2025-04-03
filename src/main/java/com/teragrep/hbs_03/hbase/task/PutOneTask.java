@@ -46,6 +46,7 @@
 package com.teragrep.hbs_03.hbase.task;
 
 import com.teragrep.hbs_03.HbsRuntimeException;
+import com.teragrep.hbs_03.hbase.Row;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.Put;
@@ -59,6 +60,10 @@ public final class PutOneTask implements TableTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PutOneTask.class);
     private final Put put;
+
+    public PutOneTask(final Row row) {
+        this(row.put());
+    }
 
     public PutOneTask(final Put put) {
         this.put = put;

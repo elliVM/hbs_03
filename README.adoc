@@ -15,14 +15,17 @@ It simplifies the process of migrating data from MySQL to HBase.
 Replicates data from MySQL to HBase, ensuring consistency and efficiency.
 
 === Automated Data Sync
+
 Automates the process of syncing data from MySQL to HBase, reducing manual intervention.
-The last processed row ID is stored and used as the starting point when service is started again
+The last successfully processed row is stored as a file and used as the starting point if service is started again.
 
 === Teragrep Schema Integration
+
 Uses Teragrep's predefined schema to ensure that the data is mapped and replicated correctly between MySQL and HBase.
 
 
 === Configurable Settings
+
 Provides configurable options for customizing the migration process.
 
 == Documentation
@@ -31,16 +34,15 @@ See the official documentation on https://docs.teragrep.com[docs.teragrep.com].
 
 == Limitations
 
-Expects that you have a running instance of MySQL or MariaDB and
-HBase the project can connect to.
+Designed for RHEL-based distributions of Linux.
 
-Maven RPM (Red Hat Package Manager) packaging expects command line tool (rpm) to be installed
+Maven RPM (Red Hat Package Manager) packaging expects command line tool `rpm` to be installed.
 
-MariaDB connection is expected to have the Teragrep metadata schema databases.
-Configured database user should have select permissions on journaldb, streamdb, bloomdb.
+SQL database should have the Teragrep metadata schema.
 
-Executable job that starts until it finishes the migration range or exists with exception.
-Exit code 0 for success and exit code 1 for exception.
+Database URL should start in `journaldb` as SQL extraction uses temporary tables.
+
+Connecting database user should have `select` and `create temporary table` grants on databases.
 
 == How to
 

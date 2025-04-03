@@ -52,7 +52,7 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ValidOptionTest {
+public final class ValidOptionTest {
 
     @Test
     public void testValid() {

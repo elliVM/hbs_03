@@ -45,45 +45,32 @@
  */
 package com.teragrep.hbs_03.replication;
 
-import com.teragrep.hbs_03.HbsRuntimeException;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import static org.junit.jupiter.api.Assertions.*;
 
-public final class LastIdSavedToFileTest {
+public final class BlockStubTest {
 
-    @BeforeEach
-    public void setup() {
-        final Path path = Paths.get("src", "test", "resources", "target_id_test.txt");
-        final String pathString = path.toString();
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(100, pathString);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
+    @Test
+    public void testIsStub() {
+        Block block = new BlockStub();
+        Assertions.assertTrue(block.isStub());
     }
 
     @Test
-    public void testSave() {
-        final Path path = Paths.get("src", "test", "resources", "target_id_test.txt");
-        final String stringPath = path.toString();
-        final LastIdReadFromFile lastIdReadFromFile = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(100, lastIdReadFromFile.value());
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(1000, stringPath);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
-        final LastIdReadFromFile newIdFromPath = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(1000, newIdFromPath.value());
+    public void testStart() {
+        final Block block = new BlockStub();
+        final UnsupportedOperationException exception = assertThrows(UnsupportedOperationException.class, block::start);
+        final String expectedMessage = "BlockStub does not implement start";
+        Assertions.assertEquals(expectedMessage, exception.getMessage());
     }
 
     @Test
-    public void testInvalidPath() {
-        final Path path = Paths.get("src", "test", "resources", "does_not_exists.txt");
-        final String stringPath = path.toString();
-        final HbsRuntimeException exception = Assertions
-                .assertThrows(HbsRuntimeException.class, () -> new LastIdReadFromFile(stringPath).value());
-        final String expectedMessage = "Could not find file (caused by: FileNotFoundException: src/test/resources/does_not_exists.txt (No such file or directory))";
+    public void testEnd() {
+        final Block block = new BlockStub();
+        final UnsupportedOperationException exception = assertThrows(UnsupportedOperationException.class, block::end);
+        final String expectedMessage = "BlockStub does not implement end";
         Assertions.assertEquals(expectedMessage, exception.getMessage());
     }
 }

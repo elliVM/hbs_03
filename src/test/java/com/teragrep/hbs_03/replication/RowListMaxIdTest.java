@@ -45,45 +45,26 @@
  */
 package com.teragrep.hbs_03.replication;
 
-import com.teragrep.hbs_03.HbsRuntimeException;
+import com.teragrep.hbs_03.hbase.Row;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.List;
 
-public final class LastIdSavedToFileTest {
+public final class RowListMaxIdTest {
 
-    @BeforeEach
-    public void setup() {
-        final Path path = Paths.get("src", "test", "resources", "target_id_test.txt");
-        final String pathString = path.toString();
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(100, pathString);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
+    @Test
+    public void testEmptyList() {
+        final List<Row> emptyList = Collections.emptyList();
+        final Long maxId = new RowListMaxId(emptyList).value();
+        Assertions.assertEquals(0, maxId);
     }
 
     @Test
-    public void testSave() {
-        final Path path = Paths.get("src", "test", "resources", "target_id_test.txt");
-        final String stringPath = path.toString();
-        final LastIdReadFromFile lastIdReadFromFile = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(100, lastIdReadFromFile.value());
-        final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(1000, stringPath);
-        Assertions.assertDoesNotThrow(lastIdSavedToFile::save);
-        final LastIdReadFromFile newIdFromPath = Assertions
-                .assertDoesNotThrow(() -> new LastIdReadFromFile(stringPath));
-        Assertions.assertEquals(1000, newIdFromPath.value());
-    }
-
-    @Test
-    public void testInvalidPath() {
-        final Path path = Paths.get("src", "test", "resources", "does_not_exists.txt");
-        final String stringPath = path.toString();
-        final HbsRuntimeException exception = Assertions
-                .assertThrows(HbsRuntimeException.class, () -> new LastIdReadFromFile(stringPath).value());
-        final String expectedMessage = "Could not find file (caused by: FileNotFoundException: src/test/resources/does_not_exists.txt (No such file or directory))";
-        Assertions.assertEquals(expectedMessage, exception.getMessage());
+    public void testMaxId() {
+        final List<Row> rowList = List.of(new Row.FakeRow(10L), new Row.FakeRow(20L), new Row.FakeRow(30L));
+        final Long maxId = new RowListMaxId(rowList).value();
+        Assertions.assertEquals(30L, maxId);
     }
 }

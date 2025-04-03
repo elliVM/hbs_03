@@ -73,7 +73,7 @@ import java.sql.DriverManager;
         named = "runContainerTests",
         matches = "true"
 )
-public class HostMappingTempTableTest {
+public final class HostMappingTempTableTest {
 
     final MariaDBContainer<?> mariadb = Assertions
             .assertDoesNotThrow(() -> new MariaDBContainer<>(DockerImageName.parse("mariadb:10.5")).withPrivilegedMode(false).withUsername("user").withPassword("password").withDatabaseName("journaldb").withInitScript("setup_database.sql"));

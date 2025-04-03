@@ -64,7 +64,7 @@ import org.slf4j.LoggerFactory;
 import static com.teragrep.hbs_03.jooq.generated.journaldb.Journaldb.JOURNALDB;
 import static com.teragrep.hbs_03.jooq.generated.streamdb.Streamdb.STREAMDB;
 
-public class HostMappingTempTable {
+public final class HostMappingTempTable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HostMappingTempTable.class);
 
