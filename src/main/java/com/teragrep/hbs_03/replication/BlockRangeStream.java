@@ -101,7 +101,7 @@ public final class BlockRangeStream implements Iterator<Block> {
         final Block block;
         if (hasNext()) {
             final long lastEndId = lastBlock.isStub() ? startId : lastBlock.end(); // get last blocks end id or use start id if stub
-            final long endId = Math.min((lastEndId + maxBatchSize), maxId); // use max id if calculater next block exceeds it
+            final long endId = Math.min((lastEndId + maxBatchSize), maxId); // use max id if the calculated next block exceeds it
             block = new BlockValid(new BlockPositiveValues(new BlockImpl(lastEndId, endId)));
         }
         else {
