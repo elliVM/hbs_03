@@ -53,8 +53,9 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /**
- * Calculates buffer size from a row list by checking the size of the first object, multiplying it by the size of the
- * list and finally by the multiplier. Size will be between min and max sizes. Default (2MB-64MB)
+ * Calculates the buffer size by estimating the average size of the Put objects in the list, multiplying it by the list
+ * size and a specified multiplier for overhead. The result is limited to be between the defined minimum and maximum
+ * size bounds.
  */
 public final class BufferSizeFromRowList implements Source<Long> {
 
@@ -65,7 +66,6 @@ public final class BufferSizeFromRowList implements Source<Long> {
     private final long minSize;
     private final long maxSize;
 
-    /** Default between 2MB and 64MB with overhead multiplier of 2.0 */
     public BufferSizeFromRowList(final List<Put> puts) {
         this(puts, 2.0, (2 * 1024 * 1024), (64L * 1024L * 1024L));
     }
@@ -87,9 +87,6 @@ public final class BufferSizeFromRowList implements Source<Long> {
         this.maxSize = maxSize;
     }
 
-    /**
-     * @return Average value of Put.heapSize() in lists, between bound lower and upper limits
-     */
     @Override
     public Long value() {
         // average of puts or 0 if not calculable like an empty list
