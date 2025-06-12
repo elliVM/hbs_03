@@ -45,8 +45,6 @@
  */
 package com.teragrep.hbs_03.hbase.mutator;
 
-import com.teragrep.hbs_03.HbsRuntimeException;
-import com.teragrep.hbs_03.Source;
 import com.teragrep.hbs_03.hbase.Row;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.BufferedMutatorParams;
@@ -82,14 +80,14 @@ public final class MutatorParamsFromListTest {
         for (int i = 0; i < rowListSize; i++) {
             rowList.add(row.put());
         }
-        final long estimatedBufferSize = Math.round(rowListSize * (row.put().heapSize() * overheadMultiplier));
+        final long expectedSize = Math.round(rowListSize * (row.put().heapSize() * overheadMultiplier));
         final BufferedMutatorParams params = new MutatorParamsFromList(
                 rowList,
                 TableName.valueOf("test"),
                 new MutatorConfiguration(true, 3.0)
         ).value();
         final long bufferSize = params.getWriteBufferSize();
-        Assertions.assertEquals(estimatedBufferSize, bufferSize);
+        Assertions.assertEquals(expectedSize, bufferSize);
     }
 
     @Test
@@ -110,34 +108,6 @@ public final class MutatorParamsFromListTest {
     }
 
     @Test
-    public void testMultiplierTooSmall() {
-        final Row row = new Row.FakeRow();
-        final List<Put> rowList = List.of(row.put());
-        final Source<BufferedMutatorParams> paramsSource = new MutatorParamsFromList(
-                rowList,
-                TableName.valueOf("test"),
-                new MutatorConfiguration(true, 0.9)
-        );
-        final HbsRuntimeException ex = Assertions.assertThrows(HbsRuntimeException.class, paramsSource::value);
-        final String expectedMessage = "Overhead multiplier was not between 1-5 (caused by: IllegalAccessError: Illegal overhead multiplier <0.9>)";
-        Assertions.assertEquals(expectedMessage, ex.getMessage());
-    }
-
-    @Test
-    public void testMultiplierTooLarge() {
-        final Row row = new Row.FakeRow();
-        final List<Put> rowList = List.of(row.put());
-        final Source<BufferedMutatorParams> paramsSource = new MutatorParamsFromList(
-                rowList,
-                TableName.valueOf("test"),
-                new MutatorConfiguration(true, 5.1)
-        );
-        final HbsRuntimeException ex = Assertions.assertThrows(HbsRuntimeException.class, paramsSource::value);
-        final String expectedMessage = "Overhead multiplier was not between 1-5 (caused by: IllegalAccessError: Illegal overhead multiplier <5.1>)";
-        Assertions.assertEquals(expectedMessage, ex.getMessage());
-    }
-
-    @Test
     public void testDefaultBuffer() {
         final Row row = new Row.FakeRow();
         final List<Put> rowList = List.of(row.put());
@@ -150,5 +120,4 @@ public final class MutatorParamsFromListTest {
         final long bufferSize = params.getWriteBufferSize();
         Assertions.assertEquals(minimumSize, bufferSize);
     }
-
 }

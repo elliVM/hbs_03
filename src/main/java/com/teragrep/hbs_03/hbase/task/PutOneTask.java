@@ -83,4 +83,9 @@ public final class PutOneTask implements TableTask {
 
         return true;
     }
+
+    @Override
+    public String toString() {
+        return "Put one";
+    }
 }

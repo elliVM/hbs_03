@@ -53,14 +53,13 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Properties;
 
-public final class HBaseConfigurationTest {
+public final class HBaseConfigTest {
 
     @Test
     public void testDefaultValue() {
         final Properties props = new Properties();
         final Configuration configuration = new PropertiesConfiguration(props);
-        final org.apache.hadoop.conf.Configuration hbaseConfig = new HBaseConfiguration(configuration, "prefix.")
-                .value();
+        final org.apache.hadoop.conf.Configuration hbaseConfig = new HBaseConfig(configuration, "prefix.").value();
         Assertions.assertEquals("host_from_file", hbaseConfig.get("hbase.zookeeper.quorum"));
     }
 
@@ -69,8 +68,7 @@ public final class HBaseConfigurationTest {
         final Properties props = new Properties();
         props.put("prefix.zookeeper.quorum", "testhost");
         final Configuration configuration = new PropertiesConfiguration(props);
-        final org.apache.hadoop.conf.Configuration hbaseConfig = new HBaseConfiguration(configuration, "prefix.")
-                .value();
+        final org.apache.hadoop.conf.Configuration hbaseConfig = new HBaseConfig(configuration, "prefix.").value();
         Assertions.assertEquals("testhost", hbaseConfig.get("zookeeper.quorum"));
     }
 
@@ -79,8 +77,7 @@ public final class HBaseConfigurationTest {
         final Properties props = new Properties();
         props.put("prefix.config.path", "src/test/resources/hbase-site.xml");
         final Configuration configuration = new PropertiesConfiguration(props);
-        final org.apache.hadoop.conf.Configuration hbaseConfig = new HBaseConfiguration(configuration, "prefix.")
-                .value();
+        final org.apache.hadoop.conf.Configuration hbaseConfig = new HBaseConfig(configuration, "prefix.").value();
         Assertions.assertEquals("host_from_file", hbaseConfig.get("hbase.zookeeper.quorum"));
     }
 
@@ -90,7 +87,7 @@ public final class HBaseConfigurationTest {
         props.put("prefix.config.path", "broken/path/");
         final Configuration configuration = new PropertiesConfiguration(props);
         final HbsRuntimeException ex = Assertions
-                .assertThrows(HbsRuntimeException.class, () -> new HBaseConfiguration(configuration, "prefix.").value());
+                .assertThrows(HbsRuntimeException.class, () -> new HBaseConfig(configuration, "prefix.").value());
         final String expectedMessage = "Could not find a file in given file path (caused by: MalformedURLException: No file in path)";
         Assertions.assertEquals(expectedMessage, ex.getMessage());
     }

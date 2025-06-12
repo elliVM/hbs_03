@@ -62,7 +62,7 @@ public final class ValidMultiplierTest {
         final ValidMultiplier validMultiplier = new ValidMultiplier(5.1);
         final HbsRuntimeException hbsRuntimeException = Assertions
                 .assertThrows(HbsRuntimeException.class, validMultiplier::value);
-        final String expectedMessage = "Overhead multiplier was not between 1-5 (caused by: IllegalAccessError: Illegal overhead multiplier <5.1>)";
+        final String expectedMessage = "Overhead multiplier was not between 1-5 (caused by: IllegalArgumentException: Illegal overhead multiplier <5.1>)";
         Assertions.assertEquals(expectedMessage, hbsRuntimeException.getMessage());
     }
 
@@ -71,7 +71,7 @@ public final class ValidMultiplierTest {
         final ValidMultiplier validMultiplier = new ValidMultiplier(0.9);
         final HbsRuntimeException hbsRuntimeException = Assertions
                 .assertThrows(HbsRuntimeException.class, validMultiplier::value);
-        final String expectedMessage = "Overhead multiplier was not between 1-5 (caused by: IllegalAccessError: Illegal overhead multiplier <0.9>)";
+        final String expectedMessage = "Overhead multiplier was not between 1-5 (caused by: IllegalArgumentException: Illegal overhead multiplier <0.9>)";
         Assertions.assertEquals(expectedMessage, hbsRuntimeException.getMessage());
     }
 }

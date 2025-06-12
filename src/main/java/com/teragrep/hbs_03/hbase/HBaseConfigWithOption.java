@@ -45,55 +45,42 @@
  */
 package com.teragrep.hbs_03.hbase;
 
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.cnf_01.ConfigurationException;
-import com.teragrep.hbs_03.Factory;
-import com.teragrep.hbs_03.HbsRuntimeException;
+import com.teragrep.hbs_03.Source;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
+public class HBaseConfigWithOption implements Source<Configuration> {
 
-/** Factory to create a configured HBaseClient */
-public final class HBaseClientFactory implements Factory<HBaseClient> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseConfigWithOption.class);
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseClientFactory.class);
+    private final Source<Configuration> origin;
+    private final String hbaseOptionPrefix;
+    private final String optionKey;
+    private final String optionValue;
 
-    private final Configuration config;
-    private final HBaseConfig hbaseConfigFromConfig;
-    private final String prefix;
-
-    public HBaseClientFactory(final Configuration config) {
-        this(config, new HBaseConfig(config), "hbs.");
-    }
-
-    public HBaseClientFactory(final Configuration config, final String prefix) {
-        this(config, new HBaseConfig(config), prefix);
-    }
-
-    public HBaseClientFactory(
-            final Configuration config,
-            final HBaseConfig hbaseConfigFromConfig,
-            final String prefix
+    public HBaseConfigWithOption(
+            final Source<Configuration> origin,
+            final String optionPrefix,
+            final String optionKey,
+            final String optionValue
     ) {
-        this.config = config;
-        this.hbaseConfigFromConfig = hbaseConfigFromConfig;
-        this.prefix = prefix;
+        this.origin = origin;
+        this.hbaseOptionPrefix = optionPrefix;
+        this.optionKey = optionKey;
+        this.optionValue = optionValue;
     }
 
-    @Override
-    public HBaseClient object() {
-        final String logfileTableName;
-        try {
-            final Map<String, String> map = config.asMap();
-            LOGGER.info("config map <{}>", map);
-            logfileTableName = map.getOrDefault(prefix + "hadoop.logfile.table.name", "logfile");
-            LOGGER.debug("Set HBase logfile table name <{}>", logfileTableName);
+    public Configuration value() {
+        final Configuration config = origin.value();
+        if (optionKey.startsWith(hbaseOptionPrefix)) {
+            final String hbaseOption = optionKey.substring(hbaseOptionPrefix.length());
+            config.set(hbaseOption, optionValue);
+            LOGGER.info("Set HBase configuration option: <{}>=<{}>", hbaseOption, optionValue);
         }
-        catch (final ConfigurationException e) {
-            throw new HbsRuntimeException("Error getting configuration", e);
+        else {
+            LOGGER.debug("HbaseConfiguration skipped unrecognized hadoop option <[{}]>=<[{}]>", optionKey, optionValue);
         }
-        return new HBaseClientImpl(hbaseConfigFromConfig.value(), logfileTableName);
+        return config;
     }
-
 }
