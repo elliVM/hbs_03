@@ -45,55 +45,69 @@
  */
 package com.teragrep.hbs_03.hbase;
 
-import com.teragrep.cnf_01.Configuration;
+import org.apache.hadoop.conf.Configuration;
 import com.teragrep.cnf_01.ConfigurationException;
-import com.teragrep.hbs_03.Factory;
 import com.teragrep.hbs_03.HbsRuntimeException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.teragrep.hbs_03.Source;
+import org.apache.hadoop.hbase.HBaseConfiguration;
 
 import java.util.Map;
 
-/** Factory to create a configured HBaseClient */
-public final class HBaseClientFactory implements Factory<HBaseClient> {
+/**
+ * HBase configuration HBase from arguments
+ */
+public final class HBaseConfig implements Source<Configuration> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseClientFactory.class);
-
-    private final Configuration config;
-    private final HBaseConfig hbaseConfigFromConfig;
+    private final com.teragrep.cnf_01.Configuration config;
     private final String prefix;
+    private final String filePrefix;
 
-    public HBaseClientFactory(final Configuration config) {
-        this(config, new HBaseConfig(config), "hbs.");
+    public HBaseConfig(final com.teragrep.cnf_01.Configuration config) {
+        this(config, "hbs.hadoop.");
     }
 
-    public HBaseClientFactory(final Configuration config, final String prefix) {
-        this(config, new HBaseConfig(config), prefix);
+    public HBaseConfig(final com.teragrep.cnf_01.Configuration config, final String prefix) {
+        this(config, prefix, prefix + "config.path");
     }
 
-    public HBaseClientFactory(
-            final Configuration config,
-            final HBaseConfig hbaseConfigFromConfig,
-            final String prefix
-    ) {
+    public HBaseConfig(final com.teragrep.cnf_01.Configuration config, final String prefix, final String filePrefix) {
         this.config = config;
-        this.hbaseConfigFromConfig = hbaseConfigFromConfig;
         this.prefix = prefix;
+        this.filePrefix = filePrefix;
     }
 
     @Override
-    public HBaseClient object() {
-        final String logfileTableName;
+    public Configuration value() {
+        final Map<String, String> map;
         try {
-            final Map<String, String> map = config.asMap();
-            LOGGER.info("config map <{}>", map);
-            logfileTableName = map.getOrDefault(prefix + "hadoop.logfile.table.name", "logfile");
-            LOGGER.debug("Set HBase logfile table name <{}>", logfileTableName);
+            map = config.asMap();
         }
         catch (final ConfigurationException e) {
             throw new HbsRuntimeException("Error getting configuration", e);
         }
-        return new HBaseClientImpl(hbaseConfigFromConfig.value(), logfileTableName);
+        return sourceFromMap(map).value();
     }
 
+    /** builds a source interface with all options and resources set from a options map */
+    private Source<Configuration> sourceFromMap(final Map<String, String> map) {
+
+        Source<Configuration> source = new HBaseConfigWithRequiredOptionsSet(
+                new Configuration(HBaseConfiguration.create())
+        );
+
+        for (final Map.Entry<String, String> entry : map.entrySet()) {
+            final String key = entry.getKey();
+            final String value = entry.getValue();
+
+            if (key.matches(filePrefix)) {
+                source = new HBaseConfigWithResource(source, value);
+
+            }
+            else {
+                source = new HBaseConfigWithOption(source, prefix, key, value);
+            }
+        }
+
+        return source;
+    }
 }

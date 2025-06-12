@@ -69,4 +69,9 @@ public class PutRowsTask implements TableTask {
     public boolean work(final TableName tableName, final Connection tableConnection) {
         return putManyTask.work(tableName, tableConnection);
     }
+
+    @Override
+    public String toString() {
+        return "Rows as puts: <" + putManyTask.toString() + ">";
+    }
 }

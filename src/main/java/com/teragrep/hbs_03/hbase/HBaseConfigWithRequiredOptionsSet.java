@@ -45,55 +45,30 @@
  */
 package com.teragrep.hbs_03.hbase;
 
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.cnf_01.ConfigurationException;
-import com.teragrep.hbs_03.Factory;
-import com.teragrep.hbs_03.HbsRuntimeException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.teragrep.hbs_03.Source;
+import org.apache.hadoop.conf.Configuration;
 
-import java.util.Map;
-
-/** Factory to create a configured HBaseClient */
-public final class HBaseClientFactory implements Factory<HBaseClient> {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseClientFactory.class);
+public class HBaseConfigWithRequiredOptionsSet implements Source<Configuration> {
 
     private final Configuration config;
-    private final HBaseConfig hbaseConfigFromConfig;
-    private final String prefix;
 
-    public HBaseClientFactory(final Configuration config) {
-        this(config, new HBaseConfig(config), "hbs.");
-    }
-
-    public HBaseClientFactory(final Configuration config, final String prefix) {
-        this(config, new HBaseConfig(config), prefix);
-    }
-
-    public HBaseClientFactory(
-            final Configuration config,
-            final HBaseConfig hbaseConfigFromConfig,
-            final String prefix
-    ) {
+    public HBaseConfigWithRequiredOptionsSet(final Configuration config) {
         this.config = config;
-        this.hbaseConfigFromConfig = hbaseConfigFromConfig;
-        this.prefix = prefix;
     }
 
     @Override
-    public HBaseClient object() {
-        final String logfileTableName;
-        try {
-            final Map<String, String> map = config.asMap();
-            LOGGER.info("config map <{}>", map);
-            logfileTableName = map.getOrDefault(prefix + "hadoop.logfile.table.name", "logfile");
-            LOGGER.debug("Set HBase logfile table name <{}>", logfileTableName);
-        }
-        catch (final ConfigurationException e) {
-            throw new HbsRuntimeException("Error getting configuration", e);
-        }
-        return new HBaseClientImpl(hbaseConfigFromConfig.value(), logfileTableName);
-    }
+    public Configuration value() {
+        // add default values if not set
+        config.setIfUnset("hbase.zookeeper.quorum", "localhost"); // required for connection
+        config.setIfUnset("hbase.zookeeper.property.clientProt", "2181"); // default zookeeper port
+        config.setIfUnset("hbase.client.retries.number", "10"); // retries for failed request
+        config.setIfUnset("hbase.client.pause", "150"); // pause between retries ms
+        config.setIfUnset("hbase.client.scanner.timeout.period", "60000"); // scanner timeout ms
+        config.setIfUnset("hbase.rpc.timeout", "60000"); // rpc timeout ms
+        config.setIfUnset("hbase.client.operation.timeout", "60000"); // operation timeout ms
+        config.setIfUnset("hbase.client.write.buffer", "2097152"); // write buffer size bytes
+        config.setIfUnset("hbase.regionserver.durability", "SYNC_WAL"); // default safest data durability
+        return config;
 
+    }
 }

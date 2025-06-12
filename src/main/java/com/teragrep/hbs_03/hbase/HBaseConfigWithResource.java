@@ -45,55 +45,51 @@
  */
 package com.teragrep.hbs_03.hbase;
 
-import com.teragrep.cnf_01.Configuration;
-import com.teragrep.cnf_01.ConfigurationException;
-import com.teragrep.hbs_03.Factory;
 import com.teragrep.hbs_03.HbsRuntimeException;
+import com.teragrep.hbs_03.Source;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-/** Factory to create a configured HBaseClient */
-public final class HBaseClientFactory implements Factory<HBaseClient> {
+public class HBaseConfigWithResource implements Source<Configuration> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseClientFactory.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseConfigWithResource.class);
 
-    private final Configuration config;
-    private final HBaseConfig hbaseConfigFromConfig;
-    private final String prefix;
+    private final Source<Configuration> origin;
+    private final Path path;
 
-    public HBaseClientFactory(final Configuration config) {
-        this(config, new HBaseConfig(config), "hbs.");
+    public HBaseConfigWithResource(final Source<Configuration> origin, final String pathString) {
+        this(origin, Paths.get(pathString));
     }
 
-    public HBaseClientFactory(final Configuration config, final String prefix) {
-        this(config, new HBaseConfig(config), prefix);
+    public HBaseConfigWithResource(final Source<Configuration> origin, final Path path) {
+        this.origin = origin;
+        this.path = path;
     }
 
-    public HBaseClientFactory(
-            final Configuration config,
-            final HBaseConfig hbaseConfigFromConfig,
-            final String prefix
-    ) {
-        this.config = config;
-        this.hbaseConfigFromConfig = hbaseConfigFromConfig;
-        this.prefix = prefix;
-    }
-
-    @Override
-    public HBaseClient object() {
-        final String logfileTableName;
-        try {
-            final Map<String, String> map = config.asMap();
-            LOGGER.info("config map <{}>", map);
-            logfileTableName = map.getOrDefault(prefix + "hadoop.logfile.table.name", "logfile");
-            LOGGER.debug("Set HBase logfile table name <{}>", logfileTableName);
+    public Configuration value() {
+        final Configuration config = origin.value();
+        if (!Files.exists(path)) {
+            throw new HbsRuntimeException(
+                    "Could not find a file in given file path",
+                    new MalformedURLException("No file in path")
+            );
         }
-        catch (final ConfigurationException e) {
-            throw new HbsRuntimeException("Error getting configuration", e);
+        else {
+            try {
+                // checks the file system, not the class path
+                config.addResource(path.toAbsolutePath().toUri().toURL());
+                LOGGER.info("Loaded HBase configurations from from file in path=<[{}]>", path);
+            }
+            catch (final MalformedURLException e) {
+                throw new HbsRuntimeException("Error getting options file", e);
+            }
         }
-        return new HBaseClientImpl(hbaseConfigFromConfig.value(), logfileTableName);
+        return config;
     }
-
 }

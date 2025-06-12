@@ -108,4 +108,9 @@ public final class PutManyTask implements TableTask {
 
         return true;
     }
+
+    @Override
+    public String toString() {
+        return "Puts: size <" + puts.size() + ">";
+    }
 }

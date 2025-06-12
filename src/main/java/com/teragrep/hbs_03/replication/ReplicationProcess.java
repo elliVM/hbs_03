@@ -94,7 +94,8 @@ public final class ReplicationProcess implements AutoCloseable {
         final HBaseTable destinationTable = hbaseClient.destinationTable();
         destinationTable.create();
 
-        LOGGER.info("Starting replication using stream <{}>", blockRangeStream);
+        final long startId = blockRangeStream.startId();
+        LOGGER.info("Starting replication from ID <{}>", startId);
 
         while (blockRangeStream.hasNext()) {
             final long blockStartTime = System.nanoTime();
@@ -111,7 +112,7 @@ public final class ReplicationProcess implements AutoCloseable {
             // logging
             final long blockEndTime = System.nanoTime();
             LOGGER.info("Batch replication took <{}>ms", (blockEndTime - blockStartTime) / 1000000);
-            final long processedIdCount = blockRangeStream.startId() + maxIdFromResults;
+            final long processedIdCount = maxIdFromResults - startId;
             final long remainingIdCount = blockRangeStream.maxId() - maxIdFromResults;
             LOGGER.info("Total processed rows <{}>", processedIdCount);
             LOGGER.info("Total remaining rows <{}>", remainingIdCount);
