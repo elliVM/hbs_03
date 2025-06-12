@@ -3,15 +3,30 @@
 // 2. Update the issues link in Contributing section in the readme file
 // 3. Update the discussion link in config.yml file in .github/ISSUE_TEMPLATE directory
 
-= repo-template
+= HBS_03: Teragrep Metadata Using HBase
 
-// Add a short description of your project. Tell what your project does and what it's used for.
-
-This is a template repository for Teragrep organization.
+HBS_03 is a data replication tool that syncs data from MySQL to HBase using Teragrep's predefined schema.
+It simplifies the process of migrating data from MySQL to HBase.
 
 == Features
 
-// List your project's features
+=== MySQL to HBase Data Replication
+
+Replicates data from MySQL to HBase, ensuring consistency and efficiency.
+
+=== Automated Data Sync
+
+Automates the process of syncing data from MySQL to HBase, reducing manual intervention.
+The last successfully processed row is stored as a file and used as the starting point if service is started again.
+
+=== Teragrep Schema Integration
+
+Uses Teragrep's predefined schema to ensure that the data is mapped and replicated correctly between MySQL and HBase.
+
+
+=== Configurable Settings
+
+Provides configurable options for customizing the migration process.
 
 == Documentation
 
@@ -19,17 +34,124 @@ See the official documentation on https://docs.teragrep.com[docs.teragrep.com].
 
 == Limitations
 
-// If your project has limitations, please list them. Otherwise remove this section.
+Designed for RHEL-based distributions of Linux.
 
-== How to [compile/use/implement]
+Maven RPM (Red Hat Package Manager) packaging expects command line tool `rpm` to be installed.
 
-// add instructions how people can start to use your project
+SQL database should have the Teragrep metadata schema.
+
+Database URL should start in `journaldb` as SQL extraction uses temporary tables.
+
+Connecting database user should have `select` and `create temporary table` grants on databases.
+
+== How to
+
+Example of a step-by-step guide to install and run the HBS_03 project as a systemd service.
+
+=== Package Project to RPM
+
+Start by generating the JAR file from the project
+[source]
+----
+$ mvn clean package
+----
+
+Next we package the systemd service and jar into an RPM file
+[source]
+----
+$ mvn package --file rpm/rpm.pom.xml
+----
+
+=== Install RPM to Your System
+
+Next we install the generated RPM package created by maven found in `rpm/target/rpm/com.teragrep-hbs_03/RPMS`.
+
+[source]
+----
+$ sudo dnf install rpm/target/rpm/com.teragrep-hbs_03/RPMS/x86_64/<packaged_file>.rpm
+----
+
+Configure settings in `/etc/sysconfig/hbs_03` file
+
+Example of a configured `hbs_03` file, required options are the database url, user and password.
+Other options defaults will be used if left empty.
+For example, since `BLOOMDB_NAME_OPT` is left empty it will use default name `bloomdb`.
+[source]
+----
+DB_URL_OPT="hbs.db.url=jdbc:mariadb:<database-url>"
+DB_USER_OPT="hbs.db.username=<database_username>"
+DB_PASSWORD_OPT="hbs.db.password=<database_password"
+JOURNALDB_NAME_OPT="hbs.db.journaldb.name=<schema_journaldb_name>"
+STREAMDB_NAME_OPT="hbs.db.streamdb.name=<schema_streamdb_name"
+BLOOMDB_NAME_OPT=""
+HBASE_OPT="hbs.hadoop.hbase.zookeeper.quorum=localhost hbs.hadoop.hbase.zookeeper.property.clientPort=2181"
+EXTRA_OPT=""
+JAVA_OPT=""
+----
+
+Next we reload the service, this step is needed only once or if you change the configuration.
+
+[source]
+----
+$ sudo systemctl daemon-reload
+----
+
+==== Running the Service
+
+We can now run the replication as a systemd service. Start a replication with the command:
+
+[source]
+----
+$ sudo systemctl start hbs_03
+----
+
+Process should now be running, we can check the status with the following command:
+[source]
+----
+$ sudo systemctl status hbs_03
+----
+
+
+Value in file `/var/lib/hbs_03/last_processed_id.txt` will be used as the starting point for the next time the service is started.
+
+This file is created during the installation process, on the first run the value is set to 0.
+
+You can edit it if you want to customize the start point or set to 0 if you want to replicate everything.
+
+End point is the largest `JOURNALDB.LOGFILE.ID` in your database when the process is launched.
+New inserts after the process is started are therefore ignored,
+but you can add them by starting the process again later.
+
+== About HBase Options
+
+You can set multiple different options for `HBASE_OPT` by placing the key value pair inside the string quotes.
+In the example we give two options `hbs.hadoop.hbase.zookeeper.quorum=localhost` and  `hbs.hadoop.hbase.zookeeper.property.clientPort=2181`.
+
+=== Options You Might Consider
+
+Set the HBase destination table name table that will be created if missing.
+Default table name is `logfile`.
+[source]
+----
+hbs.hadoop.logfile.table.name=<logfile_tablename>
+----
+
+Giving options from a XML file
+[source]
+----
+hbs.hadoop.config.path=<path_to_xml_file>
+----
+
+You can set any option supported by `hadoop.config.Configuration` by placing the key value after prefix
+
+[source]
+----
+hbs.hadoop.*
+----
 
 == Contributing
 
-// Change the repository name in the issues link to match with your project's name
-
-You can involve yourself with our project by https://github.com/teragrep/repo-template/issues/new/choose[opening an issue] or submitting a pull request.
+You can involve yourself with our project by https://github.com/teragrep/hbs_03/issues/new/choose[opening an issue] or submitting a pull request.
 
 Contribution requirements:
 
