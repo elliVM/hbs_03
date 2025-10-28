@@ -51,8 +51,10 @@ package com.teragrep.hbs_03.jooq.generated.journaldb;
 import com.teragrep.hbs_03.jooq.generated.DefaultCatalog;
 import com.teragrep.hbs_03.jooq.generated.journaldb.tables.Bucket;
 import com.teragrep.hbs_03.jooq.generated.journaldb.tables.Category;
+import com.teragrep.hbs_03.jooq.generated.journaldb.tables.Ci;
 import com.teragrep.hbs_03.jooq.generated.journaldb.tables.Host;
 import com.teragrep.hbs_03.jooq.generated.journaldb.tables.Logfile;
+import com.teragrep.hbs_03.jooq.generated.journaldb.tables.Logtag;
 import com.teragrep.hbs_03.jooq.generated.journaldb.tables.MetadataValue;
 import com.teragrep.hbs_03.jooq.generated.journaldb.tables.SourceSystem;
 
@@ -80,7 +82,7 @@ import org.jooq.impl.SchemaImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Journaldb extends SchemaImpl {
 
-    private static final long serialVersionUID = 353685102;
+    private static final long serialVersionUID = -104756900;
 
     /**
      * The reference instance of <code>journaldb</code>
@@ -88,32 +90,42 @@ public class Journaldb extends SchemaImpl {
     public static final Journaldb JOURNALDB = new Journaldb();
 
     /**
-     * The table <code>journaldb.bucket</code>.
+     * Buckets in object storage
      */
     public final Bucket BUCKET = com.teragrep.hbs_03.jooq.generated.journaldb.tables.Bucket.BUCKET;
 
     /**
-     * The table <code>journaldb.category</code>.
+     * Contains information for different categories.
      */
     public final Category CATEGORY = com.teragrep.hbs_03.jooq.generated.journaldb.tables.Category.CATEGORY;
 
     /**
-     * The table <code>journaldb.host</code>.
+     * Contains ci values that are identified using the ID
+     */
+    public final Ci CI = com.teragrep.hbs_03.jooq.generated.journaldb.tables.Ci.CI;
+
+    /**
+     * Host names
      */
     public final Host HOST = com.teragrep.hbs_03.jooq.generated.journaldb.tables.Host.HOST;
 
     /**
-     * The table <code>journaldb.logfile</code>.
+     * Contains information for log files that have been run through Log Archiver
      */
     public final Logfile LOGFILE = com.teragrep.hbs_03.jooq.generated.journaldb.tables.Logfile.LOGFILE;
 
     /**
-     * The table <code>journaldb.metadata_value</code>.
+     * Contains logtag values that are identified using the ID
+     */
+    public final Logtag LOGTAG = com.teragrep.hbs_03.jooq.generated.journaldb.tables.Logtag.LOGTAG;
+
+    /**
+     * Contains additional attributes for logfiles. The attributes do not apply to each logfile and therefore are not columns in Logfile table
      */
     public final MetadataValue METADATA_VALUE = com.teragrep.hbs_03.jooq.generated.journaldb.tables.MetadataValue.METADATA_VALUE;
 
     /**
-     * The table <code>journaldb.source_system</code>.
+     * Contains information for different applications.
      */
     public final SourceSystem SOURCE_SYSTEM = com.teragrep.hbs_03.jooq.generated.journaldb.tables.SourceSystem.SOURCE_SYSTEM;
 
@@ -141,8 +153,10 @@ public class Journaldb extends SchemaImpl {
         return Arrays.<Table<?>>asList(
             Bucket.BUCKET,
             Category.CATEGORY,
+            Ci.CI,
             Host.HOST,
             Logfile.LOGFILE,
+            Logtag.LOGTAG,
             MetadataValue.METADATA_VALUE,
             SourceSystem.SOURCE_SYSTEM);
     }

@@ -674,7 +674,7 @@
               </jdbc>
               <generator>
                 <database>
-                  <includes>streamdb.log_group|streamdb.host|streamdb.stream|journaldb.host|journaldb.bucket|journaldb.logfile|journaldb.source_system|journaldb.category|journaldb.metadata_value|bloomdb.filtertype</includes>
+                  <includes>streamdb.log_group|streamdb.host|streamdb.stream|journaldb.host|journaldb.bucket|journaldb.logfile|journaldb.source_system|journaldb.category|journaldb.metadata_value|journaldb.logtag|journaldb.ci|bloomdb.filtertype</includes>
                 </database>
                 <target>
                   <packageName>com.teragrep.hbs_03.jooq.generated</packageName>
