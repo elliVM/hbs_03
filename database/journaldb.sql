@@ -171,6 +171,31 @@ LOCK TABLES `host` WRITE;
     ENABLE KEYS */;
 UNLOCK TABLES;
 
+DROP TABLE IF EXISTS `logtag`;
+CREATE TABLE `logtag`
+(
+    `id`     bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'ID for logtag',
+    `logtag` varchar(48)         NOT NULL COMMENT 'A link back to CFEngine',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uix_logtag` (`logtag`)
+) ENGINE = InnoDB
+  AUTO_INCREMENT = 725
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci
+  ROW_FORMAT = DYNAMIC COMMENT ='Contains logtag values that are identified using the ID';
+
+DROP TABLE IF EXISTS `ci`;
+CREATE TABLE `ci`
+(
+    `id`   bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'ID for ci',
+    `name` varchar(255)        NOT NULL COMMENT 'Configuration item name of the logfile records',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uix_ci` (`name`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci
+  ROW_FORMAT = DYNAMIC COMMENT ='Contains ci values that are identified using the ID';
+
 --
 -- Table structure for table `logfile`
 --
@@ -195,20 +220,27 @@ CREATE TABLE `logfile`
     `logtag`                 varchar(48)          NOT NULL COMMENT 'A link back to CFEngine',
     `source_system_id`       smallint(5) unsigned NOT NULL COMMENT 'Log file''s source system (references source_system.id)',
     `category_id`            smallint(5) unsigned NOT NULL DEFAULT 0 COMMENT 'Log file''s category (references category.id)',
-    `uncompressed_file_size` bigint(20) unsigned           DEFAULT NULL COMMENT 'Log file''s  uncompressed file size',
-    `epoch_hour`             bigint(20) unsigned           DEFAULT NULL COMMENT 'Log file''s  epoch logdate',
-    `epoch_expires`          bigint(20) unsigned           DEFAULT NULL COMMENT 'Log file''s  epoch expiration',
-    `epoch_archived`         bigint(20) unsigned           DEFAULT NULL COMMENT 'Log file''s  epoch archived',
+    `uncompressed_file_size` bigint(20) unsigned           DEFAULT NULL COMMENT 'Log file''s uncompressed file size',
+    `epoch_hour`             bigint(20) unsigned           DEFAULT NULL COMMENT 'Log file''s epoch logdate',
+    `epoch_expires`          bigint(20) unsigned           DEFAULT NULL COMMENT 'Log file''s epoch expiration',
+    `epoch_archived`         bigint(20) unsigned           DEFAULT NULL COMMENT 'Log file''s epoch archived',
+    `ci_id`                  bigint(20) unsigned           DEFAULT NULL COMMENT 'Log file''s foreign key to ci table',
+    `logtag_id`              bigint(20) unsigned           DEFAULT NULL COMMENT 'Log file''s foreign key to logtag',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uix_logfile_object_hash` (`object_key_hash`),
-    KEY `bucket_id` (`bucket_id`),
     KEY `category_id` (`category_id`),
     KEY `ix_logfile_expiration` (`expiration`),
     KEY `ix_logfile__source_system_id` (`source_system_id`),
     KEY `cix_logfile_logdate_host_id_logtag` (`logdate`, `host_id`, `logtag`),
+    KEY `host_id` (`host_id`),
+    KEY `bucket_id` (`bucket_id`),
     KEY `cix_logfile_host_id_logtag_logdate` (`host_id`, `logtag`, `logdate`),
     KEY `cix_logfile_epoch_hour_host_id_logtag` (`epoch_hour`, `host_id`, `logtag`),
     KEY `ix_logfile_epoch_expires` (`epoch_expires`),
+    KEY `fk_logfile__ci_id` (`ci_id`),
+    KEY `fk_logfile__logtag_id` (`logtag_id`),
+    CONSTRAINT `fk_logfile__ci_id` FOREIGN KEY (`ci_id`) REFERENCES `ci` (`id`),
+    CONSTRAINT `fk_logfile__logtag_id` FOREIGN KEY (`logtag_id`) REFERENCES `logtag` (`id`),
     CONSTRAINT `fk_logfile__source_system_id` FOREIGN KEY (`source_system_id`) REFERENCES `source_system` (`id`),
     CONSTRAINT `logfile_ibfk_1` FOREIGN KEY (`bucket_id`) REFERENCES `bucket` (`id`),
     CONSTRAINT `logfile_ibfk_2` FOREIGN KEY (`host_id`) REFERENCES `host` (`id`),

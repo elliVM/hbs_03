@@ -34,39 +34,78 @@ CREATE TABLE `source_system`
     UNIQUE KEY `uix_source_system_name` (`name`)
 );
 
+DROP TABLE IF EXISTS `logtag`;
+CREATE TABLE `logtag`
+(
+    `id`     bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'ID for logtag',
+    `logtag` varchar(48)         NOT NULL COMMENT 'A link back to CFEngine',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uix_logtag` (`logtag`)
+) ENGINE = InnoDB
+  AUTO_INCREMENT = 725
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci
+  ROW_FORMAT = DYNAMIC COMMENT ='Contains logtag values that are identified using the ID';
+
+DROP TABLE IF EXISTS `ci`;
+CREATE TABLE `ci`
+(
+    `id`   bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'ID for ci',
+    `name` varchar(255)        NOT NULL COMMENT 'Configuration item name of the logfile records',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uix_ci` (`name`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci
+  ROW_FORMAT = DYNAMIC COMMENT ='Contains ci values that are identified using the ID';
+
 DROP TABLE IF EXISTS `logfile`;
 CREATE TABLE `logfile`
 (
-    `id`                     bigint(20) unsigned                      NOT NULL AUTO_INCREMENT,
-    `logdate`                date                                     NOT NULL COMMENT 'Log file''s date',
-    `expiration`             date                                     NOT NULL COMMENT 'Log file''s expiration date',
-    `bucket_id`              smallint(5) unsigned                     NOT NULL COMMENT 'Reference to bucket table',
-    `path`                   varchar(2048) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Log file''s path in object storage',
+    `id`                     bigint(20) unsigned  NOT NULL AUTO_INCREMENT,
+    `logdate`                date                 NOT NULL COMMENT 'Log file''s date',
+    `expiration`             date                 NOT NULL COMMENT 'Log file''s expiration date',
+    `bucket_id`              smallint(5) unsigned NOT NULL COMMENT 'Reference to bucket table',
+    `path`                   varchar(2048)        NOT NULL COMMENT 'Log file''s path in object storage',
     `object_key_hash`        char(64) GENERATED ALWAYS AS (sha2(concat(`path`, `bucket_id`), 256)) STORED COMMENT 'Hash of path and bucket_id for uniqueness checks. Known length: 64 characters (SHA-256)',
-    `host_id`                smallint(5) unsigned                     NOT NULL COMMENT 'Reference to host table',
-    `original_filename`      varchar(255) COLLATE utf8mb4_unicode_ci  NOT NULL COMMENT 'Log file''s original file name',
-    `archived`               datetime                                 NOT NULL COMMENT 'Date and time when the log file was archived',
-    `file_size`              bigint(20) unsigned                      NOT NULL DEFAULT 0 COMMENT 'Log file''s size in bytes',
-    `sha256_checksum`        char(44) COLLATE utf8mb4_unicode_ci      NOT NULL COMMENT 'An SHA256 hash of the log file (Note: known to be 44 characters long)',
-    `archive_etag`           varchar(64) COLLATE utf8mb4_unicode_ci   NOT NULL COMMENT 'Object storage''s MD5 hash of the log file (Note: room left for possible implementation changes)',
-    `logtag`                 varchar(48) COLLATE utf8mb4_unicode_ci   NOT NULL COMMENT 'A link back to CFEngine',
-    `source_system_id`       smallint(5) unsigned                     NOT NULL COMMENT 'Log file''s source system (references source_system.id)',
-    `category_id`            smallint(5) unsigned                     NOT NULL DEFAULT 0 COMMENT 'Log file''s category (references category.id)',
-    `uncompressed_file_size` bigint(20) unsigned                               DEFAULT NULL COMMENT 'Log file''s  uncompressed file size',
+    `host_id`                smallint(5) unsigned NOT NULL COMMENT 'Reference to host table',
+    `original_filename`      varchar(255)         NOT NULL COMMENT 'Log file''s original file name',
+    `archived`               datetime             NOT NULL COMMENT 'Date and time when the log file was archived',
+    `file_size`              bigint(20) unsigned  NOT NULL DEFAULT 0 COMMENT 'Log file''s size in bytes',
+    `sha256_checksum`        char(44)             NOT NULL COMMENT 'An SHA256 hash of the log file (Note: known to be 44 characters long)',
+    `archive_etag`           varchar(64)          NOT NULL COMMENT 'Object storage''s MD5 hash of the log file (Note: room left for possible implementation changes)',
+    `logtag`                 varchar(48)          NOT NULL COMMENT 'A link back to CFEngine',
+    `source_system_id`       smallint(5) unsigned NOT NULL COMMENT 'Log file''s source system (references source_system.id)',
+    `category_id`            smallint(5) unsigned NOT NULL DEFAULT 0 COMMENT 'Log file''s category (references category.id)',
+    `uncompressed_file_size` bigint(20) unsigned           DEFAULT NULL COMMENT 'Log file''s uncompressed file size',
+    `epoch_hour`             bigint(20) unsigned           DEFAULT NULL COMMENT 'Log file''s epoch logdate',
+    `epoch_expires`          bigint(20) unsigned           DEFAULT NULL COMMENT 'Log file''s epoch expiration',
+    `epoch_archived`         bigint(20) unsigned           DEFAULT NULL COMMENT 'Log file''s epoch archived',
+    `ci_id`                  bigint(20) unsigned           DEFAULT NULL COMMENT 'Log file''s foreign key to ci table',
+    `logtag_id`              bigint(20) unsigned           DEFAULT NULL COMMENT 'Log file''s foreign key to logtag',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uix_logfile_object_hash` (`object_key_hash`),
-    KEY `bucket_id` (`bucket_id`),
-    KEY `journal_host_id` (`host_id`),
     KEY `category_id` (`category_id`),
     KEY `ix_logfile_expiration` (`expiration`),
     KEY `ix_logfile__source_system_id` (`source_system_id`),
     KEY `cix_logfile_logdate_host_id_logtag` (`logdate`, `host_id`, `logtag`),
+    KEY `host_id` (`host_id`),
+    KEY `bucket_id` (`bucket_id`),
+    KEY `cix_logfile_host_id_logtag_logdate` (`host_id`, `logtag`, `logdate`),
+    KEY `cix_logfile_epoch_hour_host_id_logtag` (`epoch_hour`, `host_id`, `logtag`),
+    KEY `ix_logfile_epoch_expires` (`epoch_expires`),
+    KEY `fk_logfile__ci_id` (`ci_id`),
+    KEY `fk_logfile__logtag_id` (`logtag_id`),
+    CONSTRAINT `fk_logfile__ci_id` FOREIGN KEY (`ci_id`) REFERENCES `ci` (`id`),
+    CONSTRAINT `fk_logfile__logtag_id` FOREIGN KEY (`logtag_id`) REFERENCES `logtag` (`id`),
     CONSTRAINT `fk_logfile__source_system_id` FOREIGN KEY (`source_system_id`) REFERENCES `source_system` (`id`),
     CONSTRAINT `logfile_ibfk_1` FOREIGN KEY (`bucket_id`) REFERENCES `bucket` (`id`),
     CONSTRAINT `logfile_ibfk_2` FOREIGN KEY (`host_id`) REFERENCES `journal_host` (`id`),
     CONSTRAINT `logfile_ibfk_4` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`)
-);
-
+) ENGINE = InnoDB
+  AUTO_INCREMENT = 93215717
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci COMMENT ='Contains information for log files that have been run through Log Archiver';
 
 CREATE TABLE `corrupted_archive`
 (
@@ -162,6 +201,16 @@ DELETE
 FROM stream;
 insert into log_group (name)
 values ('group-10');
+insert into logtag (logtag) values ('0ff11b44-cpu');
+insert into logtag (logtag) values ('8411b757-fs-block');
+insert into logtag (logtag) values ('dd731d68-fs-inode');
+insert into logtag (logtag) values ('afe23b85-io');
+insert into logtag (logtag) values ('124f76f0-net');
+insert into logtag (logtag) values ('75c32eb2-pid-cpu');
+insert into logtag (logtag) values ('62a28466-pid-disk');
+insert into logtag (logtag) values ('5a67ffae-pid-page-memory');
+insert into logtag (logtag) values ('7ee85a32-vmstat');
+insert into logtag (logtag) values ('generated-data');
 insert into host (name, gid)
 values ('sc-99-99-10-10', (select id from log_group where name = 'group-10'));
 insert into host (name, gid)
@@ -2296,34 +2345,54 @@ on duplicate key update id = id;
 COMMIT;
 
 create procedure insert_log(in i int)
+
+
 begin
+    declare v_logtag_value varchar(48) default '0ff11b44-cpu';
+    declare v_logtag_id bigint unsigned;
+    declare v_errmsg varchar(255);
+
+    select id into v_logtag_id
+    from logtag
+    where logtag = v_logtag_value collate utf8mb4_unicode_ci
+    limit 1;
+
+    if v_logtag_id is null then
+        set v_errmsg = concat('logtag not found: ', v_logtag_value);
+        signal sqlstate '45000'
+            set message_text = v_errmsg;
+    end if;
+
     insert into logfile (logdate, expiration, bucket_id, path, host_id, original_filename, archived,
                          file_size, sha256_checksum, archive_etag, logtag, source_system_id, category_id,
-                         uncompressed_file_size)
-    values (
-               curdate(),
-               date_add(curdate(), interval 1 year),
-               (select id from bucket where name = 'test-bucket' limit 1),
-               concat(
-                       date_format(curdate(), '%Y/%m-%d'), '/',
-                       (select name from host where name = 'sc-99-99-10-10' limit 1), '/',
-                       '0ff11b44-cpu/',
-                       'cpu-',
-                       date_format(curdate(), '%Y%m%d%H'),
-                       '_', i,
-                       '.log.gz'
-               ),
-               (select id from journal_host where name = 'sc-99-99-10-10' limit 1),
-               concat('test-', i, '.log'),
-               now(),
-               floor(rand() * 1000000),
-               lpad(conv(floor(rand() * pow(36, 10)), 10, 36), 44, '0'),
-               lpad(conv(floor(rand() * pow(36, 10)), 10, 36), 64, '0'),
-               '0ff11b44-cpu',
-               (select id from source_system where name = 'log:cpu:0' limit 1),
-               (select id from category where name = 'test-category' limit 1),
-
-               floor(rand() * 2000000)
+                         uncompressed_file_size, epoch_hour, epoch_expires, epoch_archived, ci_id, logtag_id)
+    values (curdate(),
+            date_add(curdate(), interval 1 year),
+            (select id from bucket where name = 'test-bucket' limit 1),
+            concat(
+                    date_format(curdate(), '%Y/%m-%d'), '/',
+                    (select name from host where name = 'sc-99-99-10-10' limit 1), '/',
+                    '0ff11b44-cpu/',
+                    'cpu-',
+                    date_format(curdate(), '%Y%m%d%H'),
+                    '_', i,
+                    '.log.gz'
+            ),
+            (select id from journal_host where name = 'sc-99-99-10-10' limit 1),
+            concat('test-', i, '.log'),
+            now(),
+            floor(rand() * 1000000),
+            lpad(conv(floor(rand() * pow(36, 10)), 10, 36), 44, '0'),
+            lpad(conv(floor(rand() * pow(36, 10)), 10, 36), 64, '0'),
+            '0ff11b44-cpu',
+            (select id from source_system where name = 'log:cpu:0' limit 1),
+            (select id from category where name = 'test-category' limit 1),
+            floor(rand() * 2000000),
+            UNIX_TIMESTAMP(CURDATE()) DIV 3600,
+            UNIX_TIMESTAMP(DATE_ADD(CURDATE(), INTERVAL 1 YEAR)) DIV 3600,
+            UNIX_TIMESTAMP(NOW()) DIV 3600,
+            (SELECT id FROM ci WHERE name = 'ci-cpu' LIMIT 1),
+            (SELECT id FROM logtag WHERE logtag = '0ff11b44-cpu' LIMIT 1)
            );
 end;
 

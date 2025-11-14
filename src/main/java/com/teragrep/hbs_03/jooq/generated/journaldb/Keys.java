@@ -130,6 +130,8 @@ public class Keys {
     public static final ForeignKey<LogfileRecord, HostRecord> LOGFILE_IBFK_2 = ForeignKeys0.LOGFILE_IBFK_2;
     public static final ForeignKey<LogfileRecord, SourceSystemRecord> FK_LOGFILE__SOURCE_SYSTEM_ID = ForeignKeys0.FK_LOGFILE__SOURCE_SYSTEM_ID;
     public static final ForeignKey<LogfileRecord, CategoryRecord> LOGFILE_IBFK_4 = ForeignKeys0.LOGFILE_IBFK_4;
+    public static final ForeignKey<LogfileRecord, CiRecord> FK_LOGFILE__CI_ID = ForeignKeys0.FK_LOGFILE__CI_ID;
+    public static final ForeignKey<LogfileRecord, LogtagRecord> FK_LOGFILE__LOGTAG_ID = ForeignKeys0.FK_LOGFILE__LOGTAG_ID;
     public static final ForeignKey<MetadataValueRecord, LogfileRecord> METADATA_VALUE_IBFK_1 = ForeignKeys0.METADATA_VALUE_IBFK_1;
 
     // -------------------------------------------------------------------------
@@ -170,6 +172,8 @@ public class Keys {
         public static final ForeignKey<LogfileRecord, HostRecord> LOGFILE_IBFK_2 = Internal.createForeignKey(com.teragrep.hbs_03.jooq.generated.journaldb.Keys.KEY_HOST_PRIMARY, Logfile.LOGFILE, "logfile_ibfk_2", Logfile.LOGFILE.HOST_ID);
         public static final ForeignKey<LogfileRecord, SourceSystemRecord> FK_LOGFILE__SOURCE_SYSTEM_ID = Internal.createForeignKey(com.teragrep.hbs_03.jooq.generated.journaldb.Keys.KEY_SOURCE_SYSTEM_PRIMARY, Logfile.LOGFILE, "fk_logfile__source_system_id", Logfile.LOGFILE.SOURCE_SYSTEM_ID);
         public static final ForeignKey<LogfileRecord, CategoryRecord> LOGFILE_IBFK_4 = Internal.createForeignKey(com.teragrep.hbs_03.jooq.generated.journaldb.Keys.KEY_CATEGORY_PRIMARY, Logfile.LOGFILE, "logfile_ibfk_4", Logfile.LOGFILE.CATEGORY_ID);
+        public static final ForeignKey<LogfileRecord, CiRecord> FK_LOGFILE__CI_ID = Internal.createForeignKey(com.teragrep.hbs_03.jooq.generated.journaldb.Keys.KEY_CI_PRIMARY, Logfile.LOGFILE, "fk_logfile__ci_id", Logfile.LOGFILE.CI_ID);
+        public static final ForeignKey<LogfileRecord, LogtagRecord> FK_LOGFILE__LOGTAG_ID = Internal.createForeignKey(com.teragrep.hbs_03.jooq.generated.journaldb.Keys.KEY_LOGTAG_PRIMARY, Logfile.LOGFILE, "fk_logfile__logtag_id", Logfile.LOGFILE.LOGTAG_ID);
         public static final ForeignKey<MetadataValueRecord, LogfileRecord> METADATA_VALUE_IBFK_1 = Internal.createForeignKey(com.teragrep.hbs_03.jooq.generated.journaldb.Keys.KEY_LOGFILE_PRIMARY, MetadataValue.METADATA_VALUE, "metadata_value_ibfk_1", MetadataValue.METADATA_VALUE.LOGFILE_ID);
     }
 }

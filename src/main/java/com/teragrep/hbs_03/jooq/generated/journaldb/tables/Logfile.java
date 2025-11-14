@@ -66,7 +66,7 @@ import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row19;
+import org.jooq.Row21;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -90,7 +90,7 @@ import org.jooq.types.UShort;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Logfile extends TableImpl<LogfileRecord> {
 
-    private static final long serialVersionUID = 91042630;
+    private static final long serialVersionUID = 1987928107;
 
     /**
      * The reference instance of <code>journaldb.logfile</code>
@@ -181,24 +181,34 @@ public class Logfile extends TableImpl<LogfileRecord> {
     public final TableField<LogfileRecord, UShort> CATEGORY_ID = createField(DSL.name("category_id"), org.jooq.impl.SQLDataType.SMALLINTUNSIGNED.nullable(false).defaultValue(org.jooq.impl.DSL.field("0", org.jooq.impl.SQLDataType.SMALLINTUNSIGNED)), this, "Log file's category (references category.id)");
 
     /**
-     * The column <code>journaldb.logfile.uncompressed_file_size</code>. Log file's  uncompressed file size
+     * The column <code>journaldb.logfile.uncompressed_file_size</code>. Log file's uncompressed file size
      */
-    public final TableField<LogfileRecord, ULong> UNCOMPRESSED_FILE_SIZE = createField(DSL.name("uncompressed_file_size"), org.jooq.impl.SQLDataType.BIGINTUNSIGNED.defaultValue(org.jooq.impl.DSL.field("NULL", org.jooq.impl.SQLDataType.BIGINTUNSIGNED)), this, "Log file's  uncompressed file size");
+    public final TableField<LogfileRecord, ULong> UNCOMPRESSED_FILE_SIZE = createField(DSL.name("uncompressed_file_size"), org.jooq.impl.SQLDataType.BIGINTUNSIGNED.defaultValue(org.jooq.impl.DSL.field("NULL", org.jooq.impl.SQLDataType.BIGINTUNSIGNED)), this, "Log file's uncompressed file size");
 
     /**
-     * The column <code>journaldb.logfile.epoch_hour</code>. Log file's  epoch logdate
+     * The column <code>journaldb.logfile.epoch_hour</code>. Log file's epoch logdate
      */
-    public final TableField<LogfileRecord, ULong> EPOCH_HOUR = createField(DSL.name("epoch_hour"), org.jooq.impl.SQLDataType.BIGINTUNSIGNED.defaultValue(org.jooq.impl.DSL.field("NULL", org.jooq.impl.SQLDataType.BIGINTUNSIGNED)), this, "Log file's  epoch logdate");
+    public final TableField<LogfileRecord, ULong> EPOCH_HOUR = createField(DSL.name("epoch_hour"), org.jooq.impl.SQLDataType.BIGINTUNSIGNED.defaultValue(org.jooq.impl.DSL.field("NULL", org.jooq.impl.SQLDataType.BIGINTUNSIGNED)), this, "Log file's epoch logdate");
 
     /**
-     * The column <code>journaldb.logfile.epoch_expires</code>. Log file's  epoch expiration
+     * The column <code>journaldb.logfile.epoch_expires</code>. Log file's epoch expiration
      */
-    public final TableField<LogfileRecord, ULong> EPOCH_EXPIRES = createField(DSL.name("epoch_expires"), org.jooq.impl.SQLDataType.BIGINTUNSIGNED.defaultValue(org.jooq.impl.DSL.field("NULL", org.jooq.impl.SQLDataType.BIGINTUNSIGNED)), this, "Log file's  epoch expiration");
+    public final TableField<LogfileRecord, ULong> EPOCH_EXPIRES = createField(DSL.name("epoch_expires"), org.jooq.impl.SQLDataType.BIGINTUNSIGNED.defaultValue(org.jooq.impl.DSL.field("NULL", org.jooq.impl.SQLDataType.BIGINTUNSIGNED)), this, "Log file's epoch expiration");
 
     /**
-     * The column <code>journaldb.logfile.epoch_archived</code>. Log file's  epoch archived
+     * The column <code>journaldb.logfile.epoch_archived</code>. Log file's epoch archived
      */
-    public final TableField<LogfileRecord, ULong> EPOCH_ARCHIVED = createField(DSL.name("epoch_archived"), org.jooq.impl.SQLDataType.BIGINTUNSIGNED.defaultValue(org.jooq.impl.DSL.field("NULL", org.jooq.impl.SQLDataType.BIGINTUNSIGNED)), this, "Log file's  epoch archived");
+    public final TableField<LogfileRecord, ULong> EPOCH_ARCHIVED = createField(DSL.name("epoch_archived"), org.jooq.impl.SQLDataType.BIGINTUNSIGNED.defaultValue(org.jooq.impl.DSL.field("NULL", org.jooq.impl.SQLDataType.BIGINTUNSIGNED)), this, "Log file's epoch archived");
+
+    /**
+     * The column <code>journaldb.logfile.ci_id</code>. Log file's foreign key to ci table
+     */
+    public final TableField<LogfileRecord, ULong> CI_ID = createField(DSL.name("ci_id"), org.jooq.impl.SQLDataType.BIGINTUNSIGNED.defaultValue(org.jooq.impl.DSL.field("NULL", org.jooq.impl.SQLDataType.BIGINTUNSIGNED)), this, "Log file's foreign key to ci table");
+
+    /**
+     * The column <code>journaldb.logfile.logtag_id</code>. Log file's foreign key to logtag
+     */
+    public final TableField<LogfileRecord, ULong> LOGTAG_ID = createField(DSL.name("logtag_id"), org.jooq.impl.SQLDataType.BIGINTUNSIGNED.defaultValue(org.jooq.impl.DSL.field("NULL", org.jooq.impl.SQLDataType.BIGINTUNSIGNED)), this, "Log file's foreign key to logtag");
 
     /**
      * Create a <code>journaldb.logfile</code> table reference
@@ -240,7 +250,7 @@ public class Logfile extends TableImpl<LogfileRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.LOGFILE_BUCKET_ID, Indexes.LOGFILE_CATEGORY_ID, Indexes.LOGFILE_CIX_LOGFILE_EPOCH_HOUR_HOST_ID_LOGTAG, Indexes.LOGFILE_CIX_LOGFILE_HOST_ID_LOGTAG_LOGDATE, Indexes.LOGFILE_CIX_LOGFILE_LOGDATE_HOST_ID_LOGTAG, Indexes.LOGFILE_IX_LOGFILE_EPOCH_EXPIRES, Indexes.LOGFILE_IX_LOGFILE_EXPIRATION, Indexes.LOGFILE_IX_LOGFILE__SOURCE_SYSTEM_ID, Indexes.LOGFILE_PRIMARY, Indexes.LOGFILE_UIX_LOGFILE_OBJECT_HASH);
+        return Arrays.<Index>asList(Indexes.LOGFILE_BUCKET_ID, Indexes.LOGFILE_CATEGORY_ID, Indexes.LOGFILE_CIX_LOGFILE_EPOCH_HOUR_HOST_ID_LOGTAG, Indexes.LOGFILE_CIX_LOGFILE_HOST_ID_LOGTAG_LOGDATE, Indexes.LOGFILE_CIX_LOGFILE_LOGDATE_HOST_ID_LOGTAG, Indexes.LOGFILE_FK_LOGFILE__CI_ID, Indexes.LOGFILE_FK_LOGFILE__LOGTAG_ID, Indexes.LOGFILE_HOST_ID, Indexes.LOGFILE_IX_LOGFILE_EPOCH_EXPIRES, Indexes.LOGFILE_IX_LOGFILE_EXPIRATION, Indexes.LOGFILE_IX_LOGFILE__SOURCE_SYSTEM_ID, Indexes.LOGFILE_PRIMARY, Indexes.LOGFILE_UIX_LOGFILE_OBJECT_HASH);
     }
 
     @Override
@@ -260,7 +270,7 @@ public class Logfile extends TableImpl<LogfileRecord> {
 
     @Override
     public List<ForeignKey<LogfileRecord, ?>> getReferences() {
-        return Arrays.<ForeignKey<LogfileRecord, ?>>asList(Keys.LOGFILE_IBFK_1, Keys.LOGFILE_IBFK_2, Keys.FK_LOGFILE__SOURCE_SYSTEM_ID, Keys.LOGFILE_IBFK_4);
+        return Arrays.<ForeignKey<LogfileRecord, ?>>asList(Keys.LOGFILE_IBFK_1, Keys.LOGFILE_IBFK_2, Keys.FK_LOGFILE__SOURCE_SYSTEM_ID, Keys.LOGFILE_IBFK_4, Keys.FK_LOGFILE__CI_ID, Keys.FK_LOGFILE__LOGTAG_ID);
     }
 
     public Bucket bucket() {
@@ -277,6 +287,14 @@ public class Logfile extends TableImpl<LogfileRecord> {
 
     public Category category() {
         return new Category(this, Keys.LOGFILE_IBFK_4);
+    }
+
+    public Ci ci() {
+        return new Ci(this, Keys.FK_LOGFILE__CI_ID);
+    }
+
+    public Logtag logtag() {
+        return new Logtag(this, Keys.FK_LOGFILE__LOGTAG_ID);
     }
 
     @Override
@@ -306,11 +324,11 @@ public class Logfile extends TableImpl<LogfileRecord> {
     }
 
     // -------------------------------------------------------------------------
-    // Row19 type methods
+    // Row21 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row19<ULong, Date, Date, UShort, String, String, UShort, String, Timestamp, ULong, String, String, String, UShort, UShort, ULong, ULong, ULong, ULong> fieldsRow() {
-        return (Row19) super.fieldsRow();
+    public Row21<ULong, Date, Date, UShort, String, String, UShort, String, Timestamp, ULong, String, String, String, UShort, UShort, ULong, ULong, ULong, ULong, ULong, ULong> fieldsRow() {
+        return (Row21) super.fieldsRow();
     }
 }

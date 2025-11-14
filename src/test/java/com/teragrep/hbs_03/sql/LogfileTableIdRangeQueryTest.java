@@ -45,9 +45,11 @@
  */
 package com.teragrep.hbs_03.sql;
 
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Record1;
+import org.jooq.Record3;
 import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.SelectJoinStep;
@@ -70,6 +72,10 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
+import static com.teragrep.hbs_03.jooq.generated.journaldb.Journaldb.JOURNALDB;
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -95,6 +101,13 @@ public final class LogfileTableIdRangeQueryTest {
                         () -> DriverManager
                                 .getConnection(mariadb.getJdbcUrl(), mariadb.getUsername(), mariadb.getPassword())
                 );
+        final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
+        Record3<ULong, ULong, Integer> result = ctx.select(DSL.min(JOURNALDB.LOGFILE.ID), DSL.max(JOURNALDB.LOGFILE.ID), DSL.count())
+                .from(JOURNALDB.LOGFILE)
+                .fetchOne();
+        Assertions.assertEquals(ULong.valueOf(1), result.value1());
+        Assertions.assertEquals(ULong.valueOf(10000), result.value2());
+        Assertions.assertEquals(10000, result.value3().intValue());
     }
 
     @AfterAll
