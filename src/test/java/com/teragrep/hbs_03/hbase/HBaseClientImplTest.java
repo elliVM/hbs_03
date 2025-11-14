@@ -57,10 +57,15 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 
 import java.util.Properties;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@DisabledIfSystemProperty(
+        named = "skipContainerTests",
+        matches = "true"
+)
 @Disabled("Broken")
 public final class HBaseClientImplTest {
 

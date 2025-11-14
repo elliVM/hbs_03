@@ -45,7 +45,6 @@
  */
 package com.teragrep.hbs_03.sql;
 
-import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Record1;
@@ -65,22 +64,20 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.testcontainers.containers.MariaDBContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 
 import static com.teragrep.hbs_03.jooq.generated.journaldb.Journaldb.JOURNALDB;
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@EnabledIfSystemProperty(
-        named = "runContainerTests",
+@DisabledIfSystemProperty(
+        named = "skipContainerTests",
         matches = "true"
 )
 public final class LogfileTableIdRangeQueryTest {
@@ -102,7 +99,8 @@ public final class LogfileTableIdRangeQueryTest {
                                 .getConnection(mariadb.getJdbcUrl(), mariadb.getUsername(), mariadb.getPassword())
                 );
         final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
-        Record3<ULong, ULong, Integer> result = ctx.select(DSL.min(JOURNALDB.LOGFILE.ID), DSL.max(JOURNALDB.LOGFILE.ID), DSL.count())
+        Record3<ULong, ULong, Integer> result = ctx
+                .select(DSL.min(JOURNALDB.LOGFILE.ID), DSL.max(JOURNALDB.LOGFILE.ID), DSL.count())
                 .from(JOURNALDB.LOGFILE)
                 .fetchOne();
         Assertions.assertEquals(ULong.valueOf(1), result.value1());

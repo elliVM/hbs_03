@@ -63,6 +63,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -73,6 +74,10 @@ import java.util.Properties;
  * /var/lib/hbs_03/last_processed_id.txt to be present, sets to 0 after all
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@DisabledIfSystemProperty(
+        named = "skipContainerTests",
+        matches = "true"
+)
 @Disabled("Manual configurable test")
 public final class ManualReplicationProcessTest {
 
