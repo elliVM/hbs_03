@@ -45,6 +45,7 @@
  */
 package com.teragrep.hbs_03.hbase.mutator;
 
+import com.teragrep.hbs_03.hbase.FakeRow;
 import com.teragrep.hbs_03.hbase.Row;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.BufferedMutatorParams;
@@ -58,7 +59,7 @@ public final class MutatorParamsFromListTest {
 
     @Test
     public void testMinimumSize() {
-        final Row row = new Row.FakeRow();
+        final Row row = new FakeRow();
         final List<Put> rowList = List.of(row.put());
         final long minimumSize = 2 * 1024 * 1024; // 2MB in byte size
         final BufferedMutatorParams params = new MutatorParamsFromList(
@@ -73,7 +74,7 @@ public final class MutatorParamsFromListTest {
 
     @Test
     public void testDynamicSize() {
-        final Row row = new Row.FakeRow();
+        final Row row = new FakeRow();
         final int rowListSize = 1000;
         final double overheadMultiplier = 3.0;
         final List<Put> rowList = new ArrayList<>(rowListSize);
@@ -92,7 +93,7 @@ public final class MutatorParamsFromListTest {
 
     @Test
     public void testMaxCalculatedBufferSize() {
-        final Row row = new Row.FakeRow();
+        final Row row = new FakeRow();
         final List<Put> rowList = new ArrayList<>();
         for (int i = 0; i < 10000; i++) {
             rowList.add(row.put());
@@ -109,7 +110,7 @@ public final class MutatorParamsFromListTest {
 
     @Test
     public void testDefaultBuffer() {
-        final Row row = new Row.FakeRow();
+        final Row row = new FakeRow();
         final List<Put> rowList = List.of(row.put());
         final long minimumSize = 2 * 1024 * 1024; // 2MB in byte size, min size for default buffer
         final BufferedMutatorParams params = new MutatorParamsFromList(

@@ -45,6 +45,7 @@
  */
 package com.teragrep.hbs_03.replication;
 
+import com.teragrep.hbs_03.hbase.FakeRow;
 import com.teragrep.hbs_03.hbase.Row;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -63,7 +64,7 @@ public final class RowListMaxIdTest {
 
     @Test
     public void testMaxId() {
-        final List<Row> rowList = List.of(new Row.FakeRow(10L), new Row.FakeRow(20L), new Row.FakeRow(30L));
+        final List<Row> rowList = List.of(new FakeRow(10L), new FakeRow(20L), new FakeRow(30L));
         final Long maxId = new RowListMaxId(rowList).value();
         Assertions.assertEquals(30L, maxId);
     }

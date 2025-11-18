@@ -56,7 +56,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class HBaseConfigWithResource implements Source<Configuration> {
+public final class HBaseConfigWithResource implements Source<Configuration> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HBaseConfigWithResource.class);
 

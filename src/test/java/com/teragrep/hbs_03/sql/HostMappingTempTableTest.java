@@ -115,7 +115,7 @@ public final class HostMappingTempTableTest {
         Assertions.assertDoesNotThrow(tempTable::createIfNotExists);
         final Result<Record> result = ctx.fetch("SELECT host_id, gid FROM host_mapping_temp_table");
         Assertions.assertFalse(result.isEmpty());
-        Assertions.assertEquals(1000, result.size());
+        Assertions.assertEquals(10, result.size());
     }
 
     @Test

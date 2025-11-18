@@ -46,10 +46,7 @@
 package com.teragrep.hbs_03.hbase;
 
 import com.teragrep.hbs_03.hbase.binary.Binary;
-import com.teragrep.hbs_03.hbase.binary.BinaryOfDate;
-import com.teragrep.hbs_03.hbase.binary.BinaryOfLong;
 import com.teragrep.hbs_03.hbase.binary.BinaryOfString;
-import com.teragrep.hbs_03.hbase.binary.BinaryOfTimestamp;
 import com.teragrep.hbs_03.hbase.binary.BinaryOfUInteger;
 import com.teragrep.hbs_03.hbase.binary.BinaryOfULong;
 import org.apache.hadoop.hbase.client.Put;
@@ -58,63 +55,60 @@ import org.jooq.Record21;
 import org.jooq.types.UInteger;
 import org.jooq.types.ULong;
 
-import java.sql.Date;
-import java.sql.Timestamp;
-
 /** Represents a row for meta-column family */
 public final class MetaRow implements Row {
 
-    private final ValidRecord21 validRecord21;
+    private final ValidRecord validRecord;
 
     public MetaRow(
-            final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record
+            final Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record
     ) {
-        this(new ValidRecord21(record));
+        this(new ValidRecord(record));
     }
 
-    public MetaRow(final ValidRecord21 validRecord21) {
-        this.validRecord21 = validRecord21;
+    public MetaRow(final ValidRecord validRecord) {
+        this.validRecord = validRecord;
     }
 
     public Put put() {
 
-        final Put put = new Put(validRecord21.rowKey().bytes(), true);
+        final Put put = new Put(validRecord.rowKey().bytes(), true);
         final byte[] familyBytes = Bytes.toBytes("meta");
-        final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record = validRecord21.record21;
+        Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record = validRecord.record;
 
         // add values from the record and shorter column names for qualifier
-        put.addColumn(familyBytes, Bytes.toBytes("i"), new BinaryOfULong(record.field1().get(record)).bytes()); // log file ID
-        put.addColumn(familyBytes, Bytes.toBytes("ld"), new BinaryOfDate(record.field2().get(record)).bytes()); // log date
-        put.addColumn(familyBytes, Bytes.toBytes("e"), new BinaryOfDate(record.field3().get(record)).bytes()); // expiration
-        put.addColumn(familyBytes, Bytes.toBytes("b"), new BinaryOfString(record.field4().get(record)).bytes()); // bucket name
-        put.addColumn(familyBytes, Bytes.toBytes("p"), new BinaryOfString(record.field5().get(record)).bytes()); // log file path
-        put.addColumn(familyBytes, Bytes.toBytes("okh"), new BinaryOfString(record.field6().get(record)).bytes()); // object key hash
-        put.addColumn(familyBytes, Bytes.toBytes("h"), new BinaryOfString(record.field7().get(record)).bytes()); // host name
-        put.addColumn(familyBytes, Bytes.toBytes("of"), new BinaryOfString(record.field8().get(record)).bytes()); // original filename
-        put.addColumn(familyBytes, Bytes.toBytes("a"), new BinaryOfTimestamp(record.field9().get(record)).bytes()); // archived
-        put.addColumn(familyBytes, Bytes.toBytes("fs"), new BinaryOfULong(record.field10().get(record)).bytes()); // file size
-        put.addColumn(familyBytes, Bytes.toBytes("m"), new BinaryOfString(record.field11().get(record)).bytes()); // meta value
-        put.addColumn(familyBytes, Bytes.toBytes("chk"), new BinaryOfString(record.field12().get(record)).bytes()); // sha256 checksum
-        put.addColumn(familyBytes, Bytes.toBytes("et"), new BinaryOfString(record.field13().get(record)).bytes()); // archive ETag
-        put.addColumn(familyBytes, Bytes.toBytes("lt"), new BinaryOfString(record.field14().get(record)).bytes()); // log tag
-        put.addColumn(familyBytes, Bytes.toBytes("src"), new BinaryOfString(record.field15().get(record)).bytes()); // source system name
-        put.addColumn(familyBytes, Bytes.toBytes("c"), new BinaryOfString(record.field16().get(record)).bytes()); // category name
-        put.addColumn(familyBytes, Bytes.toBytes("ufs"), new BinaryOfULong(record.field17().get(record)).bytes()); // uncompressed file size
-        put.addColumn(familyBytes, Bytes.toBytes("sid"), new BinaryOfUInteger(record.field18().get(record)).bytes()); // stream ID
-        put.addColumn(familyBytes, Bytes.toBytes("s"), new BinaryOfString(record.field19().get(record)).bytes()); // stream
-        put.addColumn(familyBytes, Bytes.toBytes("d"), new BinaryOfString(record.field20().get(record)).bytes()); // stream directory
-        put.addColumn(familyBytes, Bytes.toBytes("t"), new BinaryOfLong(record.field21().get(record)).bytes()); // logtime
+        put.addColumn(familyBytes, Bytes.toBytes("i"), new BinaryOfULong(record.value1()).bytes()); // log file ID
+        put.addColumn(familyBytes, Bytes.toBytes("t"), new BinaryOfULong(record.value2()).bytes()); // logdate epoch
+        put.addColumn(familyBytes, Bytes.toBytes("e"), new BinaryOfULong(record.value3()).bytes()); // expiration epoch
+        put.addColumn(familyBytes, Bytes.toBytes("a"), new BinaryOfULong(record.value4()).bytes()); // archived epoch
+        put.addColumn(familyBytes, Bytes.toBytes("b"), new BinaryOfString(record.value5()).bytes()); // bucket name
+        put.addColumn(familyBytes, Bytes.toBytes("p"), new BinaryOfString(record.value6()).bytes()); // log file path
+        put.addColumn(familyBytes, Bytes.toBytes("okh"), new BinaryOfString(record.value7()).bytes()); // object key hash
+        put.addColumn(familyBytes, Bytes.toBytes("h"), new BinaryOfString(record.value8()).bytes()); // host name
+        put.addColumn(familyBytes, Bytes.toBytes("of"), new BinaryOfString(record.value9()).bytes()); // original filename
+        put.addColumn(familyBytes, Bytes.toBytes("fs"), new BinaryOfULong(record.value10()).bytes()); // file size
+        put.addColumn(familyBytes, Bytes.toBytes("m"), new BinaryOfString(record.value11()).bytes()); // meta value
+        put.addColumn(familyBytes, Bytes.toBytes("chk"), new BinaryOfString(record.value12()).bytes()); // sha256 checksum
+        put.addColumn(familyBytes, Bytes.toBytes("et"), new BinaryOfString(record.value13()).bytes()); // archive ETag
+        put.addColumn(familyBytes, Bytes.toBytes("lt"), new BinaryOfString(record.value14()).bytes()); // log tag
+        put.addColumn(familyBytes, Bytes.toBytes("src"), new BinaryOfString(record.value15()).bytes()); // source system name
+        put.addColumn(familyBytes, Bytes.toBytes("c"), new BinaryOfString(record.value16()).bytes()); // category name
+        put.addColumn(familyBytes, Bytes.toBytes("ufs"), new BinaryOfULong(record.value17()).bytes()); // uncompressed file size
+        put.addColumn(familyBytes, Bytes.toBytes("ci"), new BinaryOfString(record.value18()).bytes()); // ci
+        put.addColumn(familyBytes, Bytes.toBytes("sid"), new BinaryOfUInteger(record.value19()).bytes()); // stream ID
+        put.addColumn(familyBytes, Bytes.toBytes("s"), new BinaryOfString(record.value20()).bytes()); // stream
+        put.addColumn(familyBytes, Bytes.toBytes("d"), new BinaryOfString(record.value21()).bytes()); // stream directory
 
         return put;
     }
 
     public Binary rowKey() {
-        return validRecord21.rowKey();
+        return validRecord.rowKey();
     }
 
     @Override
     public ULong id() {
-        return validRecord21.id();
+        return validRecord.id();
     }
 
 }

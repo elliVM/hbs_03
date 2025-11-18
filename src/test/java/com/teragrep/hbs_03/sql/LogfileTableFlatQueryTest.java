@@ -47,12 +47,14 @@ package com.teragrep.hbs_03.sql;
 
 import com.teragrep.hbs_03.hbase.Row;
 import org.jooq.DSLContext;
+import org.jooq.Record3;
 import org.jooq.SQLDialect;
 import org.jooq.conf.MappedSchema;
 import org.jooq.conf.MappedTable;
 import org.jooq.conf.RenderMapping;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
+import org.jooq.types.ULong;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -67,6 +69,8 @@ import org.testcontainers.utility.DockerImageName;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
+
+import static com.teragrep.hbs_03.jooq.generated.journaldb.Journaldb.JOURNALDB;
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -93,6 +97,15 @@ public final class LogfileTableFlatQueryTest {
                         () -> DriverManager
                                 .getConnection(mariadb.getJdbcUrl(), mariadb.getUsername(), mariadb.getPassword())
                 );
+        final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
+        final Record3<ULong, ULong, Integer> result = ctx
+                .select(DSL.min(JOURNALDB.LOGFILE.ID), DSL.max(JOURNALDB.LOGFILE.ID), DSL.count())
+                .from(JOURNALDB.LOGFILE)
+                .fetchOne();
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(ULong.valueOf(1), result.value1());
+        Assertions.assertEquals(ULong.valueOf(10000), result.value2());
+        Assertions.assertEquals(10000, result.value3().intValue());
     }
 
     @AfterAll
@@ -105,7 +118,8 @@ public final class LogfileTableFlatQueryTest {
     public void testFlatQuery() {
         final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
         new HostMappingTempTable(ctx).createIfNotExists();
-        final LogfileTableFlatQuery logfileTableFlatQuery = new LogfileTableFlatQuery(ctx, 100, 200);
+        final LogfileTableIdRangeQuery rangeQuery = new LogfileTableIdRangeQuery(ctx, 100, 200);
+        final LogfileTableFlatQuery logfileTableFlatQuery = new LogfileTableFlatQuery(ctx, rangeQuery);
         final List<Row> results = logfileTableFlatQuery.resultRowList();
         Assertions.assertEquals(100, results.size());
         int loops = 0;

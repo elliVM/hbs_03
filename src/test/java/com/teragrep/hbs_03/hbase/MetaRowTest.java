@@ -58,7 +58,7 @@ public final class MetaRowTest {
 
     @Test
     public void testColumns() {
-        final Row row = new Row.FakeRow();
+        final Row row = new FakeRow();
         final Put put = row.put();
         final byte[] columnFamily = Bytes.toBytes("meta");
 
@@ -75,13 +75,13 @@ public final class MetaRowTest {
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("fs")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("h")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("i")));
-        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("ld")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("lt")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("m")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("of")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("okh")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("p")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("s")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("ci")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("sid")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("src")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("t")));
@@ -89,8 +89,13 @@ public final class MetaRowTest {
     }
 
     @Test
+    public void testFakeRow() {
+        new FakeRow();
+    }
+
+    @Test
     public void testColumnSize() {
-        final Row row = new Row.FakeRow();
+        final Row row = new FakeRow();
         final Put put = row.put();
         Assertions.assertTrue(put.getFamilyCellMap().containsKey(Bytes.toBytes("meta")));
         Assertions.assertEquals(21, put.getFamilyCellMap().get(Bytes.toBytes("meta")).size());
@@ -98,7 +103,7 @@ public final class MetaRowTest {
 
     @Test
     public void testNullValueInBucketColumn() {
-        final Row row = new Row.FakeRow(null);
+        final Row row = new FakeRow(null);
         final Put put = row.put();
         Assertions.assertTrue(put.getFamilyCellMap().containsKey(Bytes.toBytes("meta")));
         final List<Cell> cells = put.getFamilyCellMap().get(Bytes.toBytes("meta"));

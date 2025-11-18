@@ -61,8 +61,6 @@ import org.jooq.types.ULong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Date;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,6 +81,10 @@ public final class LogfileTableFlatQuery {
         this(ctx, new LogfileTableIdRangeQuery(ctx, startId, endId).asTable(), new HostMappingTempTable(ctx));
     }
 
+    public LogfileTableFlatQuery(final DSLContext ctx, final LogfileTableIdRangeQuery rangeIdQuery) {
+        this(ctx, rangeIdQuery.asTable(), new HostMappingTempTable(ctx));
+    }
+
     public LogfileTableFlatQuery(
             final DSLContext ctx,
             final Table<Record1<ULong>> rangeIdTable,
@@ -93,10 +95,28 @@ public final class LogfileTableFlatQuery {
         this.hostMappingTempTable = hostMappingTempTable;
     }
 
-    private Field<Long> logTimeFunctionField() {
+    private Field<ULong> coalescedLogtimeField() {
         final String dateFromPathRegex = "UNIX_TIMESTAMP(STR_TO_DATE(SUBSTRING(REGEXP_SUBSTR({0},'^\\\\d{4}\\\\/\\\\d{2}-\\\\d{2}\\\\/[\\\\w\\\\.-]+\\\\/([^\\\\p{Z}\\\\p{C}]+?)\\\\/([^\\\\p{Z}\\\\p{C}]+)(-@)?(\\\\d+|)-(\\\\d{4}\\\\d{2}\\\\d{2}\\\\d{2})'), -10, 10), '%Y%m%d%H'))";
-        final Field<Long> logtimeField = DSL.field("logtime", Long.class);
-        return DSL.field(dateFromPathRegex, Long.class, JOURNALDB.LOGFILE.PATH).as(logtimeField);
+        final Field<ULong> extractedLogtimeField = DSL.field(dateFromPathRegex, ULong.class, JOURNALDB.LOGFILE.PATH);
+        return DSL.coalesce(JOURNALDB.LOGFILE.EPOCH_HOUR, extractedLogtimeField).as("logtime");
+    }
+
+    private Field<ULong> coalescedEpochExpiresField() {
+        return DSL
+                .coalesce(
+                        JOURNALDB.LOGFILE.EPOCH_EXPIRES,
+                        DSL.field("UNIX_TIMESTAMP({0})", ULong.class, JOURNALDB.LOGFILE.EXPIRATION)
+                )
+                .as("epoch_expires");
+    }
+
+    private Field<ULong> coalescedEpochArchivedField() {
+        return DSL
+                .coalesce(
+                        JOURNALDB.LOGFILE.EPOCH_ARCHIVED,
+                        DSL.field("UNIX_TIMESTAMP({0})", ULong.class, JOURNALDB.LOGFILE.ARCHIVED)
+                )
+                .as("epoch_archived");
     }
 
     public List<Row> resultRowList() {
@@ -109,15 +129,15 @@ public final class LogfileTableFlatQuery {
 
         final List<Row> rowList;
         try (
-                final SelectOnConditionStep<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> selectStep = selectFlatQueryStep()
+                final SelectOnConditionStep<Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String>> selectStep = selectFlatQueryStep()
         ) {
 
-            final Result<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> result = selectStep
+            final Result<Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String>> result = selectStep
                     .fetch();
             rowList = new ArrayList<>(result.size());
 
             for (
-                final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record : result
+                final Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record : result
             ) {
                 final Row row = new MetaRow(record);
                 rowList.add(row);
@@ -127,15 +147,14 @@ public final class LogfileTableFlatQuery {
         return rowList;
     }
 
-    private SelectOnConditionStep<Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long>> selectFlatQueryStep() {
+    private SelectOnConditionStep<Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String>> selectFlatQueryStep() {
         final Field<ULong> dayQueryIdField = rangeIdTable.field("id", ULong.class);
-        return ctx
+        final SelectOnConditionStep<Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String>> selectStep = ctx
                 .select(
-                        JOURNALDB.LOGFILE.ID, JOURNALDB.LOGFILE.LOGDATE, JOURNALDB.LOGFILE.EXPIRATION,
-                        JOURNALDB.BUCKET.NAME.as("bucket"), JOURNALDB.LOGFILE.PATH, JOURNALDB.LOGFILE.OBJECT_KEY_HASH, JOURNALDB.HOST.NAME.as("host"), JOURNALDB.LOGFILE.ORIGINAL_FILENAME, JOURNALDB.LOGFILE.ARCHIVED, JOURNALDB.LOGFILE.FILE_SIZE, JOURNALDB.METADATA_VALUE.VALUE.as("meta"), // this expects that each logfile has exactly 1 value
-                        JOURNALDB.LOGFILE.SHA256_CHECKSUM, JOURNALDB.LOGFILE.ARCHIVE_ETAG, JOURNALDB.LOGFILE.LOGTAG,
-                        JOURNALDB.SOURCE_SYSTEM.NAME.as("source_system"), JOURNALDB.CATEGORY.NAME.as("category"), JOURNALDB.LOGFILE.UNCOMPRESSED_FILE_SIZE, STREAMDB.STREAM.ID.as("stream_id"), // row key id
-                        STREAMDB.STREAM.STREAM_, STREAMDB.STREAM.DIRECTORY, logTimeFunctionField()
+                        JOURNALDB.LOGFILE.ID, coalescedLogtimeField(), coalescedEpochArchivedField(),
+                        coalescedEpochExpiresField(), JOURNALDB.BUCKET.NAME.as("bucket"), JOURNALDB.LOGFILE.PATH, JOURNALDB.LOGFILE.OBJECT_KEY_HASH, JOURNALDB.HOST.NAME.as("host"), JOURNALDB.LOGFILE.ORIGINAL_FILENAME, JOURNALDB.LOGFILE.FILE_SIZE, JOURNALDB.METADATA_VALUE.VALUE.as("meta"), // this expects that each logfile has exactly 1 value
+                        JOURNALDB.LOGFILE.SHA256_CHECKSUM, JOURNALDB.LOGFILE.ARCHIVE_ETAG, JOURNALDB.LOGTAG.LOGTAG_,
+                        JOURNALDB.SOURCE_SYSTEM.NAME.as("source_system"), JOURNALDB.CATEGORY.NAME.as("category"), JOURNALDB.LOGFILE.UNCOMPRESSED_FILE_SIZE, JOURNALDB.CI.NAME, STREAMDB.STREAM.ID.as("stream_id"), STREAMDB.STREAM.STREAM_, STREAMDB.STREAM.DIRECTORY
                 )
                 .from(rangeIdTable)
                 .straightJoin(JOURNALDB.LOGFILE)
@@ -153,9 +172,14 @@ public final class LogfileTableFlatQuery {
                 .on(JOURNALDB.LOGFILE.CATEGORY_ID.eq(JOURNALDB.CATEGORY.ID))
                 .join(JOURNALDB.METADATA_VALUE)
                 .on(JOURNALDB.LOGFILE.ID.eq(JOURNALDB.METADATA_VALUE.LOGFILE_ID))
+                .join(JOURNALDB.LOGTAG)
+                .on(JOURNALDB.LOGFILE.LOGTAG_ID.eq(JOURNALDB.LOGTAG.ID))
+                .join(JOURNALDB.CI)
+                .on(JOURNALDB.LOGFILE.CI_ID.eq(JOURNALDB.CI.ID))
                 .join(STREAMDB.LOG_GROUP)
                 .on(hostMappingTempTable.groupIdField().eq(STREAMDB.LOG_GROUP.ID))
                 .join(STREAMDB.STREAM)
-                .on(STREAMDB.LOG_GROUP.ID.eq(STREAMDB.STREAM.GID).and(JOURNALDB.LOGFILE.LOGTAG.eq(STREAMDB.STREAM.TAG)));
+                .on(STREAMDB.LOG_GROUP.ID.eq(STREAMDB.STREAM.GID).and(JOURNALDB.LOGTAG.LOGTAG_.eq(STREAMDB.STREAM.TAG)));
+        return selectStep;
     }
 }

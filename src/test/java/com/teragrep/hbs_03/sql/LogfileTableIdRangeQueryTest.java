@@ -99,7 +99,7 @@ public final class LogfileTableIdRangeQueryTest {
                                 .getConnection(mariadb.getJdbcUrl(), mariadb.getUsername(), mariadb.getPassword())
                 );
         final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
-        Record3<ULong, ULong, Integer> result = ctx
+        final Record3<ULong, ULong, Integer> result = ctx
                 .select(DSL.min(JOURNALDB.LOGFILE.ID), DSL.max(JOURNALDB.LOGFILE.ID), DSL.count())
                 .from(JOURNALDB.LOGFILE)
                 .fetchOne();

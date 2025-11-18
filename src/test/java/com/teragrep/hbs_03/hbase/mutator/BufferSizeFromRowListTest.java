@@ -45,6 +45,7 @@
  */
 package com.teragrep.hbs_03.hbase.mutator;
 
+import com.teragrep.hbs_03.hbase.FakeRow;
 import com.teragrep.hbs_03.hbase.Row;
 import org.apache.hadoop.hbase.client.Put;
 import org.junit.jupiter.api.Assertions;
@@ -60,7 +61,7 @@ public final class BufferSizeFromRowListTest {
 
     @Test
     public void testSize() {
-        final Row row = new Row.FakeRow();
+        final Row row = new FakeRow();
         final int rowListSize = 1000;
         final List<Put> rowList = new ArrayList<>(rowListSize);
         for (int i = 0; i < rowListSize; i++) {
@@ -84,7 +85,7 @@ public final class BufferSizeFromRowListTest {
 
     @Test
     public void testMinSize() {
-        final Row row = new Row.FakeRow();
+        final Row row = new FakeRow();
         final int rowListSize = 10;
         final List<Put> rowList = new ArrayList<>(rowListSize);
         for (int i = 0; i < rowListSize; i++) {
@@ -97,7 +98,7 @@ public final class BufferSizeFromRowListTest {
 
     @Test
     public void testMaxSize() {
-        final Row row = new Row.FakeRow();
+        final Row row = new FakeRow();
         final int rowListSize = 10000;
         final List<Put> rowList = new ArrayList<>(rowListSize);
         for (int i = 0; i < rowListSize; i++) {

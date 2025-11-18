@@ -50,24 +50,25 @@ import org.jooq.Record21;
 import org.jooq.types.UInteger;
 import org.jooq.types.ULong;
 
-import java.sql.Date;
-import java.sql.Timestamp;
-
 /** Checks that record values that are used to create other objects are not null */
-public final class ValidRecord21 {
+public final class ValidRecord {
 
-    final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record21;
+    final Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record;
 
-    public ValidRecord21(
-            final Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record21
+    public ValidRecord(
+            final Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record
     ) {
-        this.record21 = record21;
+        this.record = record;
     }
 
     public MetaRowKey rowKey() {
         final MetaRowKey rowKey;
         try {
-            rowKey = new MetaRowKey(record21.value18().longValue(), record21.value21(), record21.value1().longValue());
+            rowKey = new MetaRowKey(
+                    record.value19().longValue(),
+                    record.value2().longValue(),
+                    record.value1().longValue()
+            );
         }
         catch (final NullPointerException e) {
             throw new HbsRuntimeException("Row key field was null", e);
@@ -75,14 +76,14 @@ public final class ValidRecord21 {
         return rowKey;
     }
 
-    public Record21<ULong, Date, Date, String, String, String, String, String, Timestamp, ULong, String, String, String, String, String, String, ULong, UInteger, String, String, Long> record() {
-        return record21;
+    public Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record() {
+        return record;
     }
 
     public ULong id() {
         final ULong id;
         try {
-            id = record21.field1().get(record21);
+            id = record.field1().get(record);
         }
         catch (final NullPointerException e) {
             throw new HbsRuntimeException("Logfile id field was null", e);

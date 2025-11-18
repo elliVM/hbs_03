@@ -48,7 +48,7 @@ package com.teragrep.hbs_03.hbase;
 import com.teragrep.hbs_03.Source;
 import org.apache.hadoop.conf.Configuration;
 
-public class HBaseConfigWithRequiredOptionsSet implements Source<Configuration> {
+public final class HBaseConfigWithRequiredOptionsSet implements Source<Configuration> {
 
     private final Configuration config;
 

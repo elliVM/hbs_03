@@ -50,7 +50,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HBaseConfigWithOption implements Source<Configuration> {
+public final class HBaseConfigWithOption implements Source<Configuration> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HBaseConfigWithOption.class);
 
