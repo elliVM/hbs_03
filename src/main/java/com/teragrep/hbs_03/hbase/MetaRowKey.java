@@ -68,11 +68,10 @@ public final class MetaRowKey implements Binary {
     }
 
     public byte[] bytes() {
-        final long reversedEpoch = new ReversedEpoch(logtime).value();
         final int capacity = (3 * Long.BYTES);
         final ByteBuffer rowKeyBuffer = ByteBuffer.allocate(capacity).order(ByteOrder.BIG_ENDIAN);
         rowKeyBuffer.putLong(streamId);
-        rowKeyBuffer.putLong(reversedEpoch);
+        rowKeyBuffer.putLong(logtime);
         rowKeyBuffer.putLong(logfileId);
         return rowKeyBuffer.array();
     }
