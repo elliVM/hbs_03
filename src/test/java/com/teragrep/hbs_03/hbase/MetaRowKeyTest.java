@@ -72,9 +72,8 @@ public final class MetaRowKeyTest {
         final MetaRowKey metaRowKey = new MetaRowKey(streamId, logtime, logfileId);
         final byte[] rowKeyBytes = metaRowKey.bytes();
         final ByteBuffer buffer = ByteBuffer.wrap(rowKeyBytes).order(ByteOrder.BIG_ENDIAN);
-        final long expectedReversedEpoch = (Long.MAX_VALUE / 2) - logtime;
         Assertions.assertEquals(streamId, buffer.getLong());
-        Assertions.assertEquals(expectedReversedEpoch, buffer.getLong());
+        Assertions.assertEquals(9876543210L, buffer.getLong());
         Assertions.assertEquals(logfileId, buffer.getLong());
     }
 
@@ -105,7 +104,7 @@ public final class MetaRowKeyTest {
         final long logfileId = 54321L;
         final MetaRowKey metaRowKey = new MetaRowKey(streamId, logtime, logfileId);
         final String expected = "RowKey(streamId=<12345>, logtime=9876543210, logfileId=54321)\n"
-                + " bytes=<[00 00 00 00 00 00 30 39 3f ff ff fd b3 4f e9 15 00 00 00 00 00 00 d4 31]>";
+                + " bytes=<[00 00 00 00 00 00 30 39 00 00 00 02 4c b0 16 ea 00 00 00 00 00 00 d4 31]>";
         Assertions.assertEquals(expected, metaRowKey.toString());
     }
 
