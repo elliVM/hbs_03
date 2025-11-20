@@ -47,15 +47,16 @@ package com.teragrep.hbs_03.hbase;
 
 import com.teragrep.hbs_03.HbsRuntimeException;
 import com.teragrep.hbs_03.hbase.task.TableTask;
-import org.apache.hadoop.hbase.MasterNotRunningException;
+import org.apache.hadoop.hbase.TableExistsException;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.TableDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 
 /**
  * HBase table that is the destination of the migration data. Has two column families: META that contains teragrep
@@ -86,22 +87,20 @@ public final class DestinationTable implements HBaseTable {
         final TableName name = tableDescriptor.name();
         try (final Admin admin = connection.getAdmin()) {
             if (!admin.tableExists(name)) {
-                final TableDescriptor descriptor = tableDescriptor.describe();
-                admin.createTable(descriptor);
-                LOGGER.debug("Created <{}> table to HBase", name);
+                try {
+                    admin.createTable(tableDescriptor.describe());
+                    LOGGER.debug("Created table <{}>", name);
+                }
+                catch (final TableExistsException e) {
+                    LOGGER.debug("Table <{}> already exists", name);
+                }
             }
             else {
                 LOGGER.debug("Table <{}> already exists, skipping creation", name);
             }
         }
-        catch (final MasterNotRunningException e) {
-            throw new HbsRuntimeException("Master was not running", e);
-        }
-        catch (final IllegalArgumentException e) {
-            throw new HbsRuntimeException("Table name was restricted", e);
-        }
         catch (final IOException e) {
-            throw new HbsRuntimeException("Error creating logfile table", e);
+            throw new HbsRuntimeException("Error creating table", e);
         }
     }
 
@@ -111,14 +110,15 @@ public final class DestinationTable implements HBaseTable {
         try (final Admin admin = connection.getAdmin()) {
             if (admin.tableExists(name)) {
                 if (!admin.isTableDisabled(name)) {
-                    admin.disableTable(name);
+                    admin.disableTableAsync(name).get(); // async disable
                     LOGGER.debug("Disabled table <{}>", name);
                 }
-                admin.deleteTable(name);
+                admin.deleteTableAsync(name).get(); // async delete
                 LOGGER.debug("Deleted table <{}>", name);
+
             }
         }
-        catch (final IOException e) {
+        catch (final IOException | InterruptedException | ExecutionException e) {
             throw new HbsRuntimeException("Error deleting table", e);
         }
     }
@@ -130,4 +130,20 @@ public final class DestinationTable implements HBaseTable {
         LOGGER.info("Worked task <{}>, status: finished=<{}>", task, finished);
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null) {
+            return false;
+        }
+        if (getClass() != o.getClass()) {
+            return false;
+        }
+        final DestinationTable that = (DestinationTable) o;
+        return Objects.equals(connection, that.connection) && Objects.equals(tableDescriptor, that.tableDescriptor);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(connection, tableDescriptor);
+    }
 }

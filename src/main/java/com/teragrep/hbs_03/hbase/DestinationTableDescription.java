@@ -50,6 +50,7 @@ import org.apache.hadoop.hbase.client.ColumnFamilyDescriptor;
 import org.apache.hadoop.hbase.client.ColumnFamilyDescriptorBuilder;
 import org.apache.hadoop.hbase.client.TableDescriptor;
 import org.apache.hadoop.hbase.client.TableDescriptorBuilder;
+import org.apache.hadoop.hbase.io.compress.Compression;
 import org.apache.hadoop.hbase.regionserver.BloomType;
 import org.apache.hadoop.hbase.util.Bytes;
 
@@ -57,17 +58,47 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-/** Description of the HBase replication destination table */
+/**
+ * Description of the HBase replication destination table
+ */
 public final class DestinationTableDescription implements TableDescription {
 
     private final TableName name;
+    private final boolean useCompression;
+    private final Compression.Algorithm compressionAlgorithm;
 
     public DestinationTableDescription(final String tableName) {
         this(TableName.valueOf(tableName));
     }
 
-    public DestinationTableDescription(final TableName name) {
+    public DestinationTableDescription(final TableName tableName) {
+        this(tableName, false, Compression.Algorithm.NONE);
+    }
+
+    public DestinationTableDescription(final String name, final boolean useCompression) {
+        this(TableName.valueOf(name), useCompression);
+    }
+
+    public DestinationTableDescription(final TableName tableName, final boolean useCompression) {
+        this(tableName, useCompression, Compression.Algorithm.SNAPPY);
+    }
+
+    public DestinationTableDescription(final String name, final Compression.Algorithm compressionAlgorithm) {
+        this(TableName.valueOf(name), compressionAlgorithm);
+    }
+
+    public DestinationTableDescription(final TableName tableName, final Compression.Algorithm compressionAlgorithm) {
+        this(tableName, true, compressionAlgorithm);
+    }
+
+    public DestinationTableDescription(
+            final TableName name,
+            final boolean useCompression,
+            final Compression.Algorithm compressionAlgorithm
+    ) {
         this.name = name;
+        this.useCompression = useCompression;
+        this.compressionAlgorithm = compressionAlgorithm;
     }
 
     @Override
@@ -85,18 +116,25 @@ public final class DestinationTableDescription implements TableDescription {
     }
 
     private List<ColumnFamilyDescriptor> columnFamilyDescriptions() {
-        final ColumnFamilyDescriptor metaFamilyBuilder = ColumnFamilyDescriptorBuilder
+        final ColumnFamilyDescriptorBuilder metaFamilyBuilder = ColumnFamilyDescriptorBuilder
                 .newBuilder(Bytes.toBytes("meta"))
                 .setMaxVersions(1) // number of allowed copies per column e.g., with the same row key
-                .setBloomFilterType(BloomType.ROW)
-                .build();
+                .setBloomFilterType(BloomType.ROW);
 
-        final ColumnFamilyDescriptor bloomFamilyBuilder = ColumnFamilyDescriptorBuilder
+        final ColumnFamilyDescriptorBuilder bloomFamilyBuilder = ColumnFamilyDescriptorBuilder
                 .newBuilder(Bytes.toBytes("bloom"))
                 .setMaxVersions(1) // number of allowed copies per column e.g., with the same row key
                 .setBloomFilterType(BloomType.ROW)
-                .build();
+                .setBlockCacheEnabled(false); // do not keep bloom filter blocks in cache memory
 
-        return Collections.unmodifiableList(Arrays.asList(metaFamilyBuilder, bloomFamilyBuilder));
+        if (useCompression) {
+            metaFamilyBuilder.setCompressionType(compressionAlgorithm);
+            bloomFamilyBuilder.setCompressionType(compressionAlgorithm);
+        }
+
+        final ColumnFamilyDescriptor metaFamilyDescriptor = metaFamilyBuilder.build();
+        final ColumnFamilyDescriptor bloomFamilyDescriptor = bloomFamilyBuilder.build();
+
+        return Collections.unmodifiableList(Arrays.asList(metaFamilyDescriptor, bloomFamilyDescriptor));
     }
 }

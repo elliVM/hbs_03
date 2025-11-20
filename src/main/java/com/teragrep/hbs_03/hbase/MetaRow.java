@@ -74,7 +74,8 @@ public final class MetaRow implements Row {
 
         final Put put = new Put(validRecord.rowKey().bytes(), true);
         final byte[] familyBytes = Bytes.toBytes("meta");
-        Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record = validRecord.record;
+        final Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record = validRecord
+                .record();
 
         // add values from the record and shorter column names for qualifier
         put.addColumn(familyBytes, Bytes.toBytes("i"), new BinaryOfULong(record.value1()).bytes()); // log file ID

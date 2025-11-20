@@ -53,7 +53,7 @@ import org.jooq.types.ULong;
 /** Checks that record values that are used to create other objects are not null */
 public final class ValidRecord {
 
-    final Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record;
+    private final Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record;
 
     public ValidRecord(
             final Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record
@@ -90,4 +90,5 @@ public final class ValidRecord {
         }
         return id;
     }
+
 }

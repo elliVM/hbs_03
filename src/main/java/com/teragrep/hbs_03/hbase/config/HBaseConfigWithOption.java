@@ -43,71 +43,44 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.hbase.config;
 
-import org.apache.hadoop.conf.Configuration;
-import com.teragrep.cnf_01.ConfigurationException;
-import com.teragrep.hbs_03.HbsRuntimeException;
 import com.teragrep.hbs_03.Source;
-import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Map;
+public final class HBaseConfigWithOption implements Source<Configuration> {
 
-/**
- * HBase configuration HBase from arguments
- */
-public final class HBaseConfig implements Source<Configuration> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseConfigWithOption.class);
 
-    private final com.teragrep.cnf_01.Configuration config;
-    private final String prefix;
-    private final String filePrefix;
+    private final Source<Configuration> origin;
+    private final String hbaseOptionPrefix;
+    private final String optionKey;
+    private final String optionValue;
 
-    public HBaseConfig(final com.teragrep.cnf_01.Configuration config) {
-        this(config, "hbs.hadoop.");
+    public HBaseConfigWithOption(
+            final Source<Configuration> origin,
+            final String optionPrefix,
+            final String optionKey,
+            final String optionValue
+    ) {
+        this.origin = origin;
+        this.hbaseOptionPrefix = optionPrefix;
+        this.optionKey = optionKey;
+        this.optionValue = optionValue;
     }
 
-    public HBaseConfig(final com.teragrep.cnf_01.Configuration config, final String prefix) {
-        this(config, prefix, prefix + "config.path");
-    }
-
-    public HBaseConfig(final com.teragrep.cnf_01.Configuration config, final String prefix, final String filePrefix) {
-        this.config = config;
-        this.prefix = prefix;
-        this.filePrefix = filePrefix;
-    }
-
-    @Override
     public Configuration value() {
-        final Map<String, String> map;
-        try {
-            map = config.asMap();
+        final Configuration config = origin.value();
+        if (optionKey.startsWith(hbaseOptionPrefix)) {
+            final String hbaseOption = optionKey.substring(hbaseOptionPrefix.length());
+            config.set(hbaseOption, optionValue);
+            LOGGER.info("Set HBase configuration option: <{}>=<{}>", hbaseOption, optionValue);
         }
-        catch (final ConfigurationException e) {
-            throw new HbsRuntimeException("Error getting configuration", e);
+        else {
+            LOGGER.debug("HbaseConfiguration skipped unrecognized hadoop option <[{}]>=<[{}]>", optionKey, optionValue);
         }
-        return sourceFromMap(map).value();
-    }
-
-    /** builds a source interface with all options and resources set from a options map */
-    private Source<Configuration> sourceFromMap(final Map<String, String> map) {
-
-        Source<Configuration> source = new HBaseConfigWithRequiredOptionsSet(
-                new Configuration(HBaseConfiguration.create())
-        );
-
-        for (final Map.Entry<String, String> entry : map.entrySet()) {
-            final String key = entry.getKey();
-            final String value = entry.getValue();
-
-            if (key.matches(filePrefix)) {
-                source = new HBaseConfigWithResource(source, value);
-
-            }
-            else {
-                source = new HBaseConfigWithOption(source, prefix, key, value);
-            }
-        }
-
-        return source;
+        return config;
     }
 }

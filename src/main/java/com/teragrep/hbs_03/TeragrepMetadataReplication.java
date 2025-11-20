@@ -69,8 +69,11 @@ public final class TeragrepMetadataReplication {
             System.exit(0); // success
         }
         catch (final HbsRuntimeException e) {
-            LOGGER.error("Exception executing migration <{}>", e.getMessage(), e);
-            System.exit(1); // failure
+            LOGGER.error("Exception executing replication <{}>", e.getMessage(), e);
         }
+        catch (final Exception e) {
+            LOGGER.error("Unexpected error during replication <{}>", e.getMessage());
+        }
+        System.exit(1); // failure
     }
 }

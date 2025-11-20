@@ -43,53 +43,71 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.hbase.config;
 
+import org.apache.hadoop.conf.Configuration;
+import com.teragrep.cnf_01.ConfigurationException;
 import com.teragrep.hbs_03.HbsRuntimeException;
 import com.teragrep.hbs_03.Source;
-import org.apache.hadoop.conf.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.hadoop.hbase.HBaseConfiguration;
 
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Map;
 
-public final class HBaseConfigWithResource implements Source<Configuration> {
+/**
+ * HBase configuration HBase from arguments
+ */
+public final class HBaseConfig implements Source<Configuration> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseConfigWithResource.class);
+    private final com.teragrep.cnf_01.Configuration config;
+    private final String prefix;
+    private final String filePrefix;
 
-    private final Source<Configuration> origin;
-    private final Path path;
-
-    public HBaseConfigWithResource(final Source<Configuration> origin, final String pathString) {
-        this(origin, Paths.get(pathString));
+    public HBaseConfig(final com.teragrep.cnf_01.Configuration config) {
+        this(config, "hbs.hadoop.");
     }
 
-    public HBaseConfigWithResource(final Source<Configuration> origin, final Path path) {
-        this.origin = origin;
-        this.path = path;
+    public HBaseConfig(final com.teragrep.cnf_01.Configuration config, final String prefix) {
+        this(config, prefix, prefix + "config.path");
     }
 
+    public HBaseConfig(final com.teragrep.cnf_01.Configuration config, final String prefix, final String filePrefix) {
+        this.config = config;
+        this.prefix = prefix;
+        this.filePrefix = filePrefix;
+    }
+
+    @Override
     public Configuration value() {
-        final Configuration config = origin.value();
-        if (!Files.exists(path)) {
-            throw new HbsRuntimeException(
-                    "Could not find a file in given file path",
-                    new MalformedURLException("No file in path")
-            );
+        final Map<String, String> map;
+        try {
+            map = config.asMap();
         }
-        else {
-            try {
-                // checks the file system, not the class path
-                config.addResource(path.toAbsolutePath().toUri().toURL());
-                LOGGER.info("Loaded HBase configurations from from file in path=<[{}]>", path);
+        catch (final ConfigurationException e) {
+            throw new HbsRuntimeException("Error getting configuration", e);
+        }
+        return sourceFromMap(map).value();
+    }
+
+    /** builds a source interface with all options and resources set from a options map */
+    private Source<Configuration> sourceFromMap(final Map<String, String> map) {
+
+        Source<Configuration> source = new HBaseConfigWithRequiredOptionsSet(
+                new Configuration(HBaseConfiguration.create())
+        );
+
+        for (final Map.Entry<String, String> entry : map.entrySet()) {
+            final String key = entry.getKey();
+            final String value = entry.getValue();
+
+            if (key.matches(filePrefix)) {
+                source = new HBaseConfigWithResource(source, value);
+
             }
-            catch (final MalformedURLException e) {
-                throw new HbsRuntimeException("Error getting options file", e);
+            else {
+                source = new HBaseConfigWithOption(source, prefix, key, value);
             }
         }
-        return config;
+
+        return source;
     }
 }

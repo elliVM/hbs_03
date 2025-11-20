@@ -43,44 +43,32 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.hbase.config;
 
 import com.teragrep.hbs_03.Source;
 import org.apache.hadoop.conf.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public final class HBaseConfigWithOption implements Source<Configuration> {
+public final class HBaseConfigWithRequiredOptionsSet implements Source<Configuration> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseConfigWithOption.class);
+    private final Configuration config;
 
-    private final Source<Configuration> origin;
-    private final String hbaseOptionPrefix;
-    private final String optionKey;
-    private final String optionValue;
-
-    public HBaseConfigWithOption(
-            final Source<Configuration> origin,
-            final String optionPrefix,
-            final String optionKey,
-            final String optionValue
-    ) {
-        this.origin = origin;
-        this.hbaseOptionPrefix = optionPrefix;
-        this.optionKey = optionKey;
-        this.optionValue = optionValue;
+    public HBaseConfigWithRequiredOptionsSet(final Configuration config) {
+        this.config = config;
     }
 
+    @Override
     public Configuration value() {
-        final Configuration config = origin.value();
-        if (optionKey.startsWith(hbaseOptionPrefix)) {
-            final String hbaseOption = optionKey.substring(hbaseOptionPrefix.length());
-            config.set(hbaseOption, optionValue);
-            LOGGER.info("Set HBase configuration option: <{}>=<{}>", hbaseOption, optionValue);
-        }
-        else {
-            LOGGER.debug("HbaseConfiguration skipped unrecognized hadoop option <[{}]>=<[{}]>", optionKey, optionValue);
-        }
+        // add default values if not set
+        config.setIfUnset("hbase.zookeeper.quorum", "localhost"); // required for connection
+        config.setIfUnset("hbase.zookeeper.property.clientProt", "2181"); // default zookeeper port
+        config.setIfUnset("hbase.client.retries.number", "10"); // retries for failed request
+        config.setIfUnset("hbase.client.pause", "150"); // pause between retries ms
+        config.setIfUnset("hbase.client.scanner.timeout.period", "60000"); // scanner timeout ms
+        config.setIfUnset("hbase.rpc.timeout", "60000"); // rpc timeout ms
+        config.setIfUnset("hbase.client.operation.timeout", "60000"); // operation timeout ms
+        config.setIfUnset("hbase.client.write.buffer", "2097152"); // write buffer size bytes
+        config.setIfUnset("hbase.regionserver.durability", "SYNC_WAL"); // default safest data durability
         return config;
+
     }
 }

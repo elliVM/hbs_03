@@ -43,32 +43,53 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase;
+package com.teragrep.hbs_03.hbase.config;
 
+import com.teragrep.hbs_03.HbsRuntimeException;
 import com.teragrep.hbs_03.Source;
 import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public final class HBaseConfigWithRequiredOptionsSet implements Source<Configuration> {
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-    private final Configuration config;
+public final class HBaseConfigWithResource implements Source<Configuration> {
 
-    public HBaseConfigWithRequiredOptionsSet(final Configuration config) {
-        this.config = config;
+    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseConfigWithResource.class);
+
+    private final Source<Configuration> origin;
+    private final Path path;
+
+    public HBaseConfigWithResource(final Source<Configuration> origin, final String pathString) {
+        this(origin, Paths.get(pathString));
     }
 
-    @Override
-    public Configuration value() {
-        // add default values if not set
-        config.setIfUnset("hbase.zookeeper.quorum", "localhost"); // required for connection
-        config.setIfUnset("hbase.zookeeper.property.clientProt", "2181"); // default zookeeper port
-        config.setIfUnset("hbase.client.retries.number", "10"); // retries for failed request
-        config.setIfUnset("hbase.client.pause", "150"); // pause between retries ms
-        config.setIfUnset("hbase.client.scanner.timeout.period", "60000"); // scanner timeout ms
-        config.setIfUnset("hbase.rpc.timeout", "60000"); // rpc timeout ms
-        config.setIfUnset("hbase.client.operation.timeout", "60000"); // operation timeout ms
-        config.setIfUnset("hbase.client.write.buffer", "2097152"); // write buffer size bytes
-        config.setIfUnset("hbase.regionserver.durability", "SYNC_WAL"); // default safest data durability
-        return config;
+    public HBaseConfigWithResource(final Source<Configuration> origin, final Path path) {
+        this.origin = origin;
+        this.path = path;
+    }
 
+    public Configuration value() {
+        final Configuration config = origin.value();
+        if (!Files.exists(path)) {
+            throw new HbsRuntimeException(
+                    "Could not find a file in given file path",
+                    new MalformedURLException("No file in path")
+            );
+        }
+        else {
+            try {
+                // checks the file system, not the class path
+                config.addResource(path.toAbsolutePath().toUri().toURL());
+                LOGGER.info("Loaded HBase configurations from from file in path=<[{}]>", path);
+            }
+            catch (final MalformedURLException e) {
+                throw new HbsRuntimeException("Error getting options file", e);
+            }
+        }
+        return config;
     }
 }

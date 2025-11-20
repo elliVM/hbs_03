@@ -103,6 +103,7 @@ public final class MetaRowTest {
 
     @Test
     public void testNullValueInBucketColumn() {
+        // in general the binary package objects handle null values, see testing there
         final Row row = new FakeRow(null);
         final Put put = row.put();
         Assertions.assertTrue(put.getFamilyCellMap().containsKey(Bytes.toBytes("meta")));

@@ -56,8 +56,8 @@ import java.util.List;
 
 public final class BufferSizeFromRowListTest {
 
-    final long twoMB = 2 * 1024 * 1024;
-    final long fourMB = 4 * 1024 * 1024;
+    private final long twoMB = 2 * 1024 * 1024;
+    private final long fourMB = 4 * 1024 * 1024;
 
     @Test
     public void testSize() {

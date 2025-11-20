@@ -45,7 +45,7 @@
  */
 package com.teragrep.hbs_03.hbase;
 
-import org.apache.hadoop.hbase.HBaseTestingUtility;
+import nl.jqno.equalsverifier.EqualsVerifier;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.ColumnFamilyDescriptor;
@@ -53,6 +53,8 @@ import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.TableDescriptor;
 import org.apache.hadoop.hbase.regionserver.BloomType;
+import org.apache.hadoop.hbase.testing.TestingHBaseCluster;
+import org.apache.hadoop.hbase.testing.TestingHBaseClusterOption;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -67,68 +69,80 @@ import java.util.stream.Collectors;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public final class DestinationTableTest {
 
-    private final HBaseTestingUtility hbase = new HBaseTestingUtility();
+    private TestingHBaseCluster hbase;
     private Connection conn;
 
     @BeforeAll
     public void setup() {
-        Assertions.assertDoesNotThrow(() -> {
-            hbase.getConfiguration().set("hbase.master.hostname", "localhost");
-            hbase.getConfiguration().set("hbase.regionserver.hostname", "localhost");
-            hbase.getConfiguration().set("hbase.zookeeper.quorum", "localhost");
-            hbase.getConfiguration().set("hbase.zookeeper.property.clientPort", "2181");
-            hbase.startMiniCluster();
-            conn = ConnectionFactory.createConnection(hbase.getConfiguration());
-        });
+        final TestingHBaseClusterOption options = TestingHBaseClusterOption
+                .builder()
+                .numMasters(1)
+                .numRegionServers(1)
+                .build();
+        hbase = TestingHBaseCluster.create(options);
+        hbase.getConf().set("hbase.master.hostname", "localhost");
+        hbase.getConf().set("hbase.regionserver.hostname", "localhost");
+        hbase.getConf().set("hbase.zookeeper.quorum", "localhost");
+        hbase.getConf().set("hbase.zookeeper.property.clientPort", "2181");
+        Assertions.assertDoesNotThrow(hbase::start);
+        conn = Assertions.assertDoesNotThrow(() -> ConnectionFactory.createConnection(hbase.getConf()));
     }
 
     @AfterAll
     public void tearDown() {
         Assertions.assertDoesNotThrow(conn::close);
-        Assertions.assertDoesNotThrow(hbase::shutdownMiniCluster);
+        if (hbase.isClusterRunning()) {
+            Assertions.assertDoesNotThrow(hbase::stop);
+        }
     }
 
     @Test
     public void testCreation() {
-        final TableName tableName = TableName.valueOf("destination_table_test");
+        final TableName tableName = TableName.valueOf("destination_table_test_1");
         final DestinationTable destinationTable = new DestinationTable(conn, tableName);
         destinationTable.create();
-        final Admin admin = Assertions.assertDoesNotThrow(() -> conn.getAdmin());
-        final boolean tableExists = Assertions.assertDoesNotThrow(() -> admin.tableExists(tableName));
-        Assertions.assertTrue(tableExists);
-        Assertions.assertDoesNotThrow(admin::close);
+        Assertions.assertDoesNotThrow(() -> {
+            try (final Admin admin = conn.getAdmin()) {
+                final boolean tableExists = Assertions.assertDoesNotThrow(() -> admin.tableExists(tableName));
+                Assertions.assertTrue(tableExists);
+            }
+        });
     }
 
     @Test
     public void testColumnFamilies() {
-        final TableName tableName = TableName.valueOf("destination_table_test");
+        final TableName tableName = TableName.valueOf("destination_table_test_2");
         new DestinationTable(conn, tableName).create();
-        final Admin admin = Assertions.assertDoesNotThrow(() -> conn.getAdmin());
-        final boolean tableExists = Assertions.assertDoesNotThrow(() -> admin.tableExists(tableName));
-        Assertions.assertTrue(tableExists);
-        final TableDescriptor destinationTableDescriptor = Assertions
-                .assertDoesNotThrow(() -> admin.getDescriptor(tableName));
-        Assertions.assertEquals(tableName, destinationTableDescriptor.getTableName());
-        final List<String> columnFamilies = Arrays
-                .stream(destinationTableDescriptor.getColumnFamilies())
-                .map(ColumnFamilyDescriptor::getNameAsString)
-                .collect(Collectors.toList());
-        final List<String> expectedFamilies = List.of("bloom", "meta");
-        Assertions.assertEquals(expectedFamilies, columnFamilies);
-        final ColumnFamilyDescriptor metaDescriptor = destinationTableDescriptor.getColumnFamily(Bytes.toBytes("meta"));
-        final ColumnFamilyDescriptor bloomDescriptor = destinationTableDescriptor
-                .getColumnFamily(Bytes.toBytes("bloom"));
-        // number of copies kept for a single row key
-        final int metaCFMaxVersions = metaDescriptor.getMaxVersions();
-        final int bloomCFMaxVersions = bloomDescriptor.getMaxVersions();
-        Assertions.assertEquals(1, metaCFMaxVersions);
-        Assertions.assertEquals(1, bloomCFMaxVersions);
-        // bloom created filter only row key
-        final BloomType metaCFbloomType = metaDescriptor.getBloomFilterType();
-        final BloomType bloomCFbloomType = bloomDescriptor.getBloomFilterType();
-        Assertions.assertEquals(BloomType.ROW, metaCFbloomType);
-        Assertions.assertEquals(BloomType.ROW, bloomCFbloomType);
-        Assertions.assertDoesNotThrow(admin::close);
+
+        Assertions.assertDoesNotThrow(() -> {
+            TableDescriptor destinationTableDescriptor;
+            try (Admin admin = conn.getAdmin()) {
+                final boolean tableExists = admin.tableExists(tableName);
+                Assertions.assertTrue(tableExists);
+                destinationTableDescriptor = admin.getDescriptor(tableName);
+            }
+            Assertions.assertEquals(tableName, destinationTableDescriptor.getTableName());
+            final List<String> columnFamilies = Arrays
+                    .stream(destinationTableDescriptor.getColumnFamilies())
+                    .map(ColumnFamilyDescriptor::getNameAsString)
+                    .collect(Collectors.toList());
+            final List<String> expectedFamilies = List.of("bloom", "meta");
+            Assertions.assertEquals(expectedFamilies, columnFamilies);
+            final ColumnFamilyDescriptor metaDescriptor = destinationTableDescriptor
+                    .getColumnFamily(Bytes.toBytes("meta"));
+            final ColumnFamilyDescriptor bloomDescriptor = destinationTableDescriptor
+                    .getColumnFamily(Bytes.toBytes("bloom"));
+            // number of copies kept for a single row key
+            final int metaCFMaxVersions = metaDescriptor.getMaxVersions();
+            final int bloomCFMaxVersions = bloomDescriptor.getMaxVersions();
+            Assertions.assertEquals(1, metaCFMaxVersions);
+            Assertions.assertEquals(1, bloomCFMaxVersions);
+            // bloom created filter only row key
+            final BloomType metaCFbloomType = metaDescriptor.getBloomFilterType();
+            final BloomType bloomCFbloomType = bloomDescriptor.getBloomFilterType();
+            Assertions.assertEquals(BloomType.ROW, metaCFbloomType);
+            Assertions.assertEquals(BloomType.ROW, bloomCFbloomType);
+        });
     }
 
     @Test
@@ -136,17 +150,23 @@ public final class DestinationTableTest {
         final TableName tableName = TableName.valueOf("table_drop_test");
         final DestinationTable destinationTable = new DestinationTable(conn, tableName);
         destinationTable.create();
-        final Admin admin = Assertions.assertDoesNotThrow(() -> conn.getAdmin());
-        final boolean tableExists = Assertions.assertDoesNotThrow(() -> admin.tableExists(tableName));
-        Assertions.assertTrue(tableExists);
-        destinationTable.drop();
-        final boolean tableExistsAfterDrop = Assertions.assertDoesNotThrow(() -> admin.tableExists(tableName));
-        Assertions.assertFalse(tableExistsAfterDrop);
-        Assertions.assertDoesNotThrow(admin::close);
+        Assertions.assertDoesNotThrow(() -> {
+            try (final Admin admin = conn.getAdmin()) {
+                final boolean tableExists = Assertions.assertDoesNotThrow(() -> admin.tableExists(tableName));
+                Assertions.assertTrue(tableExists);
+                destinationTable.drop();
+                final boolean tableExistsAfterDrop = Assertions.assertDoesNotThrow(() -> admin.tableExists(tableName));
+                Assertions.assertFalse(tableExistsAfterDrop);
+            }
+        });
     }
 
     @Test
-    public void testPutTask() {
-
+    public void testContract() {
+        EqualsVerifier
+                .forClass(DestinationTable.class)
+                .withNonnullFields("connection", "tableDescriptor")
+                .withIgnoredFields("LOGGER")
+                .verify();
     }
 }

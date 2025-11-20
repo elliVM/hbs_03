@@ -45,10 +45,7 @@
  */
 package com.teragrep.hbs_03.hbase;
 
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.testing.TestingHBaseCluster;
 import org.apache.hadoop.hbase.testing.TestingHBaseClusterOption;
 import org.junit.jupiter.api.AfterAll;
@@ -58,15 +55,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisabledIfSystemProperty(
         named = "skipContainerTests",
         matches = "true"
 )
-public final class HBaseClientImplTest {
+public final class ScalarConnectionTest {
 
     private TestingHBaseCluster hbase;
-    private Connection conn;
 
     @BeforeAll
     public void setup() {
@@ -81,33 +80,33 @@ public final class HBaseClientImplTest {
         hbase.getConf().set("hbase.zookeeper.quorum", "localhost");
         hbase.getConf().set("hbase.zookeeper.property.clientPort", "2181");
         Assertions.assertDoesNotThrow(hbase::start);
-        conn = Assertions.assertDoesNotThrow(() -> ConnectionFactory.createConnection(hbase.getConf()));
     }
 
     @AfterAll
     public void tearDown() {
-        Assertions.assertDoesNotThrow(conn::close);
         if (hbase.isClusterRunning()) {
             Assertions.assertDoesNotThrow(hbase::stop);
         }
     }
 
     @Test
-    public void testTableCreation() {
-        final TableName tableName = TableName.valueOf("hbase_client_test");
-        try (
-                final HBaseClient hBaseClient = new HBaseClientImpl(
-                        new LazyConnection(new ScalarConnection(hbase.getConf(), 1)),
-                        tableName
-                )
-        ) {
-            Assertions.assertDoesNotThrow(() -> hBaseClient.destinationTable().create());
-        }
-        Assertions.assertDoesNotThrow(() -> {
-            try (final Admin admin = Assertions.assertDoesNotThrow(conn::getAdmin)) {
-                final boolean targetTableExists = Assertions.assertDoesNotThrow(() -> admin.tableExists(tableName));
-                Assertions.assertTrue(targetTableExists);
-            }
-        });
+    public void testConnectionIsOpened() {
+        final ScalarConnection scalarConnection = new ScalarConnection(hbase.getConf(), 1);
+        final Connection connection = scalarConnection.value();
+        Assertions.assertNotNull(connection);
+        Assertions.assertFalse(connection.isClosed());
+        Assertions.assertDoesNotThrow(connection::close);
+    }
+
+    @Test
+    public void testFixedThreaPoolCount() {
+        final int threads = 8;
+        final ExecutorService executorService = Executors.newFixedThreadPool(threads);
+        final ScalarConnection scalarConnection = new ScalarConnection(hbase.getConf(), threads, executorService);
+        final Connection connection = scalarConnection.value();
+        Assertions.assertNotNull(connection);
+        Assertions.assertFalse(connection.isClosed());
+        Assertions.assertFalse(executorService.isShutdown());
+        Assertions.assertDoesNotThrow(connection::close);
     }
 }

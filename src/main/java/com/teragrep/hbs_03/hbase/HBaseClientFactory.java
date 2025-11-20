@@ -49,6 +49,7 @@ import com.teragrep.cnf_01.Configuration;
 import com.teragrep.cnf_01.ConfigurationException;
 import com.teragrep.hbs_03.Factory;
 import com.teragrep.hbs_03.HbsRuntimeException;
+import com.teragrep.hbs_03.hbase.config.HBaseConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,7 +65,7 @@ public final class HBaseClientFactory implements Factory<HBaseClient> {
     private final String prefix;
 
     public HBaseClientFactory(final Configuration config) {
-        this(config, new HBaseConfig(config), "hbs.");
+        this(config, "hbs.");
     }
 
     public HBaseClientFactory(final Configuration config, final String prefix) {
@@ -86,8 +87,11 @@ public final class HBaseClientFactory implements Factory<HBaseClient> {
         final String logfileTableName;
         try {
             final Map<String, String> map = config.asMap();
-            LOGGER.info("config map <{}>", map);
+            LOGGER.trace("config map <{}>", map);
             logfileTableName = map.getOrDefault(prefix + "hadoop.logfile.table.name", "logfile");
+            if ("logfile".equals(logfileTableName)) {
+                LOGGER.info("hadoop.logfile.table.name option was not set using default name <{}>", logfileTableName);
+            }
             LOGGER.debug("Set HBase logfile table name <{}>", logfileTableName);
         }
         catch (final ConfigurationException e) {

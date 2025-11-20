@@ -52,6 +52,7 @@ import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.cactoos.Scalar;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /** Provides configured connection */
@@ -59,10 +60,20 @@ public final class ScalarConnection implements Scalar<Connection> {
 
     private final Configuration configuration;
     private final int fixedThreadPoolCount;
+    private final ExecutorService executorService;
 
     public ScalarConnection(final Configuration configuration, final int fixedThreadPoolCount) {
+        this(configuration, fixedThreadPoolCount, Executors.newFixedThreadPool(fixedThreadPoolCount));
+    }
+
+    public ScalarConnection(
+            final Configuration configuration,
+            final int fixedThreadPoolCount,
+            final ExecutorService executorService
+    ) {
         this.configuration = configuration;
         this.fixedThreadPoolCount = fixedThreadPoolCount;
+        this.executorService = executorService;
     }
 
     @Override
@@ -70,8 +81,7 @@ public final class ScalarConnection implements Scalar<Connection> {
         final Connection connection;
         try {
             if (fixedThreadPoolCount > 1) {
-                connection = ConnectionFactory
-                        .createConnection(configuration, Executors.newFixedThreadPool(fixedThreadPoolCount));
+                connection = ConnectionFactory.createConnection(configuration, executorService);
             }
             else {
                 connection = ConnectionFactory.createConnection(configuration);

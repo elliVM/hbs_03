@@ -45,10 +45,7 @@
  */
 package com.teragrep.hbs_03.hbase;
 
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.testing.TestingHBaseCluster;
 import org.apache.hadoop.hbase.testing.TestingHBaseClusterOption;
 import org.junit.jupiter.api.AfterAll;
@@ -63,10 +60,9 @@ import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
         named = "skipContainerTests",
         matches = "true"
 )
-public final class HBaseClientImplTest {
+public final class LazyConnectionTest {
 
     private TestingHBaseCluster hbase;
-    private Connection conn;
 
     @BeforeAll
     public void setup() {
@@ -81,33 +77,23 @@ public final class HBaseClientImplTest {
         hbase.getConf().set("hbase.zookeeper.quorum", "localhost");
         hbase.getConf().set("hbase.zookeeper.property.clientPort", "2181");
         Assertions.assertDoesNotThrow(hbase::start);
-        conn = Assertions.assertDoesNotThrow(() -> ConnectionFactory.createConnection(hbase.getConf()));
     }
 
     @AfterAll
     public void tearDown() {
-        Assertions.assertDoesNotThrow(conn::close);
         if (hbase.isClusterRunning()) {
             Assertions.assertDoesNotThrow(hbase::stop);
         }
     }
 
     @Test
-    public void testTableCreation() {
-        final TableName tableName = TableName.valueOf("hbase_client_test");
-        try (
-                final HBaseClient hBaseClient = new HBaseClientImpl(
-                        new LazyConnection(new ScalarConnection(hbase.getConf(), 1)),
-                        tableName
-                )
-        ) {
-            Assertions.assertDoesNotThrow(() -> hBaseClient.destinationTable().create());
-        }
-        Assertions.assertDoesNotThrow(() -> {
-            try (final Admin admin = Assertions.assertDoesNotThrow(conn::getAdmin)) {
-                final boolean targetTableExists = Assertions.assertDoesNotThrow(() -> admin.tableExists(tableName));
-                Assertions.assertTrue(targetTableExists);
-            }
-        });
+    public void testConnectionIsLazy() {
+        LazyConnection lazyConnection = new LazyConnection(new ScalarConnection(hbase.getConf(), 1));
+        Connection conn1 = lazyConnection.value();
+        Connection conn2 = lazyConnection.value();
+        Assertions.assertEquals(conn1, conn2);
+        Assertions.assertDoesNotThrow(conn1::close);
+        Assertions.assertTrue(conn1.isClosed());
+        Assertions.assertTrue(conn2.isClosed());
     }
 }
