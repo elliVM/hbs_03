@@ -56,7 +56,7 @@ import org.jooq.types.ULong;
 import java.time.Instant;
 import java.time.ZoneId;
 
-public class FakeRow implements Row {
+public final class FakeRow implements Row {
 
     final Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record;
 

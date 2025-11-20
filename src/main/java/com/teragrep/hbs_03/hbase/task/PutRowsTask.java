@@ -53,7 +53,7 @@ import org.apache.hadoop.hbase.client.Connection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class PutRowsTask implements TableTask {
+public final class PutRowsTask implements TableTask {
 
     private final PutManyTask putManyTask;
 

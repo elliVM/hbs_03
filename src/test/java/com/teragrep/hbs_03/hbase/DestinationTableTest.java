@@ -65,7 +65,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class DestinationTableTest {
+public final class DestinationTableTest {
 
     private final HBaseTestingUtility hbase = new HBaseTestingUtility();
     private Connection conn;

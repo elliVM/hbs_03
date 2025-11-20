@@ -103,7 +103,6 @@ CREATE TABLE `logfile`
     CONSTRAINT `logfile_ibfk_2` FOREIGN KEY (`host_id`) REFERENCES `journal_host` (`id`),
     CONSTRAINT `logfile_ibfk_4` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`)
 ) ENGINE = InnoDB
-  AUTO_INCREMENT = 93215717
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci COMMENT ='Contains information for log files that have been run through Log Archiver';
 
@@ -361,6 +360,4 @@ begin
     commit;
 end;
 
-alter table logfile
-    auto_increment = 1;
 call insert_logs(1, 10000);
