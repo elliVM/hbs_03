@@ -45,7 +45,9 @@
  */
 package com.teragrep.hbs_03.hbase.binary;
 
+import com.teragrep.hbs_03.HbsRuntimeException;
+
 public interface Binary {
 
-    public abstract byte[] bytes();
+    public abstract byte[] bytes() throws HbsRuntimeException;
 }

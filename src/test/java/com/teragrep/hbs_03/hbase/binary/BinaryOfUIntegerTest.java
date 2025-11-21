@@ -55,14 +55,14 @@ public final class BinaryOfUIntegerTest {
 
     @Test
     public void testValidValue() {
-        final BinaryOfUInteger binaryOfUInteger = new BinaryOfUInteger(UInteger.valueOf(10));
+        final Binary binaryOfUInteger = new BinaryOfUInteger(UInteger.valueOf(10));
         final byte[] expected = Bytes.toBytes(10);
         Assertions.assertArrayEquals(expected, binaryOfUInteger.bytes());
     }
 
     @Test
     public void testZero() {
-        final BinaryOfUInteger binaryOfUInteger = new BinaryOfUInteger(UInteger.valueOf(0));
+        final Binary binaryOfUInteger = new BinaryOfUInteger(UInteger.valueOf(0));
         final byte[] expected = Bytes.toBytes(0);
         Assertions.assertArrayEquals(expected, binaryOfUInteger.bytes());
     }
@@ -70,7 +70,7 @@ public final class BinaryOfUIntegerTest {
     @Test
     public void testIntegerMaxValue() {
         final UInteger maxValue = UInteger.valueOf(UInteger.MAX_VALUE);
-        final BinaryOfUInteger binaryOfUInteger = new BinaryOfUInteger(maxValue);
+        final Binary binaryOfUInteger = new BinaryOfUInteger(maxValue);
         final byte[] expected = Bytes.toBytes(maxValue.intValue());
         Assertions.assertArrayEquals(expected, binaryOfUInteger.bytes());
     }
@@ -78,19 +78,19 @@ public final class BinaryOfUIntegerTest {
     @Test
     public void testMinValue() {
         final UInteger minValue = UInteger.valueOf(UInteger.MIN_VALUE);
-        final BinaryOfUInteger binaryOfUInteger = new BinaryOfUInteger(minValue);
+        final Binary binaryOfUInteger = new BinaryOfUInteger(minValue);
         final byte[] expected = Bytes.toBytes(minValue.intValue());
         Assertions.assertArrayEquals(expected, binaryOfUInteger.bytes());
     }
 
     @Test
     public void testNullValue() {
-        final BinaryOfUInteger binaryOfUInteger = new BinaryOfUInteger(null);
+        final Binary binaryOfUInteger = new BinaryOfUInteger(null, true);
         Assertions.assertArrayEquals(new byte[0], binaryOfUInteger.bytes());
     }
 
     @Test
     public void testContract() {
-        EqualsVerifier.forClass(BinaryOfUInteger.class).withNonnullFields("value").verify();
+        EqualsVerifier.forClass(BinaryOfUInteger.class).withNonnullFields("value", "acceptNullValue").verify();
     }
 }

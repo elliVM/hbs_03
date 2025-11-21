@@ -45,6 +45,7 @@
  */
 package com.teragrep.hbs_03.hbase.binary;
 
+import com.teragrep.hbs_03.HbsRuntimeException;
 import org.jooq.types.ULong;
 
 import java.nio.ByteBuffer;
@@ -53,16 +54,28 @@ import java.util.Objects;
 public final class BinaryOfULong implements Binary {
 
     private final ULong value;
+    private final boolean acceptNullValue;
 
     public BinaryOfULong(final ULong value) {
+        this(value, false);
+    }
+
+    public BinaryOfULong(final ULong value, final boolean acceptNullValue) {
         this.value = value;
+        this.acceptNullValue = acceptNullValue;
     }
 
     @Override
     public byte[] bytes() {
         final byte[] bytes;
-        if (value == null) { // empty bytes represents a null value in hbase
+        if (value == null && acceptNullValue) { // empty bytes represents a null value in hbase
             bytes = new byte[0];
+        }
+        else if (value == null) {
+            throw new HbsRuntimeException(
+                    "Value was null and acceptNullValue was <false>",
+                    new IllegalStateException("ULong value was null")
+            );
         }
         else {
             bytes = ByteBuffer.allocate(Long.BYTES).putLong(value.longValue()).array();
@@ -71,23 +84,19 @@ public final class BinaryOfULong implements Binary {
     }
 
     @Override
-    public boolean equals(final Object object) {
-        final boolean isEqual;
-        if (object == null) {
-            isEqual = false;
+    public boolean equals(final Object o) {
+        if (o == null) {
+            return false;
         }
-        else if (getClass() != object.getClass()) {
-            isEqual = false;
+        if (getClass() != o.getClass()) {
+            return false;
         }
-        else {
-            final BinaryOfULong binaryOfULong = (BinaryOfULong) object;
-            isEqual = Objects.equals(value, binaryOfULong.value);
-        }
-        return isEqual;
+        final BinaryOfULong that = (BinaryOfULong) o;
+        return acceptNullValue == that.acceptNullValue && Objects.equals(value, that.value);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(value);
+        return Objects.hash(value, acceptNullValue);
     }
 }

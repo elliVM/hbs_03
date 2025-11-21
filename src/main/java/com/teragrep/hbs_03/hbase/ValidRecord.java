@@ -45,50 +45,15 @@
  */
 package com.teragrep.hbs_03.hbase;
 
-import com.teragrep.hbs_03.HbsRuntimeException;
 import org.jooq.Record21;
 import org.jooq.types.UInteger;
 import org.jooq.types.ULong;
 
-/** Checks that record values that are used to create other objects are not null */
-public final class ValidRecord {
+public interface ValidRecord {
 
-    private final Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record;
+    public abstract ULong id();
 
-    public ValidRecord(
-            final Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record
-    ) {
-        this.record = record;
-    }
+    public abstract MetaRowKey rowKey();
 
-    public MetaRowKey rowKey() {
-        final MetaRowKey rowKey;
-        try {
-            rowKey = new MetaRowKey(
-                    record.value19().longValue(),
-                    record.value2().longValue(),
-                    record.value1().longValue()
-            );
-        }
-        catch (final NullPointerException e) {
-            throw new HbsRuntimeException("Row key field was null", e);
-        }
-        return rowKey;
-    }
-
-    public Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record() {
-        return record;
-    }
-
-    public ULong id() {
-        final ULong id;
-        try {
-            id = record.field1().get(record);
-        }
-        catch (final NullPointerException e) {
-            throw new HbsRuntimeException("Logfile id field was null", e);
-        }
-        return id;
-    }
-
+    public abstract Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record();
 }

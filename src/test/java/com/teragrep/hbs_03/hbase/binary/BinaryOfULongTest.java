@@ -55,14 +55,14 @@ public final class BinaryOfULongTest {
 
     @Test
     public void testValidValue() {
-        final BinaryOfULong binaryOfULong = new BinaryOfULong(ULong.valueOf(100000L));
+        final Binary binaryOfULong = new BinaryOfULong(ULong.valueOf(100000L));
         final byte[] expected = Bytes.toBytes(100000L);
         Assertions.assertArrayEquals(expected, binaryOfULong.bytes());
     }
 
     @Test
     public void testZero() {
-        final BinaryOfULong binaryOfULong = new BinaryOfULong(ULong.valueOf(0L));
+        final Binary binaryOfULong = new BinaryOfULong(ULong.valueOf(0L));
         final byte[] expected = Bytes.toBytes(0L);
         Assertions.assertArrayEquals(expected, binaryOfULong.bytes());
     }
@@ -70,7 +70,7 @@ public final class BinaryOfULongTest {
     @Test
     public void testMaxValue() {
         final ULong maxValue = ULong.valueOf(ULong.MAX_VALUE);
-        final BinaryOfULong binaryOfULong = new BinaryOfULong(maxValue);
+        final Binary binaryOfULong = new BinaryOfULong(maxValue);
         final byte[] expected = Bytes.toBytes(maxValue.longValue());
         Assertions.assertArrayEquals(expected, binaryOfULong.bytes());
     }
@@ -78,20 +78,20 @@ public final class BinaryOfULongTest {
     @Test
     public void testMinValue() {
         final ULong minValue = ULong.valueOf(ULong.MIN_VALUE);
-        final BinaryOfULong binaryOfULong = new BinaryOfULong(minValue);
+        final Binary binaryOfULong = new BinaryOfULong(minValue);
         final byte[] expected = Bytes.toBytes(minValue.longValue());
         Assertions.assertArrayEquals(expected, binaryOfULong.bytes());
     }
 
     @Test
     public void testNullValue() {
-        final BinaryOfULong binaryOfULong = new BinaryOfULong(null);
+        final Binary binaryOfULong = new BinaryOfULong(null, true);
         Assertions.assertArrayEquals(new byte[0], binaryOfULong.bytes());
     }
 
     @Test
     public void testContract() {
-        EqualsVerifier.forClass(BinaryOfULong.class).withNonnullFields("value").verify();
+        EqualsVerifier.forClass(BinaryOfULong.class).withNonnullFields("value", "acceptNullValue").verify();
     }
 
 }

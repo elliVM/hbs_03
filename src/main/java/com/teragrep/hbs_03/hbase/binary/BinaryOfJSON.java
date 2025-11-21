@@ -45,6 +45,7 @@
  */
 package com.teragrep.hbs_03.hbase.binary;
 
+import com.teragrep.hbs_03.HbsRuntimeException;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.jooq.JSON;
 
@@ -53,16 +54,28 @@ import java.util.Objects;
 public final class BinaryOfJSON implements Binary {
 
     private final JSON value;
+    private final boolean acceptNullValue;
 
     public BinaryOfJSON(final JSON value) {
+        this(value, false);
+    }
+
+    public BinaryOfJSON(final JSON value, final boolean acceptNullValue) {
         this.value = value;
+        this.acceptNullValue = acceptNullValue;
     }
 
     @Override
     public byte[] bytes() {
         final byte[] bytes;
-        if (value == null) { // empty bytes represents a null value in hbase
+        if (value == null && acceptNullValue) { // empty bytes represents a null value in hbase
             bytes = new byte[0];
+        }
+        else if (value == null) {
+            throw new HbsRuntimeException(
+                    "Value was null and acceptNullValue was <false>",
+                    new IllegalStateException("JSON value was null")
+            );
         }
         else {
             bytes = Bytes.toBytes(value.toString());
@@ -71,23 +84,19 @@ public final class BinaryOfJSON implements Binary {
     }
 
     @Override
-    public boolean equals(final Object object) {
-        final boolean isEqual;
-        if (object == null) {
-            isEqual = false;
+    public boolean equals(final Object o) {
+        if (o == null) {
+            return false;
         }
-        else if (getClass() != object.getClass()) {
-            isEqual = false;
+        if (getClass() != o.getClass()) {
+            return false;
         }
-        else {
-            final BinaryOfJSON binaryOfJSON = (BinaryOfJSON) object;
-            isEqual = Objects.equals(value, binaryOfJSON.value);
-        }
-        return isEqual;
+        final BinaryOfJSON that = (BinaryOfJSON) o;
+        return acceptNullValue == that.acceptNullValue && Objects.equals(value, that.value);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(value);
+        return Objects.hash(value, acceptNullValue);
     }
 }

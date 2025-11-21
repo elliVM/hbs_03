@@ -51,14 +51,17 @@ import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public final class PutRowsTask implements TableTask {
 
     private final PutManyTask putManyTask;
 
     public PutRowsTask(final List<Row> rows, final MutatorConfiguration configuration) {
-        this(new PutManyTask(rows.stream().map(Row::put).collect(Collectors.toList()), configuration));
+        this(new ValidRows(rows), configuration);
+    }
+
+    public PutRowsTask(final ValidRows validRows, final MutatorConfiguration configuration) {
+        this(new PutManyTask(validRows.validPuts(), configuration));
     }
 
     private PutRowsTask(final PutManyTask putManyTask) {

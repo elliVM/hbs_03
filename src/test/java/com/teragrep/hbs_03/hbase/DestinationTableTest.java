@@ -97,6 +97,19 @@ public final class DestinationTableTest {
     }
 
     @Test
+    public void testDefaultName() {
+        final DestinationTable destinationTable = new DestinationTable(conn);
+        destinationTable.create();
+        Assertions.assertDoesNotThrow(() -> {
+            try (final Admin admin = conn.getAdmin()) {
+                final boolean tableExists = Assertions
+                        .assertDoesNotThrow(() -> admin.tableExists(TableName.valueOf("logfile")));
+                Assertions.assertTrue(tableExists);
+            }
+        });
+    }
+
+    @Test
     public void testCreation() {
         final TableName tableName = TableName.valueOf("destination_table_test_1");
         final DestinationTable destinationTable = new DestinationTable(conn, tableName);

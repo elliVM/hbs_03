@@ -56,21 +56,21 @@ public final class BinaryOfJSONTest {
 
     @Test
     public void testValidValue() {
-        JSON json = JSON.json("{\"key\":\"value\"}");
-        final BinaryOfJSON binaryOfJSON = new BinaryOfJSON(json);
+        final JSON json = JSON.json("{\"key\":\"value\"}");
+        final Binary binaryOfJSON = new BinaryOfJSON(json);
         final byte[] expected = json.toString().getBytes(StandardCharsets.UTF_8);
         Assertions.assertArrayEquals(expected, binaryOfJSON.bytes());
     }
 
     @Test
     public void testNullValue() {
-        final BinaryOfJSON binaryOfInteger = new BinaryOfJSON(null);
+        final Binary binaryOfInteger = new BinaryOfJSON(null, true);
         Assertions.assertArrayEquals(new byte[0], binaryOfInteger.bytes());
     }
 
     @Test
     public void testContract() {
-        EqualsVerifier.forClass(BinaryOfJSON.class).withNonnullFields("value").verify();
+        EqualsVerifier.forClass(BinaryOfJSON.class).withNonnullFields("value", "acceptNullValue").verify();
     }
 
 }

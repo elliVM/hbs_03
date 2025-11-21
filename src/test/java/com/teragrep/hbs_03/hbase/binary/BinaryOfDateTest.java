@@ -64,12 +64,12 @@ public final class BinaryOfDateTest {
 
     @Test
     public void testNullValue() {
-        final BinaryOfDate binaryOfDate = new BinaryOfDate(null);
+        final BinaryOfDate binaryOfDate = new BinaryOfDate(null, true);
         Assertions.assertArrayEquals(new byte[0], binaryOfDate.bytes());
     }
 
     @Test
     public void testContract() {
-        EqualsVerifier.forClass(BinaryOfDate.class).withNonnullFields("value").verify();
+        EqualsVerifier.forClass(BinaryOfDate.class).withNonnullFields("value", "acceptNullValue").verify();
     }
 }

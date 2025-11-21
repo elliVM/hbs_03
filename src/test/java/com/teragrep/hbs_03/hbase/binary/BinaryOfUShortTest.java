@@ -47,51 +47,51 @@ package com.teragrep.hbs_03.hbase.binary;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.jooq.types.ULong;
+import org.jooq.types.UShort;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-class BinaryOfUShortTest {
+public final class BinaryOfUShortTest {
 
     @Test
     public void testValidValue() {
-        final BinaryOfULong binaryOfULong = new BinaryOfULong(ULong.valueOf(100000L));
-        final byte[] expected = Bytes.toBytes(100000L);
-        Assertions.assertArrayEquals(expected, binaryOfULong.bytes());
+        final Binary binaryOfUShort = new BinaryOfUShort(UShort.valueOf(100));
+        final byte[] expected = Bytes.toBytes(100);
+        Assertions.assertArrayEquals(expected, binaryOfUShort.bytes());
     }
 
     @Test
     public void testZero() {
-        final BinaryOfULong binaryOfULong = new BinaryOfULong(ULong.valueOf(0L));
-        final byte[] expected = Bytes.toBytes(0L);
-        Assertions.assertArrayEquals(expected, binaryOfULong.bytes());
+        final Binary binaryOfUShort = new BinaryOfUShort(UShort.valueOf(0));
+        final byte[] expected = Bytes.toBytes(0);
+        Assertions.assertArrayEquals(expected, binaryOfUShort.bytes());
     }
 
     @Test
     public void testIntegerMaxValue() {
-        final ULong maxValue = ULong.valueOf(ULong.MAX_VALUE);
-        final BinaryOfULong binaryOfULong = new BinaryOfULong(maxValue);
-        final byte[] expected = Bytes.toBytes(maxValue.longValue());
-        Assertions.assertArrayEquals(expected, binaryOfULong.bytes());
+        final UShort maxValue = UShort.valueOf(UShort.MAX_VALUE);
+        final Binary binaryOfUShort = new BinaryOfUShort(maxValue);
+        final byte[] expected = Bytes.toBytes(maxValue.intValue());
+        Assertions.assertArrayEquals(expected, binaryOfUShort.bytes());
     }
 
     @Test
     public void testMinValue() {
-        final ULong minValue = ULong.valueOf(ULong.MIN_VALUE);
-        final BinaryOfULong binaryOfULong = new BinaryOfULong(minValue);
-        final byte[] expected = Bytes.toBytes(minValue.longValue());
-        Assertions.assertArrayEquals(expected, binaryOfULong.bytes());
+        final UShort minValue = UShort.valueOf(UShort.MIN_VALUE);
+        final Binary binaryOfUShort = new BinaryOfUShort(minValue);
+        final byte[] expected = Bytes.toBytes(minValue.intValue());
+        Assertions.assertArrayEquals(expected, binaryOfUShort.bytes());
     }
 
     @Test
     public void testNullValue() {
-        final BinaryOfULong binaryOfULong = new BinaryOfULong(null);
+        final Binary binaryOfULong = new BinaryOfUShort(null, true);
         Assertions.assertArrayEquals(new byte[0], binaryOfULong.bytes());
     }
 
     @Test
     public void testContract() {
-        EqualsVerifier.forClass(BinaryOfULong.class).withNonnullFields("value").verify();
+        EqualsVerifier.forClass(BinaryOfUShort.class).withNonnullFields("value", "acceptNullValue").verify();
     }
 
 }

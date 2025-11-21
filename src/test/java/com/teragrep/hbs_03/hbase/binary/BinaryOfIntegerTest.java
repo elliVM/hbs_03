@@ -54,14 +54,14 @@ public final class BinaryOfIntegerTest {
 
     @Test
     public void testValidValue() {
-        final BinaryOfInteger binaryOfInteger = new BinaryOfInteger(10);
+        final Binary binaryOfInteger = new BinaryOfInteger(10);
         final byte[] expected = Bytes.toBytes(10);
         Assertions.assertArrayEquals(expected, binaryOfInteger.bytes());
     }
 
     @Test
     public void testZero() {
-        final BinaryOfInteger binaryOfInteger = new BinaryOfInteger(0);
+        final Binary binaryOfInteger = new BinaryOfInteger(0);
         final byte[] expected = Bytes.toBytes(0);
         Assertions.assertArrayEquals(expected, binaryOfInteger.bytes());
     }
@@ -69,7 +69,7 @@ public final class BinaryOfIntegerTest {
     @Test
     public void testIntegerMaxValue() {
         final int maxValue = Integer.MAX_VALUE;
-        final BinaryOfInteger binaryOfInteger = new BinaryOfInteger(maxValue);
+        final Binary binaryOfInteger = new BinaryOfInteger(maxValue);
         final byte[] expected = Bytes.toBytes(maxValue);
         Assertions.assertArrayEquals(expected, binaryOfInteger.bytes());
     }
@@ -77,20 +77,20 @@ public final class BinaryOfIntegerTest {
     @Test
     public void testMinValue() {
         final int minValue = Integer.MIN_VALUE;
-        final BinaryOfInteger binaryOfInteger = new BinaryOfInteger(minValue);
+        final Binary binaryOfInteger = new BinaryOfInteger(minValue);
         final byte[] expected = Bytes.toBytes(minValue);
         Assertions.assertArrayEquals(expected, binaryOfInteger.bytes());
     }
 
     @Test
     public void testNullValue() {
-        final BinaryOfInteger binaryOfInteger = new BinaryOfInteger(null);
+        final Binary binaryOfInteger = new BinaryOfInteger(null, true);
         Assertions.assertArrayEquals(new byte[0], binaryOfInteger.bytes());
     }
 
     @Test
     public void testContract() {
-        EqualsVerifier.forClass(BinaryOfInteger.class).withNonnullFields("value").verify();
+        EqualsVerifier.forClass(BinaryOfInteger.class).withNonnullFields("value", "acceptNullValue").verify();
     }
 
 }

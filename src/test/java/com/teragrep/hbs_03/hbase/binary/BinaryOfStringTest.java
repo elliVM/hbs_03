@@ -57,7 +57,7 @@ public final class BinaryOfStringTest {
     @Test
     public void testValidValue() {
         final String value = "value";
-        final BinaryOfString binaryOfString = new BinaryOfString(value);
+        final Binary binaryOfString = new BinaryOfString(value);
         final byte[] expected = value.getBytes(StandardCharsets.UTF_8);
         Assertions.assertArrayEquals(expected, binaryOfString.bytes());
     }
@@ -65,7 +65,7 @@ public final class BinaryOfStringTest {
     @Test
     public void testUTF8Encoding() {
         final String value = "€"; // outside ascii
-        final BinaryOfString binaryOfString = new BinaryOfString(value);
+        final Binary binaryOfString = new BinaryOfString(value);
         final byte[] expected = value.getBytes(StandardCharsets.UTF_8);
         Assertions.assertArrayEquals(expected, binaryOfString.bytes());
     }
@@ -73,7 +73,7 @@ public final class BinaryOfStringTest {
     @Test
     public void testDifferentEncoding() {
         final String value = "€"; // outside ascii
-        final BinaryOfString binaryOfString = new BinaryOfString(value);
+        final Binary binaryOfString = new BinaryOfString(value);
         final byte[] notExpected = value.getBytes(StandardCharsets.ISO_8859_1);
         // no assertArrayNotEquals in JUnit 5
         Assertions.assertFalse(Arrays.equals(notExpected, binaryOfString.bytes()));
@@ -82,21 +82,21 @@ public final class BinaryOfStringTest {
     @Test
     public void testEmptyString() {
         final String value = "";
-        final BinaryOfString binaryOfString = new BinaryOfString(value);
+        final Binary binaryOfString = new BinaryOfString(value);
         final byte[] expected = value.getBytes(StandardCharsets.UTF_8);
         Assertions.assertArrayEquals(expected, binaryOfString.bytes());
     }
 
     @Test
     public void testNullValue() {
-        final BinaryOfString binaryOfString = new BinaryOfString(null);
+        final Binary binaryOfString = new BinaryOfString(null, true);
         Assertions.assertArrayEquals(new byte[0], binaryOfString.bytes());
     }
 
     @Test
     public void testWhiteSpaceOnly() {
         final String value = " ";
-        final BinaryOfString binaryOfString = new BinaryOfString(value);
+        final Binary binaryOfString = new BinaryOfString(value);
         final byte[] expected = value.getBytes(StandardCharsets.UTF_8);
         final byte[] notExpected = "".getBytes(StandardCharsets.UTF_8);
         Assertions.assertArrayEquals(expected, binaryOfString.bytes());
@@ -107,7 +107,7 @@ public final class BinaryOfStringTest {
     @Test
     public void testLongString() {
         final String value = "value".repeat(1000);
-        final BinaryOfString binaryOfString = new BinaryOfString(value);
+        final Binary binaryOfString = new BinaryOfString(value);
         final byte[] expected = value.getBytes(StandardCharsets.UTF_8);
         Assertions.assertArrayEquals(expected, binaryOfString.bytes());
     }
@@ -115,7 +115,7 @@ public final class BinaryOfStringTest {
     @Test
     public void testSpecialCharacters() {
         final String value = "!@#$%^&*()_+={}[]|\\:;\"'<>,.?/";
-        final BinaryOfString binaryOfString = new BinaryOfString(value);
+        final Binary binaryOfString = new BinaryOfString(value);
         final byte[] expected = value.getBytes(StandardCharsets.UTF_8);
         Assertions.assertArrayEquals(expected, binaryOfString.bytes());
     }
@@ -123,7 +123,7 @@ public final class BinaryOfStringTest {
     @Test
     public void testNonPrintable() {
         final String value = "\t \n \r";
-        final BinaryOfString binaryOfString = new BinaryOfString(value);
+        final Binary binaryOfString = new BinaryOfString(value);
         final byte[] expected = value.getBytes(StandardCharsets.UTF_8);
         Assertions.assertArrayEquals(expected, binaryOfString.bytes());
     }
@@ -136,14 +136,14 @@ public final class BinaryOfStringTest {
         Assertions.assertTrue(value.getBytes(StandardCharsets.UTF_8).length > value.length());
         Assertions.assertEquals(nonMultiByteValue.getBytes(StandardCharsets.UTF_8).length, nonMultiByteValue.length());
 
-        final BinaryOfString binaryOfString = new BinaryOfString(value);
+        final Binary binaryOfString = new BinaryOfString(value);
         final byte[] expected = value.getBytes(StandardCharsets.UTF_8);
         Assertions.assertArrayEquals(expected, binaryOfString.bytes());
     }
 
     @Test
     public void testContract() {
-        EqualsVerifier.forClass(BinaryOfString.class).withNonnullFields("value").verify();
+        EqualsVerifier.forClass(BinaryOfString.class).withNonnullFields("value", "acceptNullValue").verify();
     }
 
 }

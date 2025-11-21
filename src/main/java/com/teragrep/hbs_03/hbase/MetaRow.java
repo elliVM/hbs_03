@@ -63,15 +63,15 @@ public final class MetaRow implements Row {
     public MetaRow(
             final Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record
     ) {
-        this(new ValidRecord(record));
+        this(new ValidRecordImpl(record));
     }
 
     public MetaRow(final ValidRecord validRecord) {
         this.validRecord = validRecord;
     }
 
+    @Override
     public Put put() {
-
         final Put put = new Put(validRecord.rowKey().bytes(), true);
         final byte[] familyBytes = Bytes.toBytes("meta");
         final Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record = validRecord
@@ -89,12 +89,12 @@ public final class MetaRow implements Row {
         put.addColumn(familyBytes, Bytes.toBytes("of"), new BinaryOfString(record.value9()).bytes()); // original filename
         put.addColumn(familyBytes, Bytes.toBytes("fs"), new BinaryOfULong(record.value10()).bytes()); // file size
         put.addColumn(familyBytes, Bytes.toBytes("m"), new BinaryOfString(record.value11()).bytes()); // meta value
-        put.addColumn(familyBytes, Bytes.toBytes("chk"), new BinaryOfString(record.value12()).bytes()); // sha256 checksum
+        put.addColumn(familyBytes, Bytes.toBytes("sha"), new BinaryOfString(record.value12()).bytes()); // sha256 checksum
         put.addColumn(familyBytes, Bytes.toBytes("et"), new BinaryOfString(record.value13()).bytes()); // archive ETag
         put.addColumn(familyBytes, Bytes.toBytes("lt"), new BinaryOfString(record.value14()).bytes()); // log tag
         put.addColumn(familyBytes, Bytes.toBytes("src"), new BinaryOfString(record.value15()).bytes()); // source system name
         put.addColumn(familyBytes, Bytes.toBytes("c"), new BinaryOfString(record.value16()).bytes()); // category name
-        put.addColumn(familyBytes, Bytes.toBytes("ufs"), new BinaryOfULong(record.value17()).bytes()); // uncompressed file size
+        put.addColumn(familyBytes, Bytes.toBytes("ufs"), new BinaryOfULong(record.value17(), true).bytes()); // uncompressed file size (null allowed)
         put.addColumn(familyBytes, Bytes.toBytes("ci"), new BinaryOfString(record.value18()).bytes()); // ci
         put.addColumn(familyBytes, Bytes.toBytes("sid"), new BinaryOfUInteger(record.value19()).bytes()); // stream ID
         put.addColumn(familyBytes, Bytes.toBytes("s"), new BinaryOfString(record.value20()).bytes()); // stream
@@ -103,6 +103,7 @@ public final class MetaRow implements Row {
         return put;
     }
 
+    @Override
     public Binary rowKey() {
         return validRecord.rowKey();
     }

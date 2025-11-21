@@ -45,14 +45,11 @@
  */
 package com.teragrep.hbs_03.hbase;
 
-import org.apache.hadoop.hbase.Cell;
-import org.apache.hadoop.hbase.CellUtil;
+import com.teragrep.hbs_03.HbsRuntimeException;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 public final class MetaRowTest {
 
@@ -68,7 +65,7 @@ public final class MetaRowTest {
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("a")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("b")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("c")));
-        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("chk")));
+        Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("sha")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("d")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("e")));
         Assertions.assertTrue(put.has(columnFamily, Bytes.toBytes("et")));
@@ -89,11 +86,6 @@ public final class MetaRowTest {
     }
 
     @Test
-    public void testFakeRow() {
-        new FakeRow();
-    }
-
-    @Test
     public void testColumnSize() {
         final Row row = new FakeRow();
         final Put put = row.put();
@@ -102,21 +94,10 @@ public final class MetaRowTest {
     }
 
     @Test
-    public void testNullValueInBucketColumn() {
-        // in general the binary package objects handle null values, see testing there
+    public void testInvalidRow() {
         final Row row = new FakeRow(null);
-        final Put put = row.put();
-        Assertions.assertTrue(put.getFamilyCellMap().containsKey(Bytes.toBytes("meta")));
-        final List<Cell> cells = put.getFamilyCellMap().get(Bytes.toBytes("meta"));
-        Assertions.assertEquals(21, cells.size());
-        int bucketColumns = 0;
-        for (Cell cell : cells) {
-            if (Bytes.equals(CellUtil.cloneQualifier(cell), Bytes.toBytes("b"))) {
-                byte[] value = CellUtil.cloneValue(cell);
-                Assertions.assertArrayEquals(new byte[0], value); // null value set as empty byte array
-                bucketColumns++;
-            }
-        }
-        Assertions.assertEquals(1, bucketColumns);
+        final RuntimeException exception = Assertions.assertThrows(HbsRuntimeException.class, row::put);
+        final String expectedMessage = "Value was null and acceptNullValue was <false> (caused by: IllegalStateException: String value was null)";
+        Assertions.assertEquals(expectedMessage, exception.getMessage());
     }
 }

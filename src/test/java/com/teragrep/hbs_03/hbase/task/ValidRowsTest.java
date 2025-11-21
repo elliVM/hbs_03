@@ -43,60 +43,36 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase.binary;
+package com.teragrep.hbs_03.hbase.task;
 
-import com.teragrep.hbs_03.HbsRuntimeException;
+import com.teragrep.hbs_03.hbase.FakeRow;
+import com.teragrep.hbs_03.hbase.Row;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import java.nio.ByteBuffer;
-import java.sql.Date;
-import java.util.Objects;
+import java.util.Arrays;
+import java.util.List;
 
-public final class BinaryOfDate implements Binary {
+public final class ValidRowsTest {
 
-    private final Date value;
-    private final boolean acceptNullValue;
-
-    public BinaryOfDate(final Date value) {
-        this(value, false);
+    @Test
+    public void testValidRowsIncluded() {
+        final Row validRow1 = new FakeRow();
+        final Row validRow2 = new FakeRow();
+        final Row validRow3 = new FakeRow();
+        final List<Row> rowList = Arrays.asList(validRow1, validRow2, validRow3);
+        final ValidRows validRows = new ValidRows(rowList);
+        Assertions.assertEquals(3, validRows.validPuts().size());
     }
 
-    public BinaryOfDate(final Date value, final boolean acceptNullValue) {
-        this.value = value;
-        this.acceptNullValue = acceptNullValue;
-    }
-
-    @Override
-    public byte[] bytes() {
-        final byte[] bytes;
-        if (value == null && acceptNullValue) { // empty bytes represents a null value in hbase
-            bytes = new byte[0];
-        }
-        else if (value == null) {
-            throw new HbsRuntimeException(
-                    "Value was null and acceptNullValue was <false>",
-                    new IllegalStateException("Date value was null")
-            );
-        }
-        else {
-            bytes = ByteBuffer.allocate(Long.BYTES).putLong(value.getTime()).array();
-        }
-        return bytes;
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-        if (o == null) {
-            return false;
-        }
-        if (getClass() != o.getClass()) {
-            return false;
-        }
-        final BinaryOfDate that = (BinaryOfDate) o;
-        return acceptNullValue == that.acceptNullValue && Objects.equals(value, that.value);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(value, acceptNullValue);
+    @Test
+    public void testInvalidRowPruned() {
+        final Row validRow1 = new FakeRow();
+        final Row validRow2 = new FakeRow();
+        final Row validRow3 = new FakeRow();
+        final Row invalidRow = new FakeRow(null);
+        final List<Row> rowList = Arrays.asList(validRow1, validRow2, invalidRow, validRow3);
+        final ValidRows validRows = new ValidRows(rowList);
+        Assertions.assertEquals(3, validRows.validPuts().size());
     }
 }

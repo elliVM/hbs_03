@@ -54,14 +54,14 @@ public final class BinaryOfLongTest {
 
     @Test
     public void testValidValue() {
-        final BinaryOfLong binaryOfInteger = new BinaryOfLong(100000L);
+        final Binary binaryOfInteger = new BinaryOfLong(100000L);
         final byte[] expected = Bytes.toBytes(100000L);
         Assertions.assertArrayEquals(expected, binaryOfInteger.bytes());
     }
 
     @Test
     public void testZero() {
-        final BinaryOfLong binaryOfInteger = new BinaryOfLong(0L);
+        final Binary binaryOfInteger = new BinaryOfLong(0L);
         final byte[] expected = Bytes.toBytes(0L);
         Assertions.assertArrayEquals(expected, binaryOfInteger.bytes());
     }
@@ -69,7 +69,7 @@ public final class BinaryOfLongTest {
     @Test
     public void testMaxValue() {
         final long maxValue = Long.MAX_VALUE;
-        final BinaryOfLong binaryOfInteger = new BinaryOfLong(maxValue);
+        final Binary binaryOfInteger = new BinaryOfLong(maxValue);
         final byte[] expected = Bytes.toBytes(maxValue);
         Assertions.assertArrayEquals(expected, binaryOfInteger.bytes());
     }
@@ -77,20 +77,20 @@ public final class BinaryOfLongTest {
     @Test
     public void testMinValue() {
         final long minValue = Long.MIN_VALUE;
-        final BinaryOfLong binaryOfInteger = new BinaryOfLong(minValue);
+        final Binary binaryOfInteger = new BinaryOfLong(minValue);
         final byte[] expected = Bytes.toBytes(minValue);
         Assertions.assertArrayEquals(expected, binaryOfInteger.bytes());
     }
 
     @Test
     public void testNullValue() {
-        final BinaryOfLong binaryOfInteger = new BinaryOfLong(null);
+        final Binary binaryOfInteger = new BinaryOfLong(null, true);
         Assertions.assertArrayEquals(new byte[0], binaryOfInteger.bytes());
     }
 
     @Test
     public void testContract() {
-        EqualsVerifier.forClass(BinaryOfLong.class).withNonnullFields("value").verify();
+        EqualsVerifier.forClass(BinaryOfLong.class).withNonnullFields("value", "acceptNullValue").verify();
     }
 
 }

@@ -45,6 +45,7 @@
  */
 package com.teragrep.hbs_03.hbase.binary;
 
+import com.teragrep.hbs_03.HbsRuntimeException;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.jooq.types.UShort;
 
@@ -53,16 +54,28 @@ import java.util.Objects;
 public final class BinaryOfUShort implements Binary {
 
     private final UShort value;
+    private final boolean acceptNullValue;
 
     public BinaryOfUShort(final UShort value) {
+        this(value, false);
+    }
+
+    public BinaryOfUShort(final UShort value, final boolean acceptNullValue) {
         this.value = value;
+        this.acceptNullValue = acceptNullValue;
     }
 
     @Override
     public byte[] bytes() {
         final byte[] bytes;
-        if (value == null) { // empty bytes represents a null value in hbase
+        if (value == null && acceptNullValue) { // empty bytes represents a null value in hbase
             bytes = new byte[0];
+        }
+        else if (value == null) {
+            throw new HbsRuntimeException(
+                    "Value was null and acceptNullValue was <false>",
+                    new IllegalStateException("UShort value was null")
+            );
         }
         else {
             bytes = Bytes.toBytes(value.intValue());
@@ -71,24 +84,19 @@ public final class BinaryOfUShort implements Binary {
     }
 
     @Override
-    public boolean equals(final Object object) {
-        final boolean isEqual;
-        if (object == null) {
-            isEqual = false;
+    public boolean equals(final Object o) {
+        if (o == null) {
+            return false;
         }
-        else if (getClass() != object.getClass()) {
-            isEqual = false;
+        if (getClass() != o.getClass()) {
+            return false;
         }
-        else {
-            final BinaryOfUShort binaryOfUShort = (BinaryOfUShort) object;
-            isEqual = Objects.equals(value, binaryOfUShort.value);
-        }
-        return isEqual;
+        final BinaryOfUShort that = (BinaryOfUShort) o;
+        return acceptNullValue == that.acceptNullValue && Objects.equals(value, that.value);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(value);
+        return Objects.hash(value, acceptNullValue);
     }
-
 }

@@ -53,18 +53,18 @@ import org.jooq.types.ULong;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public final class ValidRecordTest {
+public final class ValidRecordImplTest {
 
     @Test
     public void testId() {
-        final ValidRecord validRecord = new ValidRecord(createRecord(1000L, 10000L, 10L));
+        final ValidRecord validRecord = new ValidRecordImpl(createRecord(1000L, 10000L, 10L));
         final ULong id = validRecord.id();
         Assertions.assertEquals(10L, id.longValue());
     }
 
     @Test
     public void testRowKey() {
-        final ValidRecord validRecord = new ValidRecord(createRecord(485L, 17503324L, 15L));
+        final ValidRecord validRecord = new ValidRecordImpl(createRecord(485L, 17503324L, 15L));
         final MetaRowKey metaRowKey = validRecord.rowKey();
         final MetaRowKey expected = new MetaRowKey(485L, 17503324L, 15L);
         Assertions.assertEquals(expected, metaRowKey);

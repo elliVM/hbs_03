@@ -57,20 +57,20 @@ public final class BinaryOfTimestampTest {
     @Test
     public void testValidValue() {
         final Timestamp timestamp = Timestamp.valueOf("2010-01-01 10:12:30");
-        final BinaryOfTimestamp binaryOfTimestamp = new BinaryOfTimestamp(timestamp);
+        final Binary binaryOfTimestamp = new BinaryOfTimestamp(timestamp);
         final byte[] expected = ByteBuffer.allocate(Long.BYTES).putLong(timestamp.getTime()).array();
         Assertions.assertArrayEquals(expected, binaryOfTimestamp.bytes());
     }
 
     @Test
     public void testNullValue() {
-        final BinaryOfTimestamp binaryOfTimestamp = new BinaryOfTimestamp(null);
+        final Binary binaryOfTimestamp = new BinaryOfTimestamp(null, true);
         Assertions.assertArrayEquals(new byte[0], binaryOfTimestamp.bytes());
     }
 
     @Test
     public void testContract() {
-        EqualsVerifier.forClass(BinaryOfTimestamp.class).withNonnullFields("value").verify();
+        EqualsVerifier.forClass(BinaryOfTimestamp.class).withNonnullFields("value", "acceptNullValue").verify();
     }
 
 }

@@ -43,60 +43,41 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase.binary;
+package com.teragrep.hbs_03.hbase.task;
 
 import com.teragrep.hbs_03.HbsRuntimeException;
+import com.teragrep.hbs_03.hbase.Row;
+import org.apache.hadoop.hbase.client.Put;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
-import java.sql.Date;
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.List;
 
-public final class BinaryOfDate implements Binary {
+/** Filters out rows that cannot be converted to Put objects, when required data is null */
+public final class ValidRows {
 
-    private final Date value;
-    private final boolean acceptNullValue;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ValidRows.class);
 
-    public BinaryOfDate(final Date value) {
-        this(value, false);
+    private final List<Row> rows;
+
+    public ValidRows(final List<Row> rows) {
+        this.rows = rows;
     }
 
-    public BinaryOfDate(final Date value, final boolean acceptNullValue) {
-        this.value = value;
-        this.acceptNullValue = acceptNullValue;
-    }
-
-    @Override
-    public byte[] bytes() {
-        final byte[] bytes;
-        if (value == null && acceptNullValue) { // empty bytes represents a null value in hbase
-            bytes = new byte[0];
+    public List<Put> validPuts() {
+        final List<Put> validPuts = new ArrayList<>();
+        int skippedCount = 0;
+        for (final Row row : rows) {
+            try {
+                validPuts.add(row.put());
+            }
+            catch (final HbsRuntimeException e) {
+                skippedCount++;
+                LOGGER.trace("Skipping row <{}> Exception message <{}>", row, e.getMessage());
+            }
         }
-        else if (value == null) {
-            throw new HbsRuntimeException(
-                    "Value was null and acceptNullValue was <false>",
-                    new IllegalStateException("Date value was null")
-            );
-        }
-        else {
-            bytes = ByteBuffer.allocate(Long.BYTES).putLong(value.getTime()).array();
-        }
-        return bytes;
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-        if (o == null) {
-            return false;
-        }
-        if (getClass() != o.getClass()) {
-            return false;
-        }
-        final BinaryOfDate that = (BinaryOfDate) o;
-        return acceptNullValue == that.acceptNullValue && Objects.equals(value, that.value);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(value, acceptNullValue);
+        LOGGER.info("ValidPuts skipped <{}> invalid rows", skippedCount);
+        return validPuts;
     }
 }

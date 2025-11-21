@@ -43,60 +43,55 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.hbs_03.hbase.binary;
+package com.teragrep.hbs_03.hbase;
 
 import com.teragrep.hbs_03.HbsRuntimeException;
+import org.jooq.Record21;
+import org.jooq.types.UInteger;
+import org.jooq.types.ULong;
 
-import java.nio.ByteBuffer;
-import java.sql.Date;
-import java.util.Objects;
+/** Checks that record values that are used to create other objects are not null */
+public final class ValidRecordImpl implements ValidRecord {
 
-public final class BinaryOfDate implements Binary {
+    private final Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record;
 
-    private final Date value;
-    private final boolean acceptNullValue;
-
-    public BinaryOfDate(final Date value) {
-        this(value, false);
-    }
-
-    public BinaryOfDate(final Date value, final boolean acceptNullValue) {
-        this.value = value;
-        this.acceptNullValue = acceptNullValue;
+    public ValidRecordImpl(
+            final Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record
+    ) {
+        this.record = record;
     }
 
     @Override
-    public byte[] bytes() {
-        final byte[] bytes;
-        if (value == null && acceptNullValue) { // empty bytes represents a null value in hbase
-            bytes = new byte[0];
-        }
-        else if (value == null) {
-            throw new HbsRuntimeException(
-                    "Value was null and acceptNullValue was <false>",
-                    new IllegalStateException("Date value was null")
+    public MetaRowKey rowKey() {
+        final MetaRowKey rowKey;
+        try {
+            rowKey = new MetaRowKey(
+                    record.value19().longValue(),
+                    record.value2().longValue(),
+                    record.value1().longValue()
             );
         }
-        else {
-            bytes = ByteBuffer.allocate(Long.BYTES).putLong(value.getTime()).array();
+        catch (final NullPointerException e) {
+            throw new HbsRuntimeException("Row key field was null", e);
         }
-        return bytes;
+        return rowKey;
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (o == null) {
-            return false;
-        }
-        if (getClass() != o.getClass()) {
-            return false;
-        }
-        final BinaryOfDate that = (BinaryOfDate) o;
-        return acceptNullValue == that.acceptNullValue && Objects.equals(value, that.value);
+    public Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record() {
+        return record;
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(value, acceptNullValue);
+    public ULong id() {
+        final ULong id;
+        try {
+            id = record.field1().get(record);
+        }
+        catch (final NullPointerException e) {
+            throw new HbsRuntimeException("Logfile id field was null", e);
+        }
+        return id;
     }
+
 }
