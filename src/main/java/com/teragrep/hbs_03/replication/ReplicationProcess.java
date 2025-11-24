@@ -67,13 +67,29 @@ public final class ReplicationProcess implements AutoCloseable {
     private final HBaseClient hbaseClient;
     private final BlockRangeStream blockRangeStream;
     private final MutatorConfiguration mutatorConfiguration;
+    private final String pathToLastSavedIdFile;
 
     public ReplicationProcess(
             final DatabaseClient databaseClient,
             final HBaseClient hbaseClient,
             final BlockRangeStream blockRangeStream
     ) {
-        this(databaseClient, hbaseClient, blockRangeStream, new MutatorConfiguration(false));
+        this(
+                databaseClient,
+                hbaseClient,
+                blockRangeStream,
+                new MutatorConfiguration(false),
+                "/var/lib/hbs_03/last_processed_id.txt"
+        );
+    }
+
+    public ReplicationProcess(
+            final DatabaseClient databaseClient,
+            final HBaseClient hbaseClient,
+            final BlockRangeStream blockRangeStream,
+            final String pathToLastSavedIdFile
+    ) {
+        this(databaseClient, hbaseClient, blockRangeStream, new MutatorConfiguration(false), pathToLastSavedIdFile);
     }
 
     public ReplicationProcess(
@@ -82,10 +98,27 @@ public final class ReplicationProcess implements AutoCloseable {
             final BlockRangeStream blockRangeStream,
             final MutatorConfiguration mutatorConfiguration
     ) {
+        this(
+                databaseClient,
+                hbaseClient,
+                blockRangeStream,
+                mutatorConfiguration,
+                "/var/lib/hbs_03/last_processed_id.txt"
+        );
+    }
+
+    public ReplicationProcess(
+            final DatabaseClient databaseClient,
+            final HBaseClient hbaseClient,
+            final BlockRangeStream blockRangeStream,
+            final MutatorConfiguration mutatorConfiguration,
+            final String pathToLastSavedIdFile
+    ) {
         this.databaseClient = databaseClient;
         this.hbaseClient = hbaseClient;
         this.blockRangeStream = blockRangeStream;
         this.mutatorConfiguration = mutatorConfiguration;
+        this.pathToLastSavedIdFile = pathToLastSavedIdFile;
     }
 
     public void replicate() {
@@ -106,7 +139,7 @@ public final class ReplicationProcess implements AutoCloseable {
             destinationTable.workTask(new PutRowsTask(rangeRowResults, mutatorConfiguration));
 
             final long maxIdFromResults = new RowListMaxId(rangeRowResults).value();
-            final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(maxIdFromResults);
+            final LastIdSavedToFile lastIdSavedToFile = new LastIdSavedToFile(maxIdFromResults, pathToLastSavedIdFile);
             lastIdSavedToFile.save();
 
             // logging
