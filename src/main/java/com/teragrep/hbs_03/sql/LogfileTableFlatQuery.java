@@ -55,7 +55,6 @@ import org.jooq.Record21;
 import org.jooq.Result;
 import org.jooq.SelectOnConditionStep;
 import org.jooq.Table;
-import org.jooq.impl.DSL;
 import org.jooq.types.UInteger;
 import org.jooq.types.ULong;
 import org.slf4j.Logger;
@@ -95,30 +94,6 @@ public final class LogfileTableFlatQuery {
         this.hostMappingTempTable = hostMappingTempTable;
     }
 
-    private Field<ULong> coalescedLogtimeField() {
-        final String dateFromPathRegex = "UNIX_TIMESTAMP(STR_TO_DATE(SUBSTRING(REGEXP_SUBSTR({0},'^\\\\d{4}\\\\/\\\\d{2}-\\\\d{2}\\\\/[\\\\w\\\\.-]+\\\\/([^\\\\p{Z}\\\\p{C}]+?)\\\\/([^\\\\p{Z}\\\\p{C}]+)(-@)?(\\\\d+|)-(\\\\d{4}\\\\d{2}\\\\d{2}\\\\d{2})'), -10, 10), '%Y%m%d%H'))";
-        final Field<ULong> extractedLogtimeField = DSL.field(dateFromPathRegex, ULong.class, JOURNALDB.LOGFILE.PATH);
-        return DSL.coalesce(JOURNALDB.LOGFILE.EPOCH_HOUR, extractedLogtimeField).as("logtime");
-    }
-
-    private Field<ULong> coalescedEpochExpiresField() {
-        return DSL
-                .coalesce(
-                        JOURNALDB.LOGFILE.EPOCH_EXPIRES,
-                        DSL.field("UNIX_TIMESTAMP({0})", ULong.class, JOURNALDB.LOGFILE.EXPIRATION)
-                )
-                .as("epoch_expires");
-    }
-
-    private Field<ULong> coalescedEpochArchivedField() {
-        return DSL
-                .coalesce(
-                        JOURNALDB.LOGFILE.EPOCH_ARCHIVED,
-                        DSL.field("UNIX_TIMESTAMP({0})", ULong.class, JOURNALDB.LOGFILE.ARCHIVED)
-                )
-                .as("epoch_archived");
-    }
-
     public List<Row> resultRowList() {
         hostMappingTempTable.createIfNotExists();
 
@@ -151,8 +126,8 @@ public final class LogfileTableFlatQuery {
         final Field<ULong> dayQueryIdField = rangeIdTable.field("id", ULong.class);
         final SelectOnConditionStep<Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String>> selectStep = ctx
                 .select(
-                        JOURNALDB.LOGFILE.ID, coalescedLogtimeField(), coalescedEpochArchivedField(),
-                        coalescedEpochExpiresField(), JOURNALDB.BUCKET.NAME.as("bucket"), JOURNALDB.LOGFILE.PATH, JOURNALDB.LOGFILE.OBJECT_KEY_HASH, JOURNALDB.HOST.NAME.as("host"), JOURNALDB.LOGFILE.ORIGINAL_FILENAME, JOURNALDB.LOGFILE.FILE_SIZE, JOURNALDB.METADATA_VALUE.VALUE.as("meta"), // this expects that each logfile has exactly 1 value
+                        JOURNALDB.LOGFILE.ID, JOURNALDB.LOGFILE.EPOCH_HOUR, JOURNALDB.LOGFILE.EPOCH_ARCHIVED,
+                        JOURNALDB.LOGFILE.EPOCH_EXPIRES, JOURNALDB.BUCKET.NAME.as("bucket"), JOURNALDB.LOGFILE.PATH, JOURNALDB.LOGFILE.OBJECT_KEY_HASH, JOURNALDB.HOST.NAME.as("host"), JOURNALDB.LOGFILE.ORIGINAL_FILENAME, JOURNALDB.LOGFILE.FILE_SIZE, JOURNALDB.METADATA_VALUE.VALUE.as("meta"), // this expects that each logfile has exactly 1 value
                         JOURNALDB.LOGFILE.SHA256_CHECKSUM, JOURNALDB.LOGFILE.ARCHIVE_ETAG, JOURNALDB.LOGTAG.LOGTAG_,
                         JOURNALDB.SOURCE_SYSTEM.NAME.as("source_system"), JOURNALDB.CATEGORY.NAME.as("category"), JOURNALDB.LOGFILE.UNCOMPRESSED_FILE_SIZE, JOURNALDB.CI.NAME, STREAMDB.STREAM.ID.as("stream_id"), STREAMDB.STREAM.STREAM_, STREAMDB.STREAM.DIRECTORY
                 )

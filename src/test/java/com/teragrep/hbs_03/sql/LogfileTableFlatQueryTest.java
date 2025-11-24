@@ -47,7 +47,9 @@ package com.teragrep.hbs_03.sql;
 
 import com.teragrep.hbs_03.hbase.Row;
 import org.jooq.DSLContext;
+import org.jooq.Record;
 import org.jooq.Record3;
+import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.conf.MappedSchema;
 import org.jooq.conf.MappedTable;
@@ -58,7 +60,6 @@ import org.jooq.types.ULong;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
@@ -78,7 +79,6 @@ import static com.teragrep.hbs_03.jooq.generated.journaldb.Journaldb.JOURNALDB;
         named = "skipContainerTests",
         matches = "true"
 )
-@Disabled("some issue with test db joins")
 public final class LogfileTableFlatQueryTest {
 
     final MariaDBContainer<?> mariadb = Assertions
@@ -118,7 +118,7 @@ public final class LogfileTableFlatQueryTest {
     public void testFlatQuery() {
         final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
         new HostMappingTempTable(ctx).createIfNotExists();
-        final LogfileTableIdRangeQuery rangeQuery = new LogfileTableIdRangeQuery(ctx, 100, 200);
+        final LogfileTableIdRangeQuery rangeQuery = new LogfileTableIdRangeQuery(ctx, 101, 200);
         final LogfileTableFlatQuery logfileTableFlatQuery = new LogfileTableFlatQuery(ctx, rangeQuery);
         final List<Row> results = logfileTableFlatQuery.resultRowList();
         Assertions.assertEquals(100, results.size());
@@ -130,6 +130,52 @@ public final class LogfileTableFlatQueryTest {
             loops++;
         }
 
-        Assertions.assertEquals(101, loops);
+        Assertions.assertEquals(100, loops);
+    }
+
+    @Test
+    public void testFlatQueryJoinsIncrementally() {
+        final DSLContext ctx = DSL.using(connection, SQLDialect.MYSQL, settings);
+        new HostMappingTempTable(ctx).createIfNotExists();
+
+        // SQL queries with joins added progressively
+        final String[] queries = new String[] {
+                "select count(*) from host_mapping_temp_table",
+                "select count(*) from logfile where id between 100 and 200",
+                "select count(*) from logfile join journal_host on logfile.host_id = journal_host.id where logfile.id between 100 and 200",
+                "select count(*) from logfile join journal_host on logfile.host_id = journal_host.id join host_mapping_temp_table on journal_host.id = host_mapping_temp_table.host_id where logfile.id between 100 and 200",
+                "select count(*) from logfile join journal_host on logfile.host_id = journal_host.id join host_mapping_temp_table on journal_host.id = host_mapping_temp_table.host_id join bucket on logfile.bucket_id = bucket.id where logfile.id between 100 and 200",
+                "select count(*) from logfile join journal_host on logfile.host_id = journal_host.id join host_mapping_temp_table on journal_host.id = host_mapping_temp_table.host_id join bucket on logfile.bucket_id = bucket.id join metadata_value on logfile.id = metadata_value.logfile_id where logfile.id between 100 and 200",
+                "select count(*) from logfile join journal_host on logfile.host_id = journal_host.id join host_mapping_temp_table on journal_host.id = host_mapping_temp_table.host_id join bucket on logfile.bucket_id = bucket.id join metadata_value on logfile.id = metadata_value.logfile_id join logtag on logfile.logtag_id = logtag.id where logfile.id between 100 and 200",
+                "select count(*) from logfile join journal_host on logfile.host_id = journal_host.id join host_mapping_temp_table on journal_host.id = host_mapping_temp_table.host_id join bucket on logfile.bucket_id = bucket.id join metadata_value on logfile.id = metadata_value.logfile_id join logtag on logfile.logtag_id = logtag.id join source_system on logfile.source_system_id = source_system.id where logfile.id between 100 and 200",
+                "select count(*) from logfile join journal_host on logfile.host_id = journal_host.id join host_mapping_temp_table on journal_host.id = host_mapping_temp_table.host_id join bucket on logfile.bucket_id = bucket.id join metadata_value on logfile.id = metadata_value.logfile_id join logtag on logfile.logtag_id = logtag.id join source_system on logfile.source_system_id = source_system.id join category on logfile.category_id = category.id where logfile.id between 100 and 200",
+                "select count(*) from logfile join journal_host on logfile.host_id = journal_host.id join host_mapping_temp_table on journal_host.id = host_mapping_temp_table.host_id join bucket on logfile.bucket_id = bucket.id join metadata_value on logfile.id = metadata_value.logfile_id join logtag on logfile.logtag_id = logtag.id join source_system on logfile.source_system_id = source_system.id join category on logfile.category_id = category.id join ci on logfile.ci_id = ci.id where logfile.id between 100 and 200",
+                "select count(*) from logfile join journal_host on logfile.host_id = journal_host.id join host_mapping_temp_table on journal_host.id = host_mapping_temp_table.host_id join bucket on logfile.bucket_id = bucket.id join metadata_value on logfile.id = metadata_value.logfile_id join logtag on logfile.logtag_id = logtag.id join source_system on logfile.source_system_id = source_system.id join category on logfile.category_id = category.id join ci on logfile.ci_id = ci.id join log_group on host_mapping_temp_table.gid = log_group.id where logfile.id between 100 and 200",
+                "select count(*) from logfile join journal_host on logfile.host_id = journal_host.id join host_mapping_temp_table on journal_host.id = host_mapping_temp_table.host_id join bucket on logfile.bucket_id = bucket.id join metadata_value on logfile.id = metadata_value.logfile_id join logtag on logfile.logtag_id = logtag.id join source_system on logfile.source_system_id = source_system.id join category on logfile.category_id = category.id join ci on logfile.ci_id = ci.id join log_group on host_mapping_temp_table.gid = log_group.id join stream on log_group.id = stream.gid and logtag.logtag = stream.tag where logfile.id between 100 and 200"
+        };
+
+        final int[] expectedRows = new int[] {
+                10, // host_mapping_temp_table
+                101, // logfile id 100-200
+                101, // join journal_host
+                101, // join host_mapping_temp_table
+                101, // join bucket
+                101, // join metadata_value
+                101, // join logtag
+                101, // join source_system
+                101, // join category
+                101, // join ci
+                101, // join log_group
+                101 // join stream
+        };
+
+        for (int i = 0; i < queries.length; i++) {
+            final Result<Record> result = ctx.fetch(queries[i]);
+            final int count = result.get(0).getValue(0, Integer.class);
+            Assertions
+                    .assertEquals(
+                            expectedRows[i], count, "Query " + (i + 1) + " returned unexpected row count: " + count
+                    );
+        }
     }
 }

@@ -203,8 +203,7 @@ values ('group-10'),
        ('group-16'),
        ('group-17'),
        ('group-18'),
-       ('group-19')
-on duplicate key update name=name;
+       ('group-19');
 
 -- 2. streamdb host
 insert into host (name, gid)
@@ -217,8 +216,7 @@ values ('sc-99-99-10-10', (select id from log_group where name = 'group-10' limi
        ('sc-99-99-10-16', (select id from log_group where name = 'group-16' limit 1)),
        ('sc-99-99-10-17', (select id from log_group where name = 'group-17' limit 1)),
        ('sc-99-99-10-18', (select id from log_group where name = 'group-18' limit 1)),
-       ('sc-99-99-10-19', (select id from log_group where name = 'group-19' limit 1))
-on duplicate key update gid = values(gid);
+       ('sc-99-99-10-19', (select id from log_group where name = 'group-19' limit 1));
 
 -- 3. journaldb host
 insert into journal_host (name)
@@ -231,38 +229,36 @@ values ('sc-99-99-10-10'),
        ('sc-99-99-10-16'),
        ('sc-99-99-10-17'),
        ('sc-99-99-10-18'),
-       ('sc-99-99-10-19')
-on duplicate key update name=values(name);
+       ('sc-99-99-10-19');
 
 -- 4. stream
 insert into stream (gid, directory, stream, tag)
-values ((select id from log_group where name = 'group-10' limit 1), 'cpu', 'log:cpu:0', '0ff11b44-cpu')
-on duplicate key update stream=values(stream);
+select id,
+       'cpu',
+       'log:cpu:0',
+       '0ff11b44-cpu'
+from log_group;
+
 
 -- 5. bucket
 insert into bucket (name)
-values ('test-bucket')
-on duplicate key update name=name;
+values ('test-bucket');
 
 -- 6. logtag
 insert into logtag (logtag)
-values ('0ff11b44-cpu')
-on duplicate key update logtag=values(logtag);
+values ('0ff11b44-cpu');
 
 -- 7. source_system
 insert into source_system (name)
-values ('log:cpu:0')
-on duplicate key update name=values(name);
+values ('log:cpu:0');
 
 -- 8. category
 insert into category (name)
-values ('test-category')
-on duplicate key update name=values(name);
+values ('test-category');
 
 -- 9. ci
 insert into ci (name)
-values ('ci-cpu')
-on duplicate key update name=values(name);
+values ('ci-cpu');
 
 commit;
 
@@ -346,6 +342,10 @@ begin
            unix_timestamp(now()) div 3600                                as epoch_archived,
            v_ci_id                                                       as ci_id,
            v_logtag_id                                                   as logtag_id;
+
+    insert into metadata_value (logfile_id, value_key, value)
+    values (LAST_INSERT_ID(), 'default_key', 'single-value');
+
 end;
 
 create procedure insert_logs(in start_i int, in end_i int)
