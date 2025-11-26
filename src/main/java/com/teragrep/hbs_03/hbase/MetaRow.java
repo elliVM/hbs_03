@@ -55,7 +55,11 @@ import org.jooq.Record21;
 import org.jooq.types.UInteger;
 import org.jooq.types.ULong;
 
-/** Represents a row for meta-column family */
+import java.util.Objects;
+
+/**
+ * Represents a row for meta-column family
+ */
 public final class MetaRow implements Row {
 
     private final ValidRecord validRecord;
@@ -95,7 +99,7 @@ public final class MetaRow implements Row {
         put.addColumn(familyBytes, Bytes.toBytes("src"), new BinaryOfString(record.value15()).bytes()); // source system name
         put.addColumn(familyBytes, Bytes.toBytes("c"), new BinaryOfString(record.value16()).bytes()); // category name
         put.addColumn(familyBytes, Bytes.toBytes("ufs"), new BinaryOfULong(record.value17(), true).bytes()); // uncompressed file size (null allowed)
-        put.addColumn(familyBytes, Bytes.toBytes("ci"), new BinaryOfString(record.value18()).bytes()); // ci
+        put.addColumn(familyBytes, Bytes.toBytes("ci"), new BinaryOfString(record.value18(), true).bytes()); // ci TODO remove null allowance after QA data is updated
         put.addColumn(familyBytes, Bytes.toBytes("sid"), new BinaryOfUInteger(record.value19()).bytes()); // stream ID
         put.addColumn(familyBytes, Bytes.toBytes("s"), new BinaryOfString(record.value20()).bytes()); // stream
         put.addColumn(familyBytes, Bytes.toBytes("d"), new BinaryOfString(record.value21()).bytes()); // stream directory
@@ -113,4 +117,20 @@ public final class MetaRow implements Row {
         return validRecord.id();
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null) {
+            return false;
+        }
+        if (getClass() != o.getClass()) {
+            return false;
+        }
+        final MetaRow metaRow = (MetaRow) o;
+        return Objects.equals(validRecord, metaRow.validRecord);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(validRecord);
+    }
 }

@@ -45,6 +45,7 @@
  */
 package com.teragrep.hbs_03.hbase;
 
+import nl.jqno.equalsverifier.EqualsVerifier;
 import org.jooq.Record21;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -99,5 +100,10 @@ public final class ValidRecordImplTest {
                         "stream_name", // stream
                         "directory_name" // directory
                 );
+    }
+
+    @Test
+    public void testContract() {
+        EqualsVerifier.forClass(ValidRecordImpl.class).withNonnullFields("record").verify();
     }
 }

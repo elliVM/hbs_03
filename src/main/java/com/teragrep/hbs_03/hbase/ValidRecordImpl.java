@@ -50,7 +50,11 @@ import org.jooq.Record21;
 import org.jooq.types.UInteger;
 import org.jooq.types.ULong;
 
-/** Checks that record values that are used to create other objects are not null */
+import java.util.Objects;
+
+/**
+ * Checks that record values that are used to create other objects are not null
+ */
 public final class ValidRecordImpl implements ValidRecord {
 
     private final Record21<ULong, ULong, ULong, ULong, String, String, String, String, String, ULong, String, String, String, String, String, String, ULong, String, UInteger, String, String> record;
@@ -94,4 +98,20 @@ public final class ValidRecordImpl implements ValidRecord {
         return id;
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null) {
+            return false;
+        }
+        if (getClass() != o.getClass()) {
+            return false;
+        }
+        final ValidRecordImpl that = (ValidRecordImpl) o;
+        return Objects.equals(record, that.record);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(record);
+    }
 }

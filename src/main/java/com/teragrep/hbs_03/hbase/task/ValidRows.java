@@ -53,8 +53,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-/** Filters out rows that cannot be converted to Put objects, when required data is null */
+/**
+ * Filters out rows that cannot be converted to Put objects, when required data is null
+ */
 public final class ValidRows {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ValidRows.class);
@@ -77,7 +80,24 @@ public final class ValidRows {
                 LOGGER.trace("Skipping row <{}> Exception message <{}>", row, e.getMessage());
             }
         }
-        LOGGER.info("ValidPuts skipped <{}> invalid rows", skippedCount);
+        LOGGER.info("Skipped <{}> invalid rows", skippedCount);
         return validPuts;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null) {
+            return false;
+        }
+        if (getClass() != o.getClass()) {
+            return false;
+        }
+        final ValidRows validRows = (ValidRows) o;
+        return Objects.equals(rows, validRows.rows);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(rows);
     }
 }

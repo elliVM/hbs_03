@@ -47,6 +47,7 @@ package com.teragrep.hbs_03.hbase.task;
 
 import com.teragrep.hbs_03.hbase.FakeRow;
 import com.teragrep.hbs_03.hbase.Row;
+import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -74,5 +75,10 @@ public final class ValidRowsTest {
         final List<Row> rowList = Arrays.asList(validRow1, validRow2, invalidRow, validRow3);
         final ValidRows validRows = new ValidRows(rowList);
         Assertions.assertEquals(3, validRows.validPuts().size());
+    }
+
+    @Test
+    void testContract() {
+        EqualsVerifier.forClass(ValidRows.class).withNonnullFields("rows").verify();
     }
 }

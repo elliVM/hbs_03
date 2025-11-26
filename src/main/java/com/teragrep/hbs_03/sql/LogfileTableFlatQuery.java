@@ -149,7 +149,7 @@ public final class LogfileTableFlatQuery {
                 .on(JOURNALDB.LOGFILE.ID.eq(JOURNALDB.METADATA_VALUE.LOGFILE_ID))
                 .join(JOURNALDB.LOGTAG)
                 .on(JOURNALDB.LOGFILE.LOGTAG_ID.eq(JOURNALDB.LOGTAG.ID))
-                .join(JOURNALDB.CI)
+                .leftJoin(JOURNALDB.CI)
                 .on(JOURNALDB.LOGFILE.CI_ID.eq(JOURNALDB.CI.ID))
                 .join(STREAMDB.LOG_GROUP)
                 .on(hostMappingTempTable.groupIdField().eq(STREAMDB.LOG_GROUP.ID))
